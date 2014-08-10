@@ -21,12 +21,12 @@ int main(string[] args)
     }
     catch(SharedLibLoadException e)
     {
-        log.fatal("SDL2 not found: " ~ e.msg);
+        log.critical("SDL2 not found: " ~ e.msg);
         return 1;
     }
     catch(SymbolLoadException e)
     {
-        log.fatal("Missing SDL2 symbol (old version installed?): " ~ e.msg);
+        log.critical("Missing SDL2 symbol (old version installed?): " ~ e.msg);
         return 1;
     }
     scope(exit) { DerelictSDL2.unload(); }
@@ -35,7 +35,7 @@ int main(string[] args)
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         // SDL_Init returns a negative number on error.
-        log.fatal("SDL Video subsystem failed to initialize");
+        log.critical("SDL Video subsystem failed to initialize");
         return 1;
     }
     // Deinitialize SDL at exit.
