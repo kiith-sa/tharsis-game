@@ -7,6 +7,7 @@
 module entity.entitysystem;
 
 
+import std.exception;
 import std.logger;
 
 import tharsis.entity.componenttypemanager;
@@ -25,7 +26,11 @@ private:
     // Game log.
     Logger log_;
 
+    import tharsis.entity.entityprototype;
     import tharsis.defaults.yamlsource;
+
+    // Resource handles of prototypes of entities that should be spawned ASAP.
+    PrototypeManager.Handle[] prototypesToSpawn_;
 
     // Component types are registered here.
     ComponentTypeManager!YAMLSource componentTypeMgr_;
@@ -59,6 +64,21 @@ public:
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
         entityMgr_.registerResourceManager(prototypeMgr_);
+
+    /// Spawn entity from specified file as soon as possible.
+    ///
+    /// Params:
+    ///
+    /// fileName = Name of the file to load the entity from.
+    void spawnEntityASAP(string fileName) @trusted nothrow
+    {
+        auto descriptor = EntityPrototypeResource.Descriptor("game_data/entity1.yaml");
+        const handle    = prototypeMgr_.handle(descriptor);
+        prototypesToSpawn_.assumeSafeAppend();
+        prototypesToSpawn_ ~= handle;
+        log_.infof("Will spawn entity from prototype %s ASAP", handle.rawHandle)
+            .assumeWontThrow;
+        prototypeMgr_.requestLoad(handle);
     }
 
     /// Destroy the entity system along with all entities, components and resource managers.
@@ -71,6 +91,22 @@ public:
     /// Execute one frame (game update) of the entity system.
     void frame() @safe nothrow
     {
+        size_t handleCount = 0;
+        foreach(i, handle; prototypesToSpawn_)
+        {
+            import tharsis.entity.resourcemanager;
+            if(prototypeMgr_.state(handle) == ResourceState.Loaded)
+            {
+                log_.infof("Spawned entity from prototype %s", handle.rawHandle)
+                    .assumeWontThrow;
+                entityMgr_.addEntity(prototypeMgr_.resource(handle).prototype);
+                continue;
+            }
+            // Only keep handles of prototypes we didn't spawn.
+            prototypesToSpawn_[handleCount++] = handle;
+        }
+        prototypesToSpawn_.length = handleCount;
+
         entityMgr_.executeFrame();
     }
 }
