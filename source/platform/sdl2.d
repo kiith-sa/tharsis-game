@@ -11,6 +11,9 @@ import derelict.sdl2.sdl;
 
 import std.typecons;
 
+
+package:
+
 /// Create an OpenGL window.
 ///
 /// This only creates a window, not a GL context. The caller has to do that.
