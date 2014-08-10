@@ -3,6 +3,7 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
 
+/// SDL2-only utility functions. (Note: there is more SDL2 code in the Platform package)
 module platform.sdl2;
 
 import derelict.sdl2.sdl;
