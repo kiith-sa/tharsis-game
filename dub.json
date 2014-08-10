@@ -15,7 +15,7 @@
         "gl3n":          "~master",
         "gfm:math":      ">=1.1.7",
         "logger":        ">=0.1.0",
-        "tharsis-core" : { "version" : "~>0.1.0", "path" : "../tharsis-core" } 
+        "tharsis-full" : { "version" : "~>0.1.0", "path" : "../tharsis-full" } 
     },
     "buildTypes":
     {
