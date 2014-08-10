@@ -26,8 +26,8 @@ bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice inpu
                Logger log)
     @trusted nothrow
 {
-    // Read all waiting events
-    import derelict.sdl2.sdl;
+    entitySystem.spawnEntityASAP("game_data/entity1.yaml");
+
     for(;;)
     {
         input.collectInput();
