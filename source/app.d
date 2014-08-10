@@ -42,46 +42,26 @@ int main(string[] args)
     scope(exit) { SDL_Quit(); }
 
 
-    // Initialize the SDL window.
-    import platform.sdl2;
+    // Initialize the video device.
     const width        = 800;
     const height       = 600;
     const fullscreen   = No.fullscreen;
-    SDL_Window* window = createGLWindow(width, height, fullscreen);
-    // Exit if window creation fails.
-    if(null is window)
-    {
-        log.fatal("Failed to create the application window");
-        return 1;
-    }
-    log.infof("Created a%s window with dimensions %s x %s",
-              fullscreen ? " fullscreen" : "", width, height);
-    // Destroy the window at exit.
-    scope(exit) { SDL_DestroyWindow(window); }
+
+    import platform.inputdevice;
+    import platform.videodevice;
+    auto video = scoped!VideoDevice(log);
+    auto input = scoped!InputDevice(log);
+    if(!video.initWindow(width, height, fullscreen)) { return 1; }
+    if(!video.initGL()) { return 1; }
 
 
-    // Initialize OpenGL.
-    import gfmod.opengl.opengl;
-    OpenGL GL;
-    SDL_GLContext context;
-    scope(exit)
+    import entity.entitysystem;
+    import game.mainloop;
+    EntitySystem entitySystem = EntitySystem(log);
+    scope(failure) { log.critical("Unexpected failure in the main loop"); }
+    if(!mainLoop(entitySystem, video, input, log))
     {
-        if(GL !is null)                   { destroy(GL); }
-        if(context != SDL_GLContext.init) { SDL_GL_DeleteContext(context); }
-    }
-    try
-    {
-        GL      = new OpenGL(log);
-        context = SDL_GL_CreateContext(window);
-        if(GL.reload() < GLVersion.GL30)
-        {
-            log.fatal("Required OpenGL version 3.0 could not be loaded.");
-            return 1;
-        }
-    }
-    catch(OpenGLException e)
-    {
-        log.fatal("Failed to initialize OpenGL: ", e);
+        log.critical("Main loop exited with error");
         return 1;
     }
 
