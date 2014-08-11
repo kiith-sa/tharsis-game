@@ -427,26 +427,24 @@ final class GLProgram
 
 /// Represent an OpenGL program attribute. Owned by a GLProgram.
 /// See_also: GLProgram.
-final class GLAttribute
+struct GLAttribute
 {
+    @safe pure nothrow:
     public
     {
-        this(OpenGL gl, char[] name, GLint location, GLenum type, GLsizei size)
+        this(char[] name, GLint location, GLenum type, GLsizei size)
         {
-            _gl = gl;
             _name = name.dup;
             _location = location;
             _type = type;
             _size = size;
         }
 
+        GLint location() const @nogc { return _location; }
     }
-
-    @property GLint location() { return _location; } // property, getter only
 
     private
     {
-        OpenGL _gl;
         GLint _location;
         GLenum _type;
         GLsizei _size;
