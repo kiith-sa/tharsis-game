@@ -157,14 +157,14 @@ final class OpenGL
 
         /// Checks pending OpenGL errors.
         /// Throws: $(D OpenGLException) if at least one OpenGL error was pending.
-        void runtimeCheck()
+        void runtimeCheck() nothrow
         {
             GLint r = glGetError();
             if (r != GL_NO_ERROR)
             {
                 string errorString = getErrorString(r);
                 flushGLErrors(); // flush other errors if any
-                throw new OpenGLException(errorString);
+                _logger.warning("GL error detected: ", errorString).assumeWontThrow;
             }
         }
 
