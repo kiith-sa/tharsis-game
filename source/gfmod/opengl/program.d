@@ -429,26 +429,23 @@ final class GLProgram
 /// See_also: GLProgram.
 struct GLAttribute
 {
-    @safe pure nothrow:
-    public
+@safe pure nothrow:
+public:
+    this(char[] name, GLint location, GLenum type, GLsizei size) 
+        @safe pure nothrow
     {
-        this(char[] name, GLint location, GLenum type, GLsizei size)
-        {
-            _name = name.dup;
-            _location = location;
-            _type = type;
-            _size = size;
-        }
-
-        GLint location() const @nogc { return _location; }
+        _name = name.dup;
+        _location = location;
+        _type = type;
+        _size = size;
     }
 
-    private
-    {
-        GLint _location;
-        GLenum _type;
-        GLsizei _size;
-        //XXX fixed-size
-        string _name;
-    }
+    GLint location() @safe pure nothrow const @nogc { return _location; }
+
+
+private:
+   GLint _location;
+   GLenum _type;
+   GLsizei _size;
+   string _name;
 }
