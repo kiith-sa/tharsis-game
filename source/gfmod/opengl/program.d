@@ -2,20 +2,19 @@ module gfmod.opengl.program;
 
 import core.stdc.string;
 
-import std.conv, 
+import std.conv,
        std.exception,
-       std.string, 
-       std.regex, 
+       std.string,
+       std.regex,
        std.algorithm;
 
 import derelict.opengl3.gl3;
 
-import /*gfmod.core.log,*/
-       gfmod.core.text,
-       gfm.math.vector, 
+import gfmod.core.text,
+       gfm.math.vector,
        gfm.math.matrix,
-       gfmod.opengl.opengl, 
-       gfmod.opengl.shader, 
+       gfmod.opengl.opengl,
+       gfmod.opengl.shader,
        gfmod.opengl.uniform,
        gfmod.opengl.uniformblock;
 
@@ -46,7 +45,7 @@ final class GLProgram
 
         /**
          * Compiles N times the same GLSL source and link to a program.
-         * 
+         *
          * <p>
          * The same input is compiled 1 to 5 times, each time prepended
          * with a $(D #define) specific to a shader type.
@@ -60,11 +59,11 @@ final class GLProgram
          * )
          * <p>
          * Each of these macros are alternatively set to 1 while the others are
-         * set to 0. If such a macro isn't used in any preprocessor directive 
+         * set to 0. If such a macro isn't used in any preprocessor directive
          * of your source, this shader stage is considered unused.</p>
          *
          * <p>For conformance reasons, any #version directive on the first line will stay at the top.</p>
-         * 
+         *
          * Warning: <b>THIS FUNCTION REWRITES YOUR SHADER A BIT.</b>
          * Expect slightly wrong lines in GLSL compiler's error messages.
          *
@@ -79,14 +78,14 @@ final class GLProgram
          *      {
          *          gl_Vertex = ftransform();
          *      }
-         *      
+         *
          *      #elif FRAGMENT_SHADER
-         *      
+         *
          *      void main()
          *      {
          *          gl_FragColor = color;
          *      }
-         *      
+         *
          *      #endif
          * ---
          *
@@ -102,17 +101,16 @@ final class GLProgram
         {
             _gl = gl;
             bool present[5];
-            enum string[5] defines = 
-            [ 
+            enum string[5] defines =
+            [
               "VERTEX_SHADER",
               "FRAGMENT_SHADER",
               "GEOMETRY_SHADER",
               "TESS_CONTROL_SHADER",
               "TESS_EVALUATION_SHADER"
             ];
-
             enum GLenum[5] shaderTypes =
-            [ 
+            [
                 GL_VERTEX_SHADER,
                 GL_FRAGMENT_SHADER,
                 GL_GEOMETRY_SHADER,
