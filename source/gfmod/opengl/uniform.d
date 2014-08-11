@@ -1,6 +1,7 @@
 module gfmod.opengl.uniform;
 
 import std.conv, 
+       std.exception,
        std.string,
        core.stdc.string;
 
@@ -54,11 +55,13 @@ final class GLUniform
 
         /// Creates a fake disabled uniform variable, designed to cope with variables 
         /// that have been optimized out by the OpenGL driver, or those which do not exist.
-        this(OpenGL gl, string name)
+        this(OpenGL gl, string name) @safe nothrow
         {
             _gl = gl;
             _disabled = true;
-            _gl._logger.warningf("creating fake uniform '%s' which either does not exist in the shader program, or was discarded by the driver as unused", name);
+            _gl._logger.warningf("creating fake uniform '%s' which either does not "
+                                 "exist in the shader program, or was discarded by the"
+                                 "driver as unused", name).assumeWontThrow;
         }
 
         /// Sets a uniform variable value.
@@ -105,14 +108,14 @@ final class GLUniform
         }
     
         /// Updates the uniform value.
-        void use()
+        void use() nothrow
         {
             _shouldUpdateImmediately = true;
             update();
         }       
 
         /// Unuses this uniform..
-        void unuse()
+        void unuse() @safe pure nothrow @nogc
         {
             _shouldUpdateImmediately = false;
         }
@@ -132,7 +135,7 @@ final class GLUniform
         //XXX fixed-size
         string _name;
 
-        void update()
+        void update() nothrow
         {
             if (_disabled)
                 return;
@@ -140,7 +143,8 @@ final class GLUniform
             // safety check to prevent defaults values in uniforms
             if (_firstSet)
             {
-                _gl._logger.warningf("uniform '%s' left to default value, driver will probably zero it", _name);
+                _gl._logger.warningf("uniform '%s' left to default value, driver will probably zero it", _name)
+                           .assumeWontThrow();
                 _firstSet = false;
             }
 
@@ -153,7 +157,7 @@ final class GLUniform
             }
         }
 
-        void setUniform()
+        void setUniform() nothrow
         {
             switch(_type)
             {
