@@ -20,7 +20,6 @@ import gfmod.core.text,
        gfmod.opengl.uniform,
        gfmod.opengl.uniformblock;
 
-
 /// OpenGL Program wrapper.
 final class GLProgram
 {
@@ -280,29 +279,6 @@ final class GLProgram
             return log.assumeUnique;
         }
 
-        /** Gets a uniform by name.
-         *
-         * Returns: A GLUniform with this name. This GLUniform might be created on demand if
-         *          the name hasn't been found. So it might be a "fake" uniform. This
-         *          feature has been added to avoid errors when the driver decides that
-         *          a uniform is not used and removes it.
-         * See_also: GLUniform.
-         */
-        GLUniform uniform(string name) @safe nothrow
-        {
-            auto found = _activeUniforms.find!(a => a[0] == name)();
-
-            if(found.empty)
-            {
-                // no such variable found, either it's really missing or the OpenGL driver discarded an unused uniform
-                // create a fake disabled GLUniform to allow the show to proceed
-                _gl._logger.warningf("Faking uniform variable '%s'", name).assumeWontThrow;
-                _activeUniforms ~= tuple(name, new GLUniform(_gl, name));
-                return _activeUniforms.back[1];
-            }
-            return found.front[1];
-        }
-
         /** Gets an attribute by name.
          *
          * Params:
@@ -330,6 +306,32 @@ final class GLProgram
         GLuint handle() @safe pure const nothrow @nogc
         {
             return _program;
+        }
+    }
+
+    package
+    {
+        /** Gets a uniform by name.
+         *
+         * Returns: A GLUniform with this name. This GLUniform might be created on demand if
+         *          the name hasn't been found. So it might be a "fake" uniform. This
+         *          feature has been added to avoid errors when the driver decides that
+         *          a uniform is not used and removes it.
+         * See_also: GLUniform.
+         */
+        GLUniform uniform(string name) @safe nothrow
+        {
+            auto found = _activeUniforms.find!(a => a[0] == name)();
+
+            if(found.empty)
+            {
+                // no such variable found, either it's really missing or the OpenGL driver discarded an unused uniform
+                // create a fake disabled GLUniform to allow the show to proceed
+                _gl._logger.warningf("Faking uniform variable '%s'", name).assumeWontThrow;
+                _activeUniforms ~= tuple(name, new GLUniform(_gl, name));
+                return _activeUniforms.back[1];
+            }
+            return found.front[1];
         }
     }
 
