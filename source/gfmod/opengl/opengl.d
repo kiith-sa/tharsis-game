@@ -9,14 +9,11 @@ import std.string,
        std.algorithm;
 
 import derelict.util.exception,
-       derelict.opengl3.gl3,
-       derelict.opengl3.gl;
+       derelict.opengl3.gl3;
 
-//XXX REMOVE THE .gl IMPORT ABOVE!
 import std.logger;
 
-import /*gfmod.core.log,*/
-       gfmod.core.text,
+import gfmod.core.text,
        gfmod.opengl.textureunit;
 
 /// The one exception type thrown in this wrapper.
@@ -179,7 +176,6 @@ final class OpenGL
         /// since you won't be able to call any OpenGL function afterwards.
         void close()
         {
-            DerelictGL.unload();
             DerelictGL3.unload();
         }
 
@@ -378,9 +374,9 @@ final class OpenGL
                 case GL_INVALID_VALUE:     return "GL_INVALID_VALUE";
                 case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
                 case GL_OUT_OF_MEMORY:     return "GL_OUT_OF_MEMORY";
-                case GL_TABLE_TOO_LARGE:   return "GL_TABLE_TOO_LARGE";
-                case GL_STACK_OVERFLOW:    return "GL_STACK_OVERFLOW";
-                case GL_STACK_UNDERFLOW:   return "GL_STACK_UNDERFLOW";
+                // case GL_TABLE_TOO_LARGE:   return "GL_TABLE_TOO_LARGE";
+                // case GL_STACK_OVERFLOW:    return "GL_STACK_OVERFLOW";
+                // case GL_STACK_UNDERFLOW:   return "GL_STACK_UNDERFLOW";
                 default:                   return "Unknown OpenGL error";
             }
         }
@@ -461,7 +457,7 @@ final class OpenGL
             _maxTextureSize = getInteger(GL_MAX_TEXTURE_SIZE, 512, logging);
             // For other textures, add calls to:
             // GL_MAX_ARRAY_TEXTURE_LAYERS​, GL_MAX_3D_TEXTURE_SIZE​
-            _maxTextureUnits = getInteger(GL_MAX_TEXTURE_UNITS, 2, logging);
+            _maxTextureUnits = getInteger(GL_MAX_TEXTURE_IMAGE_UNITS, 2, logging);
 
             _maxFragmentTextureImageUnits = getInteger(GL_MAX_TEXTURE_IMAGE_UNITS, 2, logging); // odd GL enum name because of legacy reasons (initially only fragment shader could access textures)
             _maxVertexTextureImageUnits = getInteger(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, 2, logging);
