@@ -15,7 +15,7 @@ import /*gfmod.core.log,*/
 
 /// Represents an OpenGL program uniform. Owned by a GLProgram.
 /// Both uniform locations and values are cached, to minimize OpenGL calls.
-final class GLUniform
+package final class GLUniform
 {
     public
     {
@@ -23,18 +23,18 @@ final class GLUniform
         /// This is done automatically after linking a GLProgram.
         /// See_also: GLProgram.
         /// Throws: $(D OpenGLException) on error.
-        this(OpenGL gl, GLuint program, GLenum type, char[] name, GLsizei size)
+        this(OpenGL gl, GLuint program, GLenum type, string name, GLsizei size)
         {
             _gl = gl;
             _type = type;
             _size = size;
-            _name = name.idup;
+            _name = name;
 
-            _location = glGetUniformLocation(program, toStringz(name));
+            _location = glGetUniformLocation(program, toStringz(_name));
             if (_location == -1)
             {
                 // probably rare: the driver said explicitely this variable was active, and there it's not.
-                throw new OpenGLException(format("can't get uniform %s location", name));
+                throw new OpenGLException(format("can't get uniform %s location", _name));
             }
 
             size_t cacheSize = sizeOfUniformType(type) * size;
@@ -53,12 +53,13 @@ final class GLUniform
             }
         }
 
-        /// Creates a fake disabled uniform variable, designed to cope with variables 
+        /// Creates a fake disabled uniform variable, designed to cope with variables
         /// that have been optimized out by the OpenGL driver, or those which do not exist.
         this(OpenGL gl, string name) @safe nothrow
         {
-            _gl = gl;
+            _gl       = gl;
             _disabled = true;
+            _fake     = true;
             _gl._logger.warningf("creating fake uniform '%s' which either does not "
                                  "exist in the shader program, or was discarded by the"
                                  "driver as unused", name).assumeWontThrow;
@@ -67,32 +68,35 @@ final class GLUniform
         /// Sets a uniform variable value.
         /// T should be the exact type needed, checked at runtime.
         /// Throws: $(D OpenGLException) on error.
-        void set(T)(T newValue)
+        void set(T)(T newValue) @trusted
         {
             set!T(&newValue, 1u);
         }
 
         /// Sets multiple uniform variables.
         /// Throws: $(D OpenGLException) on error.
-        void set(T)(T[] newValues)
+        void set(T)(T[] newValues) @safe
         {
             set!T(newValues.ptr, newValues.length);
         }
 
         /// Sets multiple uniform variables.
         /// Throws: $(D OpenGLException) on error.
-        void set(T)(T* newValues, size_t count)
+        void set(T)(T* newValues, size_t count) @trusted nothrow
         {
             if (_disabled)
                 return;
 
-            if (!typeIsCompliant!T(_type))
-                throw new OpenGLException(format("using type %s for setting uniform '%s' which has GLSL type '%s'", 
-                                                 T.stringof, _name, GLSLTypeNameArray(_type, _size)));
+            assert(typeIsCompliant!T,
+                   "Can't use type %s to set uniform '%s' which has GLSL type %s.\n"
+                   "Use GLUniform.isTypeCompliant() to check if the type matches".
+                   format(T.stringof, _name, GLSLTypeNameArray(_type, _size))
+                   .assumeWontThrow);
+            assert(count == _size,
+                   "Can't set uniform '%s' of size %s with a value of size %s.\n"
+                   "Use GLUniform.size() to check the uniform's size."
+                   .format(_name, _size, count).assumeWontThrow);
 
-            if (count != _size)
-                throw new OpenGLException(format("cannot set uniform '%s' of size %s with a value of size %s", 
-                                                 _name, _size, count));
 
             // if first time or different value incoming
             if (_firstSet || (0 != memcmp(newValues, _value.ptr, _value.length)))
@@ -106,13 +110,29 @@ final class GLUniform
 
             _firstSet = false;
         }
-    
+
+        /// Is this a "fake" uniform?
+        ///
+        /// Fake uniforms are created to avoid errors when a uniform is optimized out
+        /// by the driver. A fake uniform has no type and will silently do nothing
+        /// without failing when set.
+        bool isFake() @safe pure nothrow const @nogc
+        {
+            return _fake;
+        }
+
+        /// Get the size (number of elements) of the uniform.
+        size_t size() @safe pure nothrow const @nogc
+        {
+            return _size;
+        }
+
         /// Updates the uniform value.
         void use() nothrow
         {
             _shouldUpdateImmediately = true;
             update();
-        }       
+        }
 
         /// Unuses this uniform..
         void unuse() @safe pure nothrow @nogc
@@ -131,8 +151,8 @@ final class GLUniform
         bool _valueChanged;
         bool _firstSet; // force update to ensure we do not relie on the driver initializing uniform to zero
         bool _disabled; // allow transparent usage while not doing anything
+        bool _fake;     // Extra flag for fake uniforms used when a uniform is optimized out.
         bool _shouldUpdateImmediately;
-        //XXX fixed-size
         string _name;
 
         void update() nothrow
@@ -248,15 +268,15 @@ final class GLUniform
                     glUniform1iv(_location, _size, cast(GLint*)_value);
                     break;
 
-                default: 
+                default:
                     break;
             }
             _gl.runtimeCheck();
         }
 
-        public static bool typeIsCompliant(T)(GLenum type)
+        public bool typeIsCompliant(T)()
         {
-            switch (type)
+            switch (_type)
             {
                 case GL_FLOAT:      return is(T == float);
                 case GL_FLOAT_VEC2: return is(T == vec2f);
