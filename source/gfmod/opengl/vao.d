@@ -1,69 +1,394 @@
 module gfmod.opengl.vao;
 
 import std.string;
+import std.traits;
+import std.typecons;
+import std.typetuple;
 
 import derelict.opengl3.gl3;
 
-import /*gfmod.core.log,*/
-       gfmod.opengl.opengl;
+import gfmod.opengl.opengl;
+import gfmod.opengl.program;
 
-/// OpenGL Vertex Array Object wrapper.
-final class VAO
+import gl3n.linalg;
+
+
+/// Primitive types that may be stored in a VAO.
+enum PrimitiveType: GLenum
 {
-    public
+    Points        = GL_POINTS,
+    LineStrip     = GL_LINE_STRIP,
+    LineLoop      = GL_LINE_LOOP,
+    Lines         = GL_LINES,
+    TriangleStrip = GL_TRIANGLE_STRIP,
+    TriangleFan   = GL_TRIANGLE_FAN,
+    Triangles     = GL_TRIANGLES
+}
+
+
+/// Possible types of a single element of a vertex attribute.
+alias AttributeElementTypes = TypeTuple!(float, double, byte, short, int, ubyte, ushort, uint);
+
+/// GL types corresponding to items in AttributeElementTypes.
+enum attributeElementGLTypes = [GL_FLOAT, GL_DOUBLE, 
+                                GL_BYTE, GL_SHORT, GL_INT,
+                                GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT];
+
+/// Determine if a type can be an attribute (aka field, aka property) of a vertex type.
+template isVertexAttribute(A)
+{
+    // gl3n.linalg.Vector has vt (element type) and dimension.
+    // We're not likely to accidentally hit another type with the same combination...
+    // and if we do, it's probably someone intentionally making a compatible type.
+    static if(hasMember!(A, "vt") && hasMember!(A, "dimension"))
     {
-        /// Creates a VAO.
-        /// Throws: $(D OpenGLException) on error.
-        this(OpenGL gl, GLuint target, GLuint storage, GLuint usage)
-        {
-            _gl = gl;
-            glGenVertexArrays(1, &_handle);
-            gl.runtimeCheck();
-            _initialized = true;
-        }
+        enum isVertexAttribute = staticIndexOf!(A.vt, AttributeElementTypes) != -1 &&
+                                 A.dimension >= 1 && A.dimension <= 4;
+    }
+    else
+    {
+        // Scalar types should work too.
+        enum isVertexAttribute = staticIndexOf!(A, AttributeElementTypes) != -1;;
+    }
+}
 
-        ~this()
-        {
-            close();
-        }
+/// Determine GL type of a vertex attribute.
+template glType(A)
+    if(isVertexAttribute!A)
+{
+    alias ElemType = Select!(hasMember!(A, "vt"), A.vt, A);
+    enum glType = attributeElementGLTypes[staticIndexOf!(ElemType, AttributeElementTypes)];
+}
 
-        /// Releases the OpenGL VAO resource.
-        void close()
-        {
-            if (_initialized)
-            {
-                glDeleteVertexArrays(1, &_handle);
-                _initialized = false;
-            }
-        }
+/// Determine the dimensionality if a vertex attribute.
+template dimension(A)
+    if(isVertexAttribute!A)
+{
+    enum dimension = Select!(hasMember!(A, "dimension"), A.dimension, A);
+}
 
-        /// Uses this VAO.
-        /// Throws: $(D OpenGLException) on error.
-        void bind()
-        {
-            glBindVertexArray(_handle);
-            _gl.runtimeCheck();
-        }
+//XXX the VAO type can be extended further:
+//    Support multiple template args (not just 'V'). If there are multiple template args,
+//    their attributes will be in separate VBOs. It will be then possible to add just
+//    to those VBOs with add(), and to access just those VBOs memory buffers by data().
+//
+//    This way we can have both interleaved and separate VBOs, and anything in between.
 
-        /// Unuses this VAO.
-        /// Throws: $(D OpenGLException) on error.
-        void unbind() 
-        {
-            glBindVertexArray(0);
-            _gl.runtimeCheck();
-        }
+/// Determine if a type is a valid vertex type.
+///
+/// A vertex type must be a plain-old-data struct with no custom
+/// destructor/copyctor/assign and all its data members must be 1 to 4-dimensional
+/// gl3n.linalg.Vectors such as vec3 or Vector!(4, ubyte).
+enum isVertex(V) = is(V == struct) &&
+                   !hasElaborateDestructor!V &&
+                   !hasElaborateCopyConstructor!V &&
+                   !hasElaborateAssign!V &&
+                   allSatisfy!(isVertexAttribute, FieldTypeTuple!V);
 
-        /// Returns: Wrapped OpenGL resource handle.
-        GLuint handle() pure const nothrow
-        {
-            return _handle;
-        }
+
+/// A wrapper around GL Vertex Attribute Object that also manages its vertex storage.
+///
+/// Acts as a dynamic array of vertex type V. 
+///
+/// V must be a plain-old-data struct where each member is either a gl3n Vector
+/// (such as vec3) or a scalar number (such as float).
+/// 
+/// Example vertex type:
+///
+/// --------------------
+/// struct Vertex
+/// {
+///     vec3 position;
+///     vec3 normal;
+///     Vector!(ubyte, 4) rgbaColor;
+/// }
+/// --------------------
+///
+/// Vertex attributes must be either one of the following types: $(I float, double,
+/// byte, short, int, ubyte, ushort, uint) or a 4 or less dimensional gl3n.linalg.Vector
+/// with type parameter set to one of listed types.
+///
+/// The VAO requires a shader program when being bound and looks for vertex attributes
+/// with names corresponding to fields of V. Any shader program used to draw a VAO must
+/// contain vertex attributes for all members of V (otherwise VAO binding will fail).
+///
+/// For example, the following vertex shader source has all members specified by the
+/// $(D Vertex) struct in the above example:
+///
+/// --------------------
+/// #version 130
+///
+/// in vec3 position;
+/// in vec3 normal;
+/// in vec4 rgbaColor;
+///
+/// void main()
+/// {
+///     // ... do stuff here ...
+/// }
+/// --------------------
+final class VAO(V)
+    if(isVertex!V)
+{
+private:
+    // The GL VAO handle.
+    GLuint vao_;
+    // Handle to the GL VBO used to store all vertex attributes.
+    GLuint vbo_;
+
+    // OpenGL info and logging.
+    OpenGL gl_;
+
+    // Storage for a RAM copy of VAO data.
+    V[] storage_;
+    // Used part of storage_.
+    V[] vertices_;
+
+    // Current state of the VAO.
+    State state_ = State.Unlocked;
+
+    // The program that was last used to draw data from the VAO.
+    //
+    // Needed to check if the user is changing programs (in which case we need to
+    // reload vertex attributes from the program).
+    GLProgram lastProgram_ = null;
+
+    // True if _any_ VAO is bound. Used to avoid collisions between VAOs.
+    static bool isAnyVAOBound_ = false;
+
+    // We can, so why not?
+    import std.range: isOutputRange;
+    static assert(isOutputRange!(typeof(this), V), "VAO must be an OutputRange");
+
+public:
+    /// Possible states a VAO can be in.
+    enum State
+    {
+        /// The VAO can be modified but not bound or drawn.
+        Unlocked,
+        /// The VAO can not be modified, but can be bound.
+        Locked,
+        /// The VAO can't be modified and can be drawn.
+        Bound
     }
 
-    private
+    /** Construct a VAO.
+     *
+     * Params:
+     *
+     * gl      = The OpenGL wrapper.
+     * storage = Space to store vertices in (we need to store a copy of all vertex data
+     *           in RAM to allow easy modification). Determines the maximum number of
+     *           vertices the VAO can hold. The VAO $(B will not) deallocate this space
+     *           when destroyed; the caller must take care of that.
+     */
+    this(OpenGL gl, V[] storage) @trusted nothrow @nogc
     {
-        OpenGL _gl;
-        GLuint _handle;
-        bool _initialized;
+        gl_       = gl;
+        storage_  = storage;
+        vertices_ = storage_[0 .. 0];
+
+        glGenBuffers(1, &vbo_);
+        glGenVertexArrays(1, &vao_);
+    }
+
+    /** Destroy the VAO.
+     *
+     * Must be destroyed by the user to ensure all used GL objects are deleted.
+     */
+    ~this() @trusted nothrow @nogc
+    {
+        glDeleteVertexArrays(1, &vao_);
+        glDeleteBuffers(1, &vbo_);
+    }
+
+    /** Add a vertex to the VAO.
+     *
+     * Must not add any more vertices if VAO.length == VAO.capacity.
+     * Must not be called when the VAO is locked.
+     */
+    void put(const V vertex) @safe pure nothrow @nogc
+    {
+        assert(state_ == State.Unlocked, "Trying to add a vertex to a locked VAO");
+        const length = vertices_.length;
+        if(length >= storage_.length) { assert(false, "Adding a vertex to a full VAO"); }
+
+        storage_[length] = vertex;
+        vertices_ = storage_[0 .. length + 1];
+    }
+
+    /** Get direct access to vertices in the VAO.
+     *
+     * Can be used for fast modification of the VAO. Any modifications to the slice
+     * after the VAO is locked will result in $(B undefined behavior).
+     */
+    V[] data() @system pure nothrow @nogc
+    {
+        assert(state_ == State.Unlocked,
+               "Trying to get direct access to contents of a locked VAO");
+        return vertices_;
+    }
+
+    /// Get the current number of vertices in the VAO.
+    size_t length() @safe pure nothrow const @nogc
+    {
+        return vertices_.length;
+    }
+
+    /** Manually set the length of the VAO.
+     *
+     * Params:
+     *
+     * rhs = The new length of the VAO. Must be <= capacity. If used to increase the
+     *       length, the new elements of the VAO ([oldLength .. newLength]) will have
+     *       $(B uninitialized values).
+     */
+    void length(size_t rhs) @system pure nothrow @nogc
+    {
+        assert(state_ == State.Unlocked, "Trying to set length of a locked VAO");
+        assert(rhs <= storage_.length, "Can't extend VAO length further than capacity");
+        vertices_ = storage_[0 .. length];
+    }
+
+    /** Get the maximum number of vertices the VAO can hold.
+     *
+     * If VAO.length equals this value, no more vertices can be added.
+     */
+    size_t capacity() @safe pure nothrow const @nogc
+    {
+        return storage_.length;
+    }
+
+    /** Draw vertices from the VAO directly, without using indices.
+     *
+     * This is the only way to draw if the VAO has no index type.
+     *
+     * Can only be called when the VAO is bound.
+     *
+     * Params:
+     *
+     * type  = Type of primitives to draw.
+     * first = Index of the first vertex to draw.
+     * count = Number of vertices to draw.
+     *
+     * first + count <= VAO.length() must be true.
+     */
+    void draw(PrimitiveType type, size_t first, size_t count)
+        @trusted nothrow @nogc
+    {
+        assert(state_ == State.Bound, "Trying to draw a VAO that is not bound");
+        assert(first + count <= length, "VAO draw call out of range.");
+        glDrawArrays(cast(GLenum)type, cast(int)first, cast(int)count);
+    }
+
+    /** Lock the buffer.
+     *
+     * Must be called before binding the buffer for drawing.
+     *
+     * It is a good practice to keep a buffer locked for a long time.
+     */
+    void lock() @trusted nothrow @nogc
+    {
+        assert(state_ == State.Unlocked, "Trying to lock a VAO that's already locked");
+
+        // Ensure that if anything is bound, it stays bound when we're done.
+        GLint oldBound;
+        glGetIntegerv(GL_ARRAY_BUFFER_BINDING,  &oldBound);
+        scope(exit) { glBindBuffer(GL_ARRAY_BUFFER, oldBound); }
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, vertices_.length * V.sizeof, vertices_.ptr,
+                     GL_STATIC_DRAW);
+
+        state_ = State.Locked;
+    }
+
+    /** Unlock the buffer.
+     *
+     * Must be called before modifying the buffer if it was locked previously.
+     */
+    void unlock() @safe pure nothrow @nogc 
+    {
+        assert(state_ == State.Locked,
+               "Trying to unlock a buffer that is either bound or not locked");
+        state_ = State.Locked;
+    }
+
+    /** Bind the VAO for drawing. Must be called before drawing. The VAO must be locked.
+     *
+     * Only one VAO can be bound at a time. It must be released before binding another
+     * VAO.
+     *
+     * Params:
+     *
+     * program = The vertex program that will be used to draw data from this VAO.
+     *           Needed for the VAO to specify which data corresponds to which
+     *           attributes.
+     *
+     * Returns: true on success, false on failure (not all vertex attributes found in
+     *          the program).
+     */
+    bool bind(GLProgram program) @trusted nothrow @nogc
+    {
+        assert(state_ == State.Locked,
+               "Trying to bind a VAO that is either already bound or not locked");
+
+        // TODO: Once moved to newer than GL 3.0, remove isAnyVAOBound and use
+        // glGetIntegerv(GL_VERTEX_ARRAY_BINDING) to ensure nothing else is bound
+        // at the moment 2014-08-12
+        assert(!isAnyVAOBound_, "Another VAO is bound already");
+
+        if(program !is lastProgram_)
+        {
+            import tharsis.util.traits: FieldNamesTuple;
+            alias fieldNames = FieldNamesTuple!V;
+
+            // Need to check if we have all attribs before we start messing with the
+            // VAO.
+            foreach(name; fieldNames) if(!program.hasAttrib(name))
+            {
+                return false;
+            }
+
+            glBindVertexArray(vao_);
+            glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+
+            // Tell the VAO where in the VBO data for each vertex attrib is.
+            enum int stride = V.sizeof;
+            size_t offset = 0;
+            foreach(index, Attrib; FieldTypeTuple!V)
+            {
+                enum name    = fieldNames[index];
+                const attrib = program.attrib(name);
+                glEnableVertexAttribArray(attrib.location);
+                glVertexAttribPointer(attrib.location, dimension!Attrib,
+                                      glType!Attrib, GL_FALSE, stride, 
+                                      cast(void*)offset);
+                offset += Attrib.sizeof;
+            }
+            glBindVertexArray(0);
+            // Rebind, just to be sure.
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            lastProgram_ = program;
+        }
+
+        glBindVertexArray(vao_);
+
+        isAnyVAOBound_ = true;
+        state_         = State.Bound;
+        return true;
+    }
+
+    /** Release the buffer after drawing.
+     *
+     * Must be called before making any modifications to the buffer.
+     */
+    void release() @trusted nothrow @nogc
+    {
+        assert(state_ == State.Bound, "Trying to release a VAO that is not bound");
+
+        glBindVertexArray(0);
+        state_         = State.Locked;
+        isAnyVAOBound_ = false;
     }
 }
