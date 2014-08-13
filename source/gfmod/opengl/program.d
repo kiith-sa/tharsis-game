@@ -361,10 +361,10 @@ final class GLProgram
             foreach(GLuint i; 0.. numActiveUniforms) { uniformIndex[i] = i; }
 
             glGetActiveUniformsiv(_program,
-                                    cast(GLint)uniformIndex.length,
-                                    uniformIndex.ptr,
-                                    GL_UNIFORM_BLOCK_INDEX,
-                                    blockIndex.ptr);
+                                  cast(GLint)uniformIndex.length,
+                                  uniformIndex.ptr,
+                                  GL_UNIFORM_BLOCK_INDEX,
+                                  blockIndex.ptr);
             _gl.runtimeCheck();
 
             // Get active uniform blocks
@@ -392,8 +392,9 @@ final class GLProgram
                     _gl._logger.warning("Invalid (non-ASCII) character in GL uniform name");
                 }
 
+                auto nameStr = name.assumeUnique;
                 _activeUniforms ~= 
-                    tuple(name.assumeUnique, new GLUniform(_gl, _program, type, name, size));
+                    tuple(nameStr, new GLUniform(_gl, _program, type, nameStr, size));
             }
         }
 
