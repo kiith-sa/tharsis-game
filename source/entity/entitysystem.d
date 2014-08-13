@@ -16,8 +16,8 @@ import tharsis.entity.entitypolicy;
 import tharsis.entity.lifecomponent;
 import tharsis.entity.prototypemanager;
 
-
 import entity.components;
+import entity.processes;
 
 /// Manages Tharsis and all Processes used by the game.
 struct EntitySystem
