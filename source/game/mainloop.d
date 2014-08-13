@@ -13,7 +13,6 @@ import platform.inputdevice;
 import platform.videodevice;
 
 
-
 /// Main event loop of the game.
 ///
 /// Params:
@@ -23,8 +22,7 @@ import platform.videodevice;
 /// inputDevice  = Device used for user input.
 /// log          = Log to write... log messages to.
 bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice input,
-               Logger log)
-    @trusted nothrow
+              Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/entity1.yaml");
 
@@ -39,6 +37,8 @@ bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice inpu
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         entitySystem.frame();
+        // Log GL errors, if any.
+        video.gl.runtimeCheck();
 
         // Swap the back buffer to the front, showing it in the window.
         video.swapBuffers();
