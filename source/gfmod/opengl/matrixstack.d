@@ -14,12 +14,12 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
 
         /// Creates a matrix stack.
         /// The stack is initialized with one element, an identity matrix.
-        this(size_t depth = 32) nothrow
+        this(size_t depth = 32) @trusted nothrow
         {
             assert(depth > 0);
             size_t memNeeded = matrix_t.sizeof * depth * 2;
             //XXX TEMP - WILL RECEIVE DATA AS PARAM
-            void* data = new void[memNeeded * 2]; // alignedMalloc(memNeeded * 2, 64);
+            void* data = new void[memNeeded * 2].ptr; // alignedMalloc(memNeeded * 2, 64);
             _matrices = cast(matrix_t*)data;
             _invMatrices = cast(matrix_t*)(data + memNeeded);
             _top = 0;
@@ -33,7 +33,7 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
         }
 
         /// Releases the matrix stack memory.
-        void close()
+        void close() @safe pure nothrow @nogc
         {
             if (_matrices !is null)
             {
@@ -91,13 +91,13 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
         }
 
         /// Replacement for $(D glMultMatrix).
-        void mult(matrix_t m) pure nothrow
+        void mult(matrix_t m) @trusted pure nothrow
         {
             mult(m, m.inverse());
         }
 
         /// Replacement for $(D glMultMatrix), with provided inverse.
-        void mult(matrix_t m, matrix_t invM) pure nothrow
+        void mult(matrix_t m, matrix_t invM) @trusted pure nothrow
         {
             _matrices[_top] = _matrices[_top] * m;
             _invMatrices[_top] = invM *_invMatrices[_top];
@@ -133,7 +133,7 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
             }
 
             /// Replacement for $(D glOrtho).
-            void ortho(T left, T right, T bottom, T top, T near, T far) pure nothrow
+            void ortho(T left, T right, T bottom, T top, T near, T far) @safe pure nothrow @nogc
             {
                 mult(matrix_t.orthographic(left, right, bottom, top, near, far));
             }
