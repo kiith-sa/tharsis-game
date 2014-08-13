@@ -31,6 +31,12 @@ private:
     // The main game window.
     SDL_Window* window_;
 
+    // Window width.
+    size_t width_;
+
+    // Window height.
+    size_t height_;
+
     // OpenGL context.
     SDL_GLContext context_;
 
@@ -69,6 +75,8 @@ public:
     {
         assert(window_ is null, "Double initialization of the main window");
         window_ = createGLWindow(width, height, fullscreen);
+        width_  = width;
+        height_ = height;
 
         // Exit if window creation fails.
         if(null is window_)
@@ -112,6 +120,22 @@ public:
             assert(false, "Unexpected exception in initGL: " ~ e.msg);
         }
         return true;
+    }
+
+    /// Get window height.
+    ///
+    /// Signed because screen size is often multiplied by negative numbers.
+    long height() @safe pure nothrow const @nogc
+    {
+        return height_;
+    }
+
+    /// Get window width.
+    ///
+    /// Signed because screen size is often multiplied by negative numbers.
+    long width() @safe pure nothrow const @nogc
+    {
+        return width_;
     }
 
     /// Get access to the OpenGL API.
