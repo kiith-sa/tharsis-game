@@ -1,17 +1,159 @@
 module gfmod.opengl.uniform;
 
-import std.conv, 
+import std.algorithm,
+       std.conv,
        std.exception,
        std.string,
        core.stdc.string;
 
 import derelict.opengl3.gl3;
 
-import /*gfmod.core.log,*/
-       gfm.math.vector, 
+import gfm.math.vector,
        gfm.math.matrix,
-       gfmod.opengl.opengl;
+       gfmod.opengl.opengl,
+       gfmod.opengl.program;
 
+
+
+import tharsis.util.traits;
+import std.traits;
+
+/// A type-safe API for manipulating GLSL uniform variables.
+///
+/// 'Uniforms specification' struct Spec specifies types and names of uniforms in
+/// a program. GLUniforms!Spec has properties with names matching fields of Spec.
+/// Uniforms in a program can be set by setting these properties.
+///
+/// Example:
+/// 
+/// We have a vertex shader with source such as this:
+///
+/// --------------------
+/// #version 130
+///
+/// uniform mat4 projection;
+/// uniform mat4 modelView;
+/// in vec3 position;
+/// 
+/// void main()
+/// {
+///     gl_Position = projection * modelView *  vec4(position, 1.0);
+/// }
+/// --------------------
+///
+/// We have the following uniforms specification struct:
+///
+/// --------------------
+/// struct Uniforms
+/// {
+///     import gl3n.linalg;
+///     mat4 projection;
+///     mat4 modelView;
+/// }
+/// --------------------
+///
+/// The vertex shader above is used by a GLProgram $(D program).
+///
+/// The following code builds a GLUniforms struct:
+///
+/// Example:
+/// --------------------
+/// try
+/// {
+///     auto uniforms = GLUniforms!Uniforms(program);
+/// }
+/// catch(OpenGLException e)
+/// {
+///     writeln("ERROR: uniforms in a program have unexpected types: ", e);
+///     return;
+/// }
+/// --------------------
+///
+/// The GLUniforms constructor enforces that types of uniforms in $(D program) match
+/// types in $(D Uniforms) - the uniforms specification struct. Note that if 
+/// $(D program) is missing any uniform, there is no error, only a logged warning, and
+/// a dummy uniform is created. This is because some GPU drivers agressively optimize
+/// and remove uniforms, and we don't want to trigger an error just because a user is
+/// running our program on a GPU we didn't test.
+///
+/// Finally, the following code sets the uniforms through $(D uniforms). Note that
+/// uniforms may only be set while a GLProgram is not in use (see GLProgram.use() and
+/// GLProgram.unuse()). This is asserted.
+///
+/// --------------------
+/// // mat4 projectionMatrix, modelViewMatrix
+/// uniforms.projection = projectionMatrix;
+/// uniforms.modelView  = modelViewMatrix;
+/// --------------------
+struct GLUniforms(Spec)
+{
+private:
+    // Names of fields in Spec.
+    enum fieldNames = [FieldNamesTuple!Spec];
+
+    // Types of fields in Spec.
+    alias fieldTypes = FieldTypeTuple!Spec;
+
+    // Generate GLUniform data members used internally to access uniforms.
+    static string uniformsInternal()
+    {
+        return fieldNames.map!(n => q{GLUniform %s_;}.format(n)).join("\n");
+    }
+
+    // Generate setters that set each uniform.
+    static string setters()
+    {
+        string[] setters;
+        foreach(i, T; fieldTypes)
+        {
+            enum name = fieldNames[i];
+            setters ~= q{
+            void %s(%s rhs) @safe nothrow { %s_.set(rhs); }
+            }.format(name, T.stringof, name);
+        }
+
+        return setters.join("\n\n");
+    }
+
+    // GLSL program owning the uniforms.
+    GLProgram program_;
+
+    // pragma(msg, uniformsInternal());
+    mixin(uniformsInternal());
+
+public:
+    /// Construct GLUniforms to access uniforms in a GLProgram.
+    ///
+    /// If any uniform present in Spec is missing in program, a fake uniform will be
+    /// created to avoid an error. See GLUniforms documentation top for why we avoid
+    /// throwing an exception in that case.
+    ///
+    /// OpenGLException if types of uniforms in the program don't match types in Spec.
+    this(GLProgram program) @safe
+    {
+        program_ = program;
+        foreach(i, T; fieldTypes)
+        {
+            enum name = fieldNames[i];
+
+            // Initialize the uniform
+            mixin(q{
+            %s_ = program_.uniform(name);
+            // Fake uniforms are automatically ignored as they have no type.
+            if(%s_.isFake) { continue; }
+            // Check that the uniform has type from the spec.
+            const compliant = %s_.typeIsCompliant!T;
+            }.format(name, name, name));
+
+            enum msg = "Uniform %s is not compatible with type %s."
+                       .format(name, T.stringof);
+            enforce(compliant, new OpenGLException(msg));
+        }
+    };
+
+    // pragma(msg, setters());
+    mixin(setters());
+}
 
 /// Represents an OpenGL program uniform. Owned by a GLProgram.
 /// Both uniform locations and values are cached, to minimize OpenGL calls.
