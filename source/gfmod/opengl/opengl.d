@@ -77,9 +77,53 @@ final class OpenGL
             _textureUnits = new TextureUnits(this);
         }
 
+        /// Unload the OpenGL library.
+        ///
+        /// Also checks for and logs any OpenGL objects that were not deleted to detect
+        /// leaks.
         ~this()
         {
+            logGLLeaks();
             close();
+        }
+
+        /// Assume any existing OpenGL objects are leaks and write them into the log.
+        ///
+        /// Should only be called when no GL objects should exist, e.g. after deleting
+        /// all GL objects. Called automatically by the OpenGL destructor.
+        void logGLLeaks()
+        {
+            // Yeah, this is a pretty ugly hack. But it works.
+            GLuint maxID = 100000;
+            foreach(id; 0 .. maxID)
+            {
+                void leak(string type, GLuint id)
+                {
+                    _logger.errorf("Leaked a %s OpenGL object. Handle: %s", id); 
+                }
+                if(glIsTexture(id))           { leak("texture",       id); }
+                else if(glIsBuffer(id))       { leak("buffer",        id); }
+                else if(glIsFramebuffer(id))  { leak("framebuffer",   id); }
+                else if(glIsRenderbuffer(id)) { leak("renderbuffer",  id); }
+                else if(glIsVertexArray(id))  { leak("vertex array",  id); }
+                else if(glIsShader(id))       { leak("shader handle", id); }
+                else if(glIsQuery(id))        { leak("query",         id); }
+                else if(glIsProgram(id))      { leak("program",       id); }
+                // These are not present in (our base requirement) OpenGL 3.0 so we
+                // check if they're available.
+                else if(glIsSampler !is null && glIsSampler(id))
+                {
+                    leak("sampler", id); 
+                }
+                else if(glIsTransformFeedback !is null && glIsTransformFeedback(id))
+                {
+                    leak("transform feedback", id); 
+                }
+                else if(glIsProgramPipeline !is null && glIsProgramPipeline(id))
+                {
+                    leak("program pipeline", id); 
+                }
+            }
         }
 
         /// Returns: true if the OpenGL extension is supported.
