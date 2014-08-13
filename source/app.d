@@ -59,10 +59,14 @@ int main(string[] args)
     import game.mainloop;
     EntitySystem entitySystem = EntitySystem(log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
-    if(!mainLoop(entitySystem, video, input, log))
+    try if(!mainLoop(entitySystem, video, input, log))
     {
         log.critical("Main loop exited with error");
         return 1;
+    }
+    catch(Throwable e)
+    {
+        log.critical(e);
     }
 
     return 0;
