@@ -18,6 +18,8 @@ import tharsis.entity.prototypemanager;
 
 import entity.components;
 import entity.processes;
+import platform.videodevice;
+
 
 /// Manages Tharsis and all Processes used by the game.
 struct EntitySystem
@@ -70,7 +72,7 @@ public:
         auto dummyPosition = new CopyProcess!PositionComponent();
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
-        renderer_          = new RenderProcess(video.gl, log);
+        renderer_          = new RenderProcess(video, log);
 
         entityMgr_.registerProcess(dummyPosition);
         entityMgr_.registerProcess(dummyVisual);

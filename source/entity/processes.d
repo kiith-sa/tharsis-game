@@ -17,6 +17,8 @@ import gfmod.opengl.vao;
 import gl3n.linalg;
 
 import entity.components;
+import platform.videodevice;
+
 
 
 /// Handles rendering of VisualComponents.
@@ -59,6 +61,9 @@ private:
     // The game log.
     Logger log_;
 
+    // The video device (screen + GL).
+    VideoDevice video_;
+
     // OpenGL wrapper.
     OpenGL gl_;
 
@@ -75,17 +80,18 @@ public:
      *
      * Params:
      *
-     * gl  = OpenGL wrapper.
-     * log = Game log.
+     * video = The video device.
+     * log   = Game log.
      */
-    this(OpenGL gl, Logger log) @safe nothrow
+    this(VideoDevice video, Logger log) @trusted nothrow
     {
-        log_ = log;
-        gl_  = gl;
+        log_   = log;
+        video_ = video;
+        gl_    = video_.gl;
 
         try
         {
-            program_ = new GLProgram(gl, shaderSrc);
+            program_ = new GLProgram(gl_, shaderSrc);
         }
         catch(OpenGLException e)
         {
