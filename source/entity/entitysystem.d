@@ -41,9 +41,19 @@ private:
     // Resource manager handling entity prototypes.
     PrototypeManager prototypeMgr_;
 
+
+    // Process used to render entities' graphics.
+    RenderProcess renderer_;
+
 public:
-    /// Construct an EntitySystem, initializing Tharsis.
-    this(Logger log) @safe nothrow //!@nogc
+    /** Construct an EntitySystem, initializing Tharsis.
+     *
+     * Params:
+     *
+     * video = VideoDevice for any processes that need to draw.
+     * log   = Game log.
+     */
+    this(VideoDevice video, Logger log) @safe nothrow //!@nogc
     {
         log_ = log;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
@@ -56,13 +66,16 @@ public:
         prototypeMgr_ = new PrototypeManager(componentTypeMgr_, entityMgr_);
 
         import tharsis.defaults.copyprocess;
+        
         auto dummyPosition = new CopyProcess!PositionComponent();
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
+        renderer_          = new RenderProcess(video.gl, log);
 
         entityMgr_.registerProcess(dummyPosition);
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
+        entityMgr_.registerProcess(renderer_);
         entityMgr_.registerResourceManager(prototypeMgr_);
 
     /// Spawn entity from specified file as soon as possible.
@@ -84,6 +97,7 @@ public:
     /// Destroy the entity system along with all entities, components and resource managers.
     ~this()
     {
+        renderer_.destroy().assumeWontThrow;
         entityMgr_.destroy();
         componentTypeMgr_.destroy();
     }
