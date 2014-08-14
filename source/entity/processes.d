@@ -10,6 +10,7 @@ module entity.processes;
 import std.exception;
 import std.logger;
 
+import gfmod.opengl.matrixstack;
 import gfmod.opengl.opengl;
 import gfmod.opengl.program;
 import gfmod.opengl.vao;
@@ -41,11 +42,12 @@ private:
 
         #if VERTEX_SHADER
 
+        uniform mat4 projection;
         in vec3 position;
 
         void main()
         {
-            gl_Position = vec4(position, 1.0);
+            gl_Position = projection * vec4(position, 1.0);
         }
 
         #elif FRAGMENT_SHADER
@@ -70,8 +72,22 @@ private:
     // GLSL program used for drawing, compiled from shaderSrc.
     GLProgram program_;
 
+    // Specification of uniform variables that should be in program_.
+    struct UniformsSpec
+    {
+        mat4 projection;
+    }
+
+    import gfmod.opengl.uniform;
+    // Provides access to uniform variables in program_.
+    GLUniforms!UniformsSpec uniforms_;
+
     // VAO storing the map grid.
     VAO!Vertex gridVAO_;
+
+
+    // Projection matrix stack.
+    MatrixStack!(4, float) projection_;
 
 public:
     /** Construct a RenderProcess.
@@ -92,6 +108,7 @@ public:
         try
         {
             program_ = new GLProgram(gl_, shaderSrc);
+            uniforms_ = GLUniforms!UniformsSpec(program_);
         }
         catch(OpenGLException e)
         {
@@ -104,19 +121,26 @@ public:
             assert(false, "Unexpected exception in mainLoop()");
         }
 
+
+        // 4 levels should be enough for projection.
+        projection_ = new MatrixStack!(4, float)(4);
+        const w = video.width;
+        const h = video.height;
+        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1, 2000);
+
         auto vaoSpace = new Vertex[3];
         gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
 
-        gridVAO_.put(Vertex(-1, -1,  0));
-        gridVAO_.put(Vertex( 1, -1,  0));
-        gridVAO_.put(Vertex( 0,  1,  0));
+        gridVAO_.put(Vertex(-100, -100,  10));
+        gridVAO_.put(Vertex( 100, -100,  10));
+        gridVAO_.put(Vertex( 0,    100,  10));
         gridVAO_.lock();
     }
 
     /// Destroy the RenderProcess along with any rendering data.
     ~this()
     {
-        program_.__dtor();
+        if(program_ !is null) { program_.__dtor(); }
         gridVAO_.__dtor();
     }
 
@@ -126,7 +150,9 @@ public:
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
 
+        uniforms_.projection = projection_.top;
         program_.use();
+
         scope(exit) { program_.unuse(); }
 
         if(!gridVAO_.bind(program_))
@@ -138,7 +164,6 @@ public:
         scope(exit) { gridVAO_.release(); }
         gl_.runtimeCheck();
 
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
         gridVAO_.draw(PrimitiveType.Triangles, 0, 3);
     }
 
