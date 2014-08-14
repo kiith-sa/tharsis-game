@@ -14,6 +14,8 @@ import gfm.math.vector,
        gfmod.opengl.program;
 
 
+// TODO: (WISHLIST) eventually refactor/simplify GLUniform to be templated with uniform type,
+// so e.g. set() will be generated just for that type without runtime checks.  2014-08-13
 
 import tharsis.util.traits;
 import std.traits;
