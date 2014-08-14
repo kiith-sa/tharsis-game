@@ -444,7 +444,6 @@ package final class GLUniform
                 default:
                     break;
             }
-            _gl.runtimeCheck();
         }
 
         public bool typeIsCompliant(T)()

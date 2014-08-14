@@ -206,7 +206,6 @@ final class GLProgram
             {
                 glAttachShader(_program, shader._shader);
                 glDeleteShader(shader._shader);
-                _gl.runtimeCheck();
             }
         }
 
@@ -247,7 +246,6 @@ final class GLProgram
         {
             foreach(pair; _activeUniforms) { pair[1].unuse(); }
             glUseProgram(0);
-            _gl.runtimeCheck();
         }
 
         /// Gets the linking report.
@@ -263,7 +261,6 @@ final class GLProgram
             char[] log = new char[logLength];
             GLint dummy;
             glGetProgramInfoLog(_program, logLength, &dummy, log.ptr);
-            _gl.runtimeCheck();
             if(_extraLines > 0)
             {
                 log.assumeSafeAppend();

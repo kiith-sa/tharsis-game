@@ -46,7 +46,6 @@ private:
 
         glShaderSource(_shader, cast(GLint)lineCount, cast(const(char)**)addresses.ptr,
                        lengths.ptr);
-        _gl.runtimeCheck();
     }
 
     /// Compile this OpenGL shader.
