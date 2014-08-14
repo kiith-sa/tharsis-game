@@ -1,8 +1,6 @@
 module gfmod.opengl.matrixstack;
 
-import /*gfmod.core.memory,*/
-       gfm.math.vector,
-       gfm.math.matrix;
+import gl3n.linalg;
 
 /// A matrix stack designed to replace fixed-pipeline matrix stacks.
 /// This stack always expose both the top element and its inverse.
@@ -45,8 +43,8 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
         /// Replacement for $(D glLoadIdentity).
         void loadIdentity() pure nothrow
         {
-            _matrices[_top] = mat4d.identity();
-            _invMatrices[_top] = mat4d.identity();
+            _matrices[_top]    = matrix_t.identity();
+            _invMatrices[_top] = matrix_t.identity();
         }
 
         /// Replacement for $(D glPushMatrix).
@@ -106,13 +104,27 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
         /// Replacement for $(D glTranslate).
         void translate(Vector!(T, R-1) v) pure nothrow
         {
-            mult(matrix_t.translation(v), matrix_t.translation(-v));
+            static if(R == 3)
+            {
+                mult(matrix_t.translation(v.x, v.y), matrix_t.translation(-v.x, -v.y));
+            }
+            else static if(R == 4)
+            {
+                mult(matrix_t.translation(v.x, v.y, v.z), matrix_t.translation(-v.x, -v.y, -v.z));
+            }
         }
 
         /// Replacement for $(D glScale).
         void scale(Vector!(T, R-1) v) pure nothrow
         {
-            mult(matrix_t.scaling(v), matrix_t.scaling(1 / v));
+            static if(R == 3)
+            {
+                mult(matrix_t.scaling(v.x, v.y), matrix_t.scaling(1 / v.x, 1 / v.y));
+            }
+            else static if(R == 4)
+            {
+                mult(matrix_t.scaling(v.x, v.y, v.z), matrix_t.scaling(1 / v.x, 1 / v.y, 1 / v.z));
+            }
         }
 
         static if (R == 4)
@@ -126,22 +138,18 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
             }
 
             /// Replacement for $(D gluPerspective).
-            /// Warning: FOV is given in radians, unlike the original API.
-            void perspective(T FOVInRadians, T aspect, T zNear, T zFar) pure nothrow
+            void perspective(T left, T right, T bottom, T top, T near, T far) pure nothrow
             {
-                mult(matrix_t.perspective(FOVInRadians, aspect, zNear, zFar));
+                mult(matrix_t.perspective(left, right, bottom, top, near, far));
             }
 
             /// Replacement for $(D glOrtho).
-            void ortho(T left, T right, T bottom, T top, T near, T far) @safe pure nothrow @nogc
+            void ortho(T left, T right, T bottom, T top, T near, T far) @trusted pure nothrow @nogc
             {
-                mult(matrix_t.orthographic(left, right, bottom, top, near, far));
-            }
-
-            /// Replacement for $(D gluLookAt).
-            void lookAt(vec3!T eye, vec3!T target, vec3!T up) pure nothrow
-            {
-                mult(matrix_t.lookAt(eye, target, up));
+                // gl3n calculates ortho projection matrix according to the spec,
+                // but for some reason that results in negated near/far.
+                // So we negate them here to cancel the effect.
+                mult(matrix_t.orthographic(left, right, bottom, top, -near, -far));
             }
         }
     }

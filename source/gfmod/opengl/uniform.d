@@ -8,9 +8,7 @@ import std.algorithm,
 
 import derelict.opengl3.gl3;
 
-import gfm.math.vector,
-       gfm.math.matrix,
-       gfmod.opengl.opengl,
+import gfmod.opengl.opengl,
        gfmod.opengl.program;
 
 
@@ -21,6 +19,26 @@ import tharsis.util.traits;
 import std.traits;
 import std.typetuple;
 
+import gl3n.linalg;
+
+// Readability shortcuts.
+alias Vector!(uint, 2) vec2u;
+alias Vector!(uint, 3) vec3u;
+alias Vector!(uint, 4) vec4u;
+alias Matrix!(float, 3, 2) mat32;
+alias Matrix!(float, 4, 2) mat42;
+alias Matrix!(float, 2, 3) mat23;
+alias Matrix!(float, 4, 3) mat43;
+alias Matrix!(float, 2, 4) mat24;
+alias Matrix!(double, 2, 2) mat2d;
+alias Matrix!(double, 3, 3) mat3d;
+alias Matrix!(double, 4, 4) mat4d;
+alias Matrix!(double, 3, 2) mat32d;
+alias Matrix!(double, 4, 2) mat42d;
+alias Matrix!(double, 2, 3) mat23d;
+alias Matrix!(double, 4, 3) mat43d;
+alias Matrix!(double, 2, 4) mat24d;
+alias Matrix!(double, 3, 4) mat34d;
 
 /// Checks if Spec is a valid uniform specification.
 ///
@@ -28,14 +46,14 @@ import std.typetuple;
 bool isUniformSpec(Spec)()
 {
     // All supported uniform types.
-    alias GLSLTypes = TypeTuple!(float,   vec2f,   vec3f,   vec4f,
-                                 double,  vec2d,   vec3d,   vec4d,
-                                 int,     vec2i,   vec3i,   vec4i,
-                                 uint,    vec2ui,  vec3ui,  vec4ui,
-                                 mat2f,   mat3f,   mat4f,
-                                 mat3x2f, mat4x2f, mat2x3f, mat4x3f, mat2x4f, mat3x4f,
-                                 mat2d,   mat3d,   mat4d,
-                                 mat3x2d, mat4x2d, mat2x3d, mat4x3d, mat2x4d, mat3x4d);
+    alias GLSLTypes = TypeTuple!(float,  vec2,   vec3,   vec4,
+                                 double, vec2d,  vec3d,  vec4d,
+                                 int,    vec2i,  vec3i,  vec4i,
+                                 uint,   vec2u,  vec3u,  vec4u,
+                                 mat2,   mat3,   mat4,
+                                 mat32,  mat42,  mat23,  mat43,  mat24, mat34,
+                                 mat2d,  mat3d,  mat4d,
+                                 mat32d, mat42d, mat23d, mat43d, mat24d, mat34d);
 
     foreach(Field; FieldTypeTuple!Spec)
     {
@@ -350,6 +368,7 @@ package final class GLUniform
             // if so, set OpenGL value
             if (_valueChanged)
             {
+                // _gl._logger.info(*cast(mat4*)_value.ptr).assumeWontThrow;
                 setUniform();
                 _valueChanged = false;
             }
@@ -456,9 +475,9 @@ package final class GLUniform
             switch (_type)
             {
                 case GL_FLOAT:             return is(T == float);
-                case GL_FLOAT_VEC2:        return is(T == vec2f);
-                case GL_FLOAT_VEC3:        return is(T == vec3f);
-                case GL_FLOAT_VEC4:        return is(T == vec4f);
+                case GL_FLOAT_VEC2:        return is(T == vec2);
+                case GL_FLOAT_VEC3:        return is(T == vec3);
+                case GL_FLOAT_VEC4:        return is(T == vec4);
                 case GL_DOUBLE:            return is(T == double);
                 case GL_DOUBLE_VEC2:       return is(T == vec2d);
                 case GL_DOUBLE_VEC3:       return is(T == vec3d);
@@ -468,31 +487,31 @@ package final class GLUniform
                 case GL_INT_VEC3:          return is(T == vec3i);
                 case GL_INT_VEC4:          return is(T == vec4i);
                 case GL_UNSIGNED_INT:      return is(T == uint);
-                case GL_UNSIGNED_INT_VEC2: return is(T == vec2ui);
-                case GL_UNSIGNED_INT_VEC3: return is(T == vec3ui);
-                case GL_UNSIGNED_INT_VEC4: return is(T == vec4ui);
+                case GL_UNSIGNED_INT_VEC2: return is(T == vec2u);
+                case GL_UNSIGNED_INT_VEC3: return is(T == vec3u);
+                case GL_UNSIGNED_INT_VEC4: return is(T == vec4u);
                 case GL_BOOL:              return is(T == int); // int because bool type is 1 byte
                 case GL_BOOL_VEC2:         return is(T == vec2i);
                 case GL_BOOL_VEC3:         return is(T == vec3i);
                 case GL_BOOL_VEC4:         return is(T == vec4i);
-                case GL_FLOAT_MAT2:        return is(T == mat2f);
-                case GL_FLOAT_MAT3:        return is(T == mat3f);
-                case GL_FLOAT_MAT4:        return is(T == mat4f);
-                case GL_FLOAT_MAT2x3:      return is(T == mat3x2f);
-                case GL_FLOAT_MAT2x4:      return is(T == mat4x2f);
-                case GL_FLOAT_MAT3x2:      return is(T == mat2x3f);
-                case GL_FLOAT_MAT3x4:      return is(T == mat4x3f);
-                case GL_FLOAT_MAT4x2:      return is(T == mat2x4f);
-                case GL_FLOAT_MAT4x3:      return is(T == mat3x4f);
+                case GL_FLOAT_MAT2:        return is(T == mat2);
+                case GL_FLOAT_MAT3:        return is(T == mat3);
+                case GL_FLOAT_MAT4:        return is(T == mat4);
+                case GL_FLOAT_MAT2x3:      return is(T == mat32);
+                case GL_FLOAT_MAT2x4:      return is(T == mat42);
+                case GL_FLOAT_MAT3x2:      return is(T == mat23);
+                case GL_FLOAT_MAT3x4:      return is(T == mat43);
+                case GL_FLOAT_MAT4x2:      return is(T == mat24);
+                case GL_FLOAT_MAT4x3:      return is(T == mat34);
                 case GL_DOUBLE_MAT2:       return is(T == mat2d);
                 case GL_DOUBLE_MAT3:       return is(T == mat3d);
                 case GL_DOUBLE_MAT4:       return is(T == mat4d);
-                case GL_DOUBLE_MAT2x3:     return is(T == mat3x2d);
-                case GL_DOUBLE_MAT2x4:     return is(T == mat4x2d);
-                case GL_DOUBLE_MAT3x2:     return is(T == mat2x3d);
-                case GL_DOUBLE_MAT3x4:     return is(T == mat4x3d);
-                case GL_DOUBLE_MAT4x2:     return is(T == mat2x4d);
-                case GL_DOUBLE_MAT4x3:     return is(T == mat3x4d);
+                case GL_DOUBLE_MAT2x3:     return is(T == mat32d);
+                case GL_DOUBLE_MAT2x4:     return is(T == mat42d);
+                case GL_DOUBLE_MAT3x2:     return is(T == mat23d);
+                case GL_DOUBLE_MAT3x4:     return is(T == mat43d);
+                case GL_DOUBLE_MAT4x2:     return is(T == mat24d);
+                case GL_DOUBLE_MAT4x3:     return is(T == mat34d);
 
                     // image samplers
                 case GL_IMAGE_1D: .. case GL_UNSIGNED_INT_IMAGE_2D_MULTISAMPLE_ARRAY:
@@ -557,9 +576,9 @@ package final class GLUniform
             switch (type)
             {
                 case GL_FLOAT:             return float.sizeof;
-                case GL_FLOAT_VEC2:        return vec2f.sizeof;
-                case GL_FLOAT_VEC3:        return vec3f.sizeof;
-                case GL_FLOAT_VEC4:        return vec4f.sizeof;
+                case GL_FLOAT_VEC2:        return vec2.sizeof;
+                case GL_FLOAT_VEC3:        return vec3.sizeof;
+                case GL_FLOAT_VEC4:        return vec4.sizeof;
                 case GL_DOUBLE:            return double.sizeof;
                 case GL_DOUBLE_VEC2:       return vec2d.sizeof;
                 case GL_DOUBLE_VEC3:       return vec3d.sizeof;
@@ -569,31 +588,31 @@ package final class GLUniform
                 case GL_INT_VEC3:          return vec3i.sizeof;
                 case GL_INT_VEC4:          return vec4i.sizeof;
                 case GL_UNSIGNED_INT:      return uint.sizeof;
-                case GL_UNSIGNED_INT_VEC2: return vec2ui.sizeof;
-                case GL_UNSIGNED_INT_VEC3: return vec3ui.sizeof;
-                case GL_UNSIGNED_INT_VEC4: return vec4ui.sizeof;
+                case GL_UNSIGNED_INT_VEC2: return vec2u.sizeof;
+                case GL_UNSIGNED_INT_VEC3: return vec3u.sizeof;
+                case GL_UNSIGNED_INT_VEC4: return vec4u.sizeof;
                 case GL_BOOL:              return int.sizeof; // int because D bool type is 1 byte
                 case GL_BOOL_VEC2:         return vec2i.sizeof;
                 case GL_BOOL_VEC3:         return vec3i.sizeof;
                 case GL_BOOL_VEC4:         return vec4i.sizeof;
-                case GL_FLOAT_MAT2:        return mat2f.sizeof;
-                case GL_FLOAT_MAT3:        return mat3f.sizeof;
-                case GL_FLOAT_MAT4:        return mat4f.sizeof;
-                case GL_FLOAT_MAT2x3:      return mat3x2f.sizeof;
-                case GL_FLOAT_MAT2x4:      return mat4x2f.sizeof;
-                case GL_FLOAT_MAT3x2:      return mat2x3f.sizeof;
-                case GL_FLOAT_MAT3x4:      return mat4x3f.sizeof;
-                case GL_FLOAT_MAT4x2:      return mat2x4f.sizeof;
-                case GL_FLOAT_MAT4x3:      return mat3x4f.sizeof;
+                case GL_FLOAT_MAT2:        return mat2.sizeof;
+                case GL_FLOAT_MAT3:        return mat3.sizeof;
+                case GL_FLOAT_MAT4:        return mat4.sizeof;
+                case GL_FLOAT_MAT2x3:      return mat32.sizeof;
+                case GL_FLOAT_MAT2x4:      return mat42.sizeof;
+                case GL_FLOAT_MAT3x2:      return mat23.sizeof;
+                case GL_FLOAT_MAT3x4:      return mat43.sizeof;
+                case GL_FLOAT_MAT4x2:      return mat24.sizeof;
+                case GL_FLOAT_MAT4x3:      return mat34.sizeof;
                 case GL_DOUBLE_MAT2:       return mat2d.sizeof;
                 case GL_DOUBLE_MAT3:       return mat3d.sizeof;
                 case GL_DOUBLE_MAT4:       return mat4d.sizeof;
-                case GL_DOUBLE_MAT2x3:     return mat3x2d.sizeof;
-                case GL_DOUBLE_MAT2x4:     return mat4x2d.sizeof;
-                case GL_DOUBLE_MAT3x2:     return mat2x3d.sizeof;
-                case GL_DOUBLE_MAT3x4:     return mat4x3d.sizeof;
-                case GL_DOUBLE_MAT4x2:     return mat2x4d.sizeof;
-                case GL_DOUBLE_MAT4x3:     return mat3x4d.sizeof;
+                case GL_DOUBLE_MAT2x3:     return mat32d.sizeof;
+                case GL_DOUBLE_MAT2x4:     return mat42d.sizeof;
+                case GL_DOUBLE_MAT3x2:     return mat23d.sizeof;
+                case GL_DOUBLE_MAT3x4:     return mat43d.sizeof;
+                case GL_DOUBLE_MAT4x2:     return mat24d.sizeof;
+                case GL_DOUBLE_MAT4x3:     return mat34d.sizeof;
 
                     // image samplers
                 case GL_IMAGE_1D: .. case GL_UNSIGNED_INT_IMAGE_2D_MULTISAMPLE_ARRAY:
