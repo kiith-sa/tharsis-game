@@ -78,6 +78,9 @@ bool isUniformSpec(Spec)()
  * }
  * --------------------
  *
+ * $(B NOTE:) Array uniforms are not supported at the moment, but will be supported in
+ * future.
+ *
  * The vertex shader above is used by a GLProgram $(D program).
  *
  * The following code builds a GLUniforms struct:
