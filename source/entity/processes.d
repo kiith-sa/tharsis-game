@@ -87,7 +87,8 @@ private:
 
 
     // Projection matrix stack.
-    MatrixStack!(4, float) projection_;
+    MatrixStack!(float, 4) projection_;
+
 
 public:
     /** Construct a RenderProcess.
@@ -126,10 +127,10 @@ public:
 
 
         // 4 levels should be enough for projection.
-        projection_ = new MatrixStack!(4, float)(4);
+        projection_ = new MatrixStack!(float, 4)();
         const w = video.width;
         const h = video.height;
-        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1, 2000);
+        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1000, 2000);
 
         auto vaoSpace = new Vertex[3];
         gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
