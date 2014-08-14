@@ -19,26 +19,7 @@ import tharsis.util.traits;
 import std.traits;
 import std.typetuple;
 
-import gl3n.linalg;
-
-// Readability shortcuts.
-alias Vector!(uint, 2) vec2u;
-alias Vector!(uint, 3) vec3u;
-alias Vector!(uint, 4) vec4u;
-alias Matrix!(float, 3, 2) mat32;
-alias Matrix!(float, 4, 2) mat42;
-alias Matrix!(float, 2, 3) mat23;
-alias Matrix!(float, 4, 3) mat43;
-alias Matrix!(float, 2, 4) mat24;
-alias Matrix!(double, 2, 2) mat2d;
-alias Matrix!(double, 3, 3) mat3d;
-alias Matrix!(double, 4, 4) mat4d;
-alias Matrix!(double, 3, 2) mat32d;
-alias Matrix!(double, 4, 2) mat42d;
-alias Matrix!(double, 2, 3) mat23d;
-alias Matrix!(double, 4, 3) mat43d;
-alias Matrix!(double, 2, 4) mat24d;
-alias Matrix!(double, 3, 4) mat34d;
+import gl3n_extra.linalg;
 
 /// Checks if Spec is a valid uniform specification.
 ///
