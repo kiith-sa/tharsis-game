@@ -195,9 +195,12 @@ final class OpenGL
             }
         }
 
-        /// Checks pending OpenGL errors.
-        /// Throws: $(D OpenGLException) if at least one OpenGL error was pending.
-        void runtimeCheck() nothrow
+        /**
+         * Checks pending OpenGL errors.
+         *
+         * Returns: true if at least one OpenGL error was pending. OpenGL error status is cleared.
+         */
+        bool runtimeCheck() nothrow
         {
             GLint r = glGetError();
             if (r != GL_NO_ERROR)
@@ -205,17 +208,6 @@ final class OpenGL
                 string errorString = getErrorString(r);
                 flushGLErrors(); // flush other errors if any
                 _logger.warning("GL error detected: ", errorString).assumeWontThrow;
-            }
-        }
-
-        /// Checks pending OpenGL errors.
-        /// Returns: true if at least one OpenGL error was pending. OpenGL error status is cleared.
-        bool runtimeCheckNothrow() nothrow
-        {
-            GLint r = glGetError();
-            if (r != GL_NO_ERROR)
-            {
-                flushGLErrors(); // flush other errors if any
                 return false;
             }
             return true;
@@ -304,7 +296,7 @@ final class OpenGL
             GLint param;
             glGetIntegerv(pname, &param);
 
-            if (runtimeCheckNothrow())
+            if (runtimeCheck())
             {
                 result = param;
                 return true;
