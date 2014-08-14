@@ -112,12 +112,15 @@ public:
         }
         catch(OpenGLException e)
         {
-            log_.error("Failed to construct the main GLSL program."
+            log_.error(e).assumeWontThrow;
+            log_.error("Failed to construct the main GLSL program "
+                       "or to load uniforms from the program. "
                        "Will run without drawing graphics.").assumeWontThrow;
             program_ = null;
         }
-        catch(Exception e)
+        catch(Throwable e)
         {
+            log_.error(e).assumeWontThrow;
             assert(false, "Unexpected exception in mainLoop()");
         }
 
