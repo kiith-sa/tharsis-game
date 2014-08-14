@@ -200,7 +200,7 @@ final class GLProgram
 
         /// Attaches OpenGL shaders to this program.
         /// Throws: $(D OpenGLException) on error.
-        void attach(GLShader[] compiledShaders...) @trusted nothrow
+        void attach(GLShader[] compiledShaders...) @trusted nothrow @nogc
         {
             foreach(shader; compiledShaders)
             {
@@ -242,7 +242,7 @@ final class GLProgram
 
         /// Unuses this program.
         /// Throws: $(D OpenGLException) on error.
-        void unuse() @trusted nothrow
+        void unuse() @trusted nothrow @nogc
         {
             foreach(pair; _activeUniforms) { pair[1].unuse(); }
             glUseProgram(0);

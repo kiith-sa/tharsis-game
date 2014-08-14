@@ -350,7 +350,7 @@ package final class GLUniform
             }
         }
 
-        void setUniform() nothrow
+        void setUniform() @trusted nothrow @nogc
         {
             switch(_type)
             {
@@ -446,7 +446,7 @@ package final class GLUniform
             }
         }
 
-        public bool typeIsCompliant(T)()
+        public bool typeIsCompliant(T)() @safe pure nothrow const @nogc
         {
             switch (_type)
             {
@@ -547,7 +547,7 @@ package final class GLUniform
             }
         }
 
-        public static size_t sizeOfUniformType(GLenum type)
+        public static size_t sizeOfUniformType(GLenum type) @safe pure nothrow @nogc 
         {
             switch (type)
             {
@@ -649,7 +649,7 @@ package final class GLUniform
             }
         }
 
-        static string GLSLTypeName(GLenum type)
+        static string GLSLTypeName(GLenum type) @safe pure nothrow @nogc 
         {
             switch (type)
             {
