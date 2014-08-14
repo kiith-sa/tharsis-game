@@ -17,75 +17,103 @@ import gfm.math.vector,
 
 import tharsis.util.traits;
 import std.traits;
+import std.typetuple;
 
-/// A type-safe API for manipulating GLSL uniform variables.
+
+/// Checks if Spec is a valid uniform specification.
 ///
-/// 'Uniforms specification' struct Spec specifies types and names of uniforms in
-/// a program. GLUniforms!Spec has properties with names matching fields of Spec.
-/// Uniforms in a program can be set by setting these properties.
-///
-/// Example:
-/// 
-/// We have a vertex shader with source such as this:
-///
-/// --------------------
-/// #version 130
-///
-/// uniform mat4 projection;
-/// uniform mat4 modelView;
-/// in vec3 position;
-/// 
-/// void main()
-/// {
-///     gl_Position = projection * modelView *  vec4(position, 1.0);
-/// }
-/// --------------------
-///
-/// We have the following uniforms specification struct:
-///
-/// --------------------
-/// struct Uniforms
-/// {
-///     import gl3n.linalg;
-///     mat4 projection;
-///     mat4 modelView;
-/// }
-/// --------------------
-///
-/// The vertex shader above is used by a GLProgram $(D program).
-///
-/// The following code builds a GLUniforms struct:
-///
-/// Example:
-/// --------------------
-/// try
-/// {
-///     auto uniforms = GLUniforms!Uniforms(program);
-/// }
-/// catch(OpenGLException e)
-/// {
-///     writeln("ERROR: uniforms in a program have unexpected types: ", e);
-///     return;
-/// }
-/// --------------------
-///
-/// The GLUniforms constructor enforces that types of uniforms in $(D program) match
-/// types in $(D Uniforms) - the uniforms specification struct. Note that if 
-/// $(D program) is missing any uniform, there is no error, only a logged warning, and
-/// a dummy uniform is created. This is because some GPU drivers agressively optimize
-/// and remove uniforms, and we don't want to trigger an error just because a user is
-/// running our program on a GPU we didn't test.
-///
-/// Finally, the following code sets the uniforms through $(D uniforms). Note that
-/// uniforms may only be set while a GLProgram is not in use (see GLProgram.use() and
-/// GLProgram.unuse()). This is asserted.
-///
-/// --------------------
-/// // mat4 projectionMatrix, modelViewMatrix
-/// uniforms.projection = projectionMatrix;
-/// uniforms.modelView  = modelViewMatrix;
-/// --------------------
+/// Uses static asserts for better compile-time error messages.
+bool isUniformSpec(Spec)()
+{
+    // All supported uniform types.
+    alias GLSLTypes = TypeTuple!(float,   vec2f,   vec3f,   vec4f,
+                                 double,  vec2d,   vec3d,   vec4d,
+                                 int,     vec2i,   vec3i,   vec4i,
+                                 uint,    vec2ui,  vec3ui,  vec4ui,
+                                 mat2f,   mat3f,   mat4f,
+                                 mat3x2f, mat4x2f, mat2x3f, mat4x3f, mat2x4f, mat3x4f,
+                                 mat2d,   mat3d,   mat4d,
+                                 mat3x2d, mat4x2d, mat2x3d, mat4x3d, mat2x4d, mat3x4d);
+
+    foreach(Field; FieldTypeTuple!Spec)
+    {
+        static assert(staticIndexOf!(Field, GLSLTypes) >= 0,
+                     "Field of uniform spec %s has type %s which is not a supported "
+                     " GL uniform type".format(Spec.stringof, Field.stringof));
+    }
+    return true;
+}
+
+/** A type-safe API for manipulating GLSL uniform variables.
+ *
+ * 'Uniforms specification' struct Spec specifies types and names of uniforms in
+ * a program. GLUniforms!Spec has properties with names matching fields of Spec.
+ * Uniforms in a program can be set by setting these properties.
+ *
+ * Example:
+ * 
+ * We have a vertex shader with source such as this:
+ *
+ * --------------------
+ * #version 130
+ *
+ * uniform mat4 projection;
+ * uniform mat4 modelView;
+ * in vec3 position;
+ * 
+ * void main()
+ * {
+ *     gl_Position = projection * modelView *  vec4(position, 1.0);
+ * }
+ * --------------------
+ *
+ * We have the following uniforms specification struct:
+ *
+ * --------------------
+ * struct Uniforms
+ * {
+ *     import gl3n.linalg;
+ *     mat4 projection;
+ *     mat4 modelView;
+ * }
+ * --------------------
+ *
+ * The vertex shader above is used by a GLProgram $(D program).
+ *
+ * The following code builds a GLUniforms struct:
+ *
+ * Example:
+ * --------------------
+ * try
+ * {
+ *     auto uniforms = GLUniforms!Uniforms(program);
+ * }
+ * catch(OpenGLException e)
+ * {
+ *     writeln("ERROR: uniforms in a program have unexpected types: ", e);
+ *     return;
+ * }
+ * --------------------
+ *
+ * The GLUniforms constructor enforces that types of uniforms in $(D program) match
+ * types in $(D Uniforms) - the uniforms specification struct. Note that if 
+ * $(D program) is missing any uniform, there is no error, only a logged warning, and
+ * a dummy uniform is created. This is because some GPU drivers agressively optimize
+ * and remove uniforms, and we don't want to trigger an error just because a user is
+ * running our program on a GPU we didn't test.
+ *
+ * Finally, the following code sets the uniforms through $(D uniforms). Note that
+ * uniforms may only be set while a GLProgram is not in use (see GLProgram.use() and
+ * GLProgram.unuse()). This is asserted.
+ *
+ * --------------------
+ * // mat4 projectionMatrix, modelViewMatrix
+ * uniforms.projection = projectionMatrix;
+ * uniforms.modelView  = modelViewMatrix;
+ * --------------------
+ */
 struct GLUniforms(Spec)
+    if(isUniformSpec!Spec)
 {
 private:
     // Names of fields in Spec.
