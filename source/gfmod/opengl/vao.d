@@ -106,7 +106,10 @@ enum isVertex(V) = is(V == struct) &&
 ///
 /// Vertex attributes must be either one of the following types: $(I float, double,
 /// byte, short, int, ubyte, ushort, uint) or a 4 or less dimensional gl3n.linalg.Vector
-/// with type parameter set to one of listed types.
+/// with type parameter set to one of listed types. Note that by default, attributes
+/// with integral values will have those values normalized into the [0-1] range (for
+/// example, a color channel with value of 255 will be normalized into 1.0). In future,
+/// an UDA (TODO) will be added to allow the user to disable normalization of integers.
 ///
 /// The VAO requires a shader program when being bound and looks for vertex attributes
 /// with names corresponding to fields of V. Any shader program used to draw a VAO must
@@ -361,8 +364,11 @@ public:
                 enum name    = fieldNames[index];
                 const attrib = program.attrib(name);
                 glEnableVertexAttribArray(attrib.location);
-                glVertexAttribPointer(attrib.location, dimension!Attrib,
-                                      glType!Attrib, GL_FALSE, stride, 
+                glVertexAttribPointer(attrib.location,
+                                      dimension!Attrib,
+                                      glType!Attrib,
+                                      isIntegral!(Attrib.vt) ? GL_TRUE : GL_FALSE,
+                                      stride, 
                                       cast(void*)offset);
                 offset += Attrib.sizeof;
             }
