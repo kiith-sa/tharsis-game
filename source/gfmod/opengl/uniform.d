@@ -107,9 +107,7 @@ bool isUniformSpec(Spec)()
  * and remove uniforms, and we don't want to trigger an error just because a user is
  * running our program on a GPU we didn't test.
  *
- * Finally, the following code sets the uniforms through $(D uniforms). Note that
- * uniforms may only be set while a GLProgram is not in use (see GLProgram.use() and
- * GLProgram.unuse()). This is asserted.
+ * Finally, the following code sets the uniforms through $(D uniforms).
  *
  * --------------------
  * // mat4 projectionMatrix, modelViewMatrix
@@ -141,6 +139,8 @@ private:
         {
             enum name = fieldNames[i];
             setters ~= q{
+            // GLUniform ensures the value can be set even while the program is not
+            // bound.
             void %s(%s rhs) @safe nothrow { %s_.set(rhs); }
             }.format(name, T.stringof, name);
         }
@@ -302,16 +302,19 @@ package final class GLUniform
             return _size;
         }
 
-        /// Updates the uniform value.
+        /// Called when the program owning this uniform is used.
         void use() nothrow
         {
+            // When in use, any changes to the uniform must trigger an immediate update.
             _shouldUpdateImmediately = true;
             update();
         }
 
-        /// Unuses this uniform..
+        /// Called when the program owning this uniform is unused.
         void unuse() @safe pure nothrow @nogc
         {
+            // When not in use, we can wait with updating the uniform till we're being
+            // used.
             _shouldUpdateImmediately = false;
         }
     }
