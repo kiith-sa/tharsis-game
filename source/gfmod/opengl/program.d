@@ -232,20 +232,30 @@ final class GLProgram
         /// Throws: $(D OpenGLException) on error.
         void use() @trusted nothrow
         {
+            assert(!_inUse, "Calling use() on a GLProgram that's already being used");
             glUseProgram(_program);
             _gl.runtimeCheck();
 
             // upload uniform values then
             // this allow setting uniform at anytime without binding the program
             foreach(pair; _activeUniforms) { pair[1].use(); }
+            _inUse = true;
         }
 
         /// Unuses this program.
         /// Throws: $(D OpenGLException) on error.
         void unuse() @trusted nothrow @nogc
         {
+            assert(_inUse, "Calling unuse() on a GLProgram that's not being used");
+            _inUse = false;
             foreach(pair; _activeUniforms) { pair[1].unuse(); }
             glUseProgram(0);
+        }
+
+        /// Is the program currently being used for drawing?
+        bool inUse() @safe pure nothrow const @nogc
+        {
+            return _inUse;
         }
 
         /// Gets the linking report.
@@ -433,6 +443,8 @@ final class GLProgram
             }
         }
 
+        // Is this program currently in use?
+        bool _inUse;
         OpenGL _gl;
         GLuint _program; // OpenGL handle
         // The number of lines added to the source code when loading a program from
