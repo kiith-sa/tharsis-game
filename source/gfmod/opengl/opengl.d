@@ -96,7 +96,7 @@ final class OpenGL
             {
                 void leak(string type, GLuint id)
                 {
-                    _logger.errorf("Leaked a %s OpenGL object. Handle: %s", id); 
+                    _logger.errorf("Leaked a %s OpenGL object. Handle: %s", type, id); 
                 }
                 if(glIsTexture(id))           { leak("texture",       id); }
                 else if(glIsBuffer(id))       { leak("buffer",        id); }
