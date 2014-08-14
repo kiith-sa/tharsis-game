@@ -43,11 +43,12 @@ private:
         #if VERTEX_SHADER
 
         uniform mat4 projection;
+        uniform mat4 modelView;
         in vec3 position;
 
         void main()
         {
-            gl_Position = projection * vec4(position, 1.0);
+            gl_Position = projection * modelView * vec4(position, 1.0);
         }
 
         #elif FRAGMENT_SHADER
@@ -76,6 +77,7 @@ private:
     struct UniformsSpec
     {
         mat4 projection;
+        mat4 modelView;
     }
 
     import gfmod.opengl.uniform;
@@ -88,6 +90,9 @@ private:
 
     // Projection matrix stack.
     MatrixStack!(float, 4) projection_;
+
+    // Modelview matrix stack.
+    MatrixStack!(float, 16) modelView_;
 
 
 public:
@@ -128,11 +133,16 @@ public:
 
         // 4 levels should be enough for projection.
         projection_ = new MatrixStack!(float, 4)();
+        modelView_  = new MatrixStack!(float, 16)();
         const w = video.width;
         const h = video.height;
         projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1000, 2000);
 
         auto vaoSpace = new Vertex[3];
+        import std.math;
+        modelView_.rotate(PI / 2 - (PI / 6), vec3(1, 0, 0));
+        modelView_.rotate(PI / 4, vec3(0, 0, 1));
+
         gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
 
         gridVAO_.put(Vertex(-100, -100,  10));
@@ -155,20 +165,22 @@ public:
         if(program_ is null) { return; }
 
         uniforms_.projection = projection_.top;
+        uniforms_.modelView  = modelView_.top;
         program_.use();
 
         scope(exit) { program_.unuse(); }
 
-        if(!gridVAO_.bind(program_))
         {
-            log_.error("Failed to bind VAO; probably missing vertex attribute "
-                       " in a GLSL program. Will not draw.").assumeWontThrow;
-            return;
+            if(!gridVAO_.bind(program_))
+            {
+                log_.error("Failed to bind a VAO; probably missing vertex attribute "
+                        " in a GLSL program. Will not draw.").assumeWontThrow;
+                return;
+            }
+            scope(exit) { gridVAO_.release(); }
+            gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length);
         }
-        scope(exit) { gridVAO_.release(); }
         gl_.runtimeCheck();
-
-        gridVAO_.draw(PrimitiveType.Triangles, 0, 3);
     }
 
     /// Draw an entity with specified position and visual.
