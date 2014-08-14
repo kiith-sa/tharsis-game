@@ -15,11 +15,10 @@ import gfmod.opengl.opengl;
 import gfmod.opengl.program;
 import gfmod.opengl.vao;
 
-import gl3n.linalg;
-
 import entity.components;
 import platform.videodevice;
 import gl3n_extra.color;
+import gl3n_extra.linalg;
 
 
 
@@ -115,6 +114,15 @@ private:
     MatrixStack!(float, 16) modelView_;
 
 
+    // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
+    enum cellSizeScreen_ = vec3u(96, 48, 24);
+    // Size of a map cell in world space.
+    enum cellSizeWorld_  = vec3d(67.882251, 67.882251, 33.9411255);
+
+    // Map grid width and height in cells.
+    size_t gridW_, gridH_;
+
+
 public:
     /** Construct a RenderProcess.
      *
@@ -130,6 +138,9 @@ public:
         log_   = log;
         video_ = video;
         gl_    = video_.gl;
+
+        gridW_ = 64;
+        gridH_ = 64;
 
         try
         {
@@ -158,16 +169,40 @@ public:
         const h = video.height;
         projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1000, 2000);
 
-        auto vaoSpace = new Vertex[3];
         import std.math;
         modelView_.rotate(PI / 2 - (PI / 6), vec3(1, 0, 0));
         modelView_.rotate(PI / 4, vec3(0, 0, 1));
 
+        auto vaoSpace = new Vertex[2 * gridW_ * (gridH_ + 1) +
+                                   2 * gridH_ * (gridW_ + 1)];
         gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
 
-        gridVAO_.put(Vertex(-100, -100,  10));
-        gridVAO_.put(Vertex( 100, -100,  10));
-        gridVAO_.put(Vertex( 0,    100,  10));
+        double x = 0.0;
+        double y = 0.0;
+        const white = rgb!"FFFFFF";
+        foreach(xCell; 0 .. gridW_ + 1)
+        {
+            y = 0.0;
+            foreach(yCell; 0 .. gridH_)
+            {
+                gridVAO_.put(Vertex(x, y, 10, white));
+                gridVAO_.put(Vertex(x, y + cellSizeWorld_.y, 10, white));
+                y += cellSizeWorld_.y;
+            }
+            x += cellSizeWorld_.x;
+        }
+        x = y = 0.0;
+        foreach(yCell; 0 .. gridH_ + 1)
+        {
+            x = 0.0;
+            foreach(xCell; 0 .. gridW_)
+            {
+                gridVAO_.put(Vertex(x, y, 10, white));
+                gridVAO_.put(Vertex(x + cellSizeWorld_.x, y, 10, white));
+                x += cellSizeWorld_.x;
+            }
+            y += cellSizeWorld_.y;
+        }
         gridVAO_.lock();
 
 
