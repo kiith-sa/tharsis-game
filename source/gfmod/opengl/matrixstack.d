@@ -2,56 +2,36 @@ module gfmod.opengl.matrixstack;
 
 import gl3n.linalg;
 
-/// A matrix stack designed to replace fixed-pipeline matrix stacks.
-/// This stack always expose both the top element and its inverse.
-final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
+
+/** A matrix stack designed to replace fixed-pipeline matrix stacks.
+ *
+ * This stack always exposes both the top element and its inverse.
+ */
+class MatrixStack(F, size_t depth = 32)
+    if(depth > 0 && (is(F == float) || is(F == duble)))
 {
+    alias M = Matrix!(F, 4, 4);
     public
     {
-        alias Matrix!(T, R, R) matrix_t; /// Type of matrices in the stack. Can be 3x3 or 4x4.
-
         /// Creates a matrix stack.
         /// The stack is initialized with one element, an identity matrix.
-        this(size_t depth = 32) @trusted nothrow
+        this() @safe pure nothrow @nogc
         {
-            assert(depth > 0);
-            size_t memNeeded = matrix_t.sizeof * depth * 2;
-            //XXX TEMP - WILL RECEIVE DATA AS PARAM
-            void* data = new void[memNeeded * 2].ptr; // alignedMalloc(memNeeded * 2, 64);
-            _matrices = cast(matrix_t*)data;
-            _invMatrices = cast(matrix_t*)(data + memNeeded);
             _top = 0;
-            _depth = depth;
             loadIdentity();
         }
 
-        ~this()
-        {
-            close();
-        }
-
-        /// Releases the matrix stack memory.
-        void close() @safe pure nothrow @nogc
-        {
-            if (_matrices !is null)
-            {
-                //alignedFree(_matrices);
-                _matrices = null;
-            }
-        }
-
         /// Replacement for $(D glLoadIdentity).
-        void loadIdentity() pure nothrow
+        void loadIdentity() @safe pure nothrow @nogc
         {
-            _matrices[_top]    = matrix_t.identity();
-            _invMatrices[_top] = matrix_t.identity();
+            _matrices[_top]    = M.identity();
+            _invMatrices[_top] = M.identity();
         }
 
         /// Replacement for $(D glPushMatrix).
-        void push() pure nothrow
+        void push() @safe pure nothrow @nogc
         {
-            if(_top + 1 >= _depth)
-                assert(false, "Matrix stack is full");
+            if(_top + 1 >= depth) { assert(false, "Matrix stack is full"); }
 
             _matrices[_top + 1] = _matrices[_top];
             _invMatrices[_top + 1] = _invMatrices[_top];
@@ -59,114 +39,104 @@ final class MatrixStack(size_t R, T) if (R == 3 || R == 4)
         }
 
         /// Replacement for $(D glPopMatrix).
-        void pop() pure nothrow
+        void pop() @safe pure nothrow @nogc
         {
-            if (_top <= 0)
-                assert(false, "Matrix stack is empty");
+            if (_top <= 0) { assert(false, "Matrix stack is empty"); }
 
             --_top;
         }
 
         /// Returns: Top matrix.
         /// Replaces $(D glLoadMatrix).
-        matrix_t top() pure const nothrow
+        M top() @safe pure const nothrow @nogc
         {
             return _matrices[_top];
         }
 
         /// Returns: Inverse of top matrix.
-        matrix_t invTop() pure const nothrow
+        M invTop() @safe pure const nothrow @nogc
         {
             return _invMatrices[_top];
         }
 
         /// Sets top matrix.
         /// Replaces $(D glLoadMatrix).
-        void setTop(matrix_t m) pure nothrow
+        void setTop(M m) @safe pure nothrow @nogc
         {
             _matrices[_top] = m;
             _invMatrices[_top] = m.inverse();
         }
 
         /// Replacement for $(D glMultMatrix).
-        void mult(matrix_t m) @trusted pure nothrow
+        void mult(M m) @safe pure nothrow @nogc
         {
             mult(m, m.inverse());
         }
 
         /// Replacement for $(D glMultMatrix), with provided inverse.
-        void mult(matrix_t m, matrix_t invM) @trusted pure nothrow
+        void mult(M m, M invM) @safe pure nothrow @nogc
         {
-            _matrices[_top] = _matrices[_top] * m;
+            _matrices[_top]    = _matrices[_top] * m;
             _invMatrices[_top] = invM *_invMatrices[_top];
         }
 
         /// Replacement for $(D glTranslate).
-        void translate(Vector!(T, R-1) v) pure nothrow
+        void translate(Vector!(F, 3) v) @safe pure nothrow @nogc { translate(v.x, v.y, v.z); }
+
+        /// Ditto.
+        void translate(F x, F y, F z) @safe pure nothrow @nogc
         {
-            static if(R == 3)
-            {
-                mult(matrix_t.translation(v.x, v.y), matrix_t.translation(-v.x, -v.y));
-            }
-            else static if(R == 4)
-            {
-                mult(matrix_t.translation(v.x, v.y, v.z), matrix_t.translation(-v.x, -v.y, -v.z));
-            }
+            mult(M.translation(x, y, z), M.translation(-x, -y, -z));
         }
 
         /// Replacement for $(D glScale).
-        void scale(Vector!(T, R-1) v) pure nothrow
+        void scale(Vector!(F, 3) v) @safe pure nothrow @nogc { scale(v.x, v.y, v.z); }
+
+        /// Replacement for $(D glScale).
+        void scale(F x, F y, F z) @safe pure nothrow @nogc
         {
-            static if(R == 3)
-            {
-                mult(matrix_t.scaling(v.x, v.y), matrix_t.scaling(1 / v.x, 1 / v.y));
-            }
-            else static if(R == 4)
-            {
-                mult(matrix_t.scaling(v.x, v.y, v.z), matrix_t.scaling(1 / v.x, 1 / v.y, 1 / v.z));
-            }
+            mult(M.scaling(x, y, z), M.scaling(1 / x, 1 / y, 1 / z));
         }
 
-        static if (R == 4)
+
+        /// Replacement for $(D glRotate).
+        /// Warning: Angle is given in radians, unlike the original API.
+        void rotate(F angle, Vector!(F, 3) axis) @safe pure nothrow @nogc
         {
-            /// Replacement for $(D glRotate).
-            /// Warning: Angle is given in radians, unlike the original API.
-            void rotate(T angle, Vector!(T, 3u) axis) pure nothrow
-            {
-                matrix_t rot = matrix_t.rotation(angle, axis);
-                mult(rot, rot.transposed()); // inversing a rotation matrix is tranposing
-            }
+            M rot = M.rotation(angle, axis);
+            mult(rot, rot.transposed()); // inversing a rotation matrix is tranposing
+        }
 
-            /// Replacement for $(D gluPerspective).
-            void perspective(T left, T right, T bottom, T top, T near, T far) pure nothrow
-            {
-                mult(matrix_t.perspective(left, right, bottom, top, near, far));
-            }
+        /// Replacement for $(D gluPerspective).
+        void perspective(F left, F right, F bottom, F top, F near, F far)
+            @safe pure nothrow @nogc
+        {
+            mult(M.perspective(left, right, bottom, top, near, far));
+        }
 
-            /// Replacement for $(D glOrtho).
-            void ortho(T left, T right, T bottom, T top, T near, T far) @trusted pure nothrow @nogc
-            {
-                // gl3n calculates ortho projection matrix according to the spec,
-                // but for some reason that results in negated near/far.
-                // So we negate them here to cancel the effect.
-                mult(matrix_t.orthographic(left, right, bottom, top, -near, -far));
-            }
+        /// Replacement for $(D glOrtho).
+        void ortho(F left, F right, F bottom, F top, F near, F far)
+            @safe pure nothrow @nogc
+        {
+            // gl3n calculates ortho projection matrix according to the spec,
+            // but for some reason that results in negated near/far.
+            // So we negate them here to cancel the effect.
+            mult(M.orthographic(left, right, bottom, top, -near, -far));
         }
     }
 
     private
     {
         size_t _top; // index of top matrix
-        size_t _depth;
-        matrix_t* _matrices;
-        matrix_t* _invMatrices;
+        M[depth] _matrices;
+        M[depth] _invMatrices;
     }
 }
 
 unittest
 {
-    auto s = new MatrixStack!(4u, double)();
-    
+    auto s = new MatrixStack!double();
+
     s.loadIdentity();
     s.push();
     s.pop();
