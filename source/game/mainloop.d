@@ -33,7 +33,7 @@ bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice inpu
 
         import derelict.opengl3.gl3;
         // Clear the back buffer with a red background (parameters are R, G, B, A)
-        glClearColor(1.0, 0.0, 0.0, 1.0);
+        glClearColor(0.01, 0.01, 0.04, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         entitySystem.frame();
