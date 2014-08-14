@@ -19,6 +19,7 @@ import gl3n.linalg;
 
 import entity.components;
 import platform.videodevice;
+import gl3n_extra.color;
 
 
 
@@ -32,8 +33,18 @@ private:
         // Position of the vertex.
         vec3 position;
 
+        // Color of the vertex.
+        Color color;
+
         // Shortcut constructor.
         this(float x, float y, float z) @safe pure nothrow @nogc { position = vec3(x, y, z); }
+
+        // Constructor from coords and a color.
+        this(float x, float y, float z, Color c) @safe pure nothrow @nogc 
+        {
+            position = vec3(x, y, z); 
+            color    = c;
+        }
     }
 
     // Source of the shader used for drawing.
@@ -45,18 +56,25 @@ private:
         uniform mat4 projection;
         uniform mat4 modelView;
         in vec3 position;
+        in vec4 color;
+
+        smooth out vec4 fsColor;
 
         void main()
         {
             gl_Position = projection * modelView * vec4(position, 1.0);
+            fsColor = color;
         }
 
         #elif FRAGMENT_SHADER
 
-        out vec4 color;
+        smooth in vec4 fsColor;
+
+        out vec4 resultColor;
+
         void main()
         {
-            color = vec4(0,1,1,1);
+            resultColor = fsColor;
         }
 
         #endif};
@@ -87,6 +105,8 @@ private:
     // VAO storing the map grid.
     VAO!Vertex gridVAO_;
 
+    // VAO of the axis thingy (showing axes in different colors).
+    VAO!Vertex axisThingy_;
 
     // Projection matrix stack.
     MatrixStack!(float, 4) projection_;
@@ -149,6 +169,18 @@ public:
         gridVAO_.put(Vertex( 100, -100,  10));
         gridVAO_.put(Vertex( 0,    100,  10));
         gridVAO_.lock();
+
+
+        axisThingy_ = new VAO!Vertex(gl_, new Vertex[6]);
+
+        axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
+        axisThingy_.put(Vertex(110, 10,  10,  rgb!"FF0000"));
+        axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
+
+        axisThingy_.put(Vertex(10,  110, 10,  rgb!"00FF00"));
+        axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
+        axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
+        axisThingy_.lock();
     }
 
     /// Destroy the RenderProcess along with any rendering data.
@@ -156,6 +188,7 @@ public:
     {
         if(program_ !is null) { program_.__dtor(); }
         gridVAO_.__dtor();
+        axisThingy_.__dtor();
     }
 
     /// Draw anything that should be drawn before any entities.
@@ -180,6 +213,17 @@ public:
             scope(exit) { gridVAO_.release(); }
             gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length);
         }
+        {
+            if(!axisThingy_.bind(program_))
+            {
+                log_.error("Failed to bind a VAO; probably missing vertex attribute "
+                           " in a GLSL program. Will not draw.").assumeWontThrow;
+                return;
+            }
+            scope(exit) { axisThingy_.release(); }
+            axisThingy_.draw(PrimitiveType.Lines, 0, axisThingy_.length);
+        }
+
         gl_.runtimeCheck();
     }
 
