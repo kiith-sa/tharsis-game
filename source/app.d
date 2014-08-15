@@ -6,6 +6,8 @@ import derelict.opengl3.gl3;
 
 import derelict.util.exception;
 
+// Testing note: to run a program with llvmpipe on Mesa drivers, use:
+//    LIBGL_ALWAYS_SOFTWARE=1 ./program_binary
 
 int main(string[] args)
 {
