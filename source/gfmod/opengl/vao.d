@@ -257,10 +257,7 @@ public:
      *
      * If VAO.length equals this value, no more vertices can be added.
      */
-    size_t capacity() @safe pure nothrow const @nogc
-    {
-        return storage_.length;
-    }
+    size_t capacity() @safe pure nothrow const @nogc { return storage_.length; }
 
     /// Is the VAO empty (no vertices) ?
     bool empty() @safe pure nothrow const @nogc { return length == 0; }
