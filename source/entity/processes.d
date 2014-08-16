@@ -105,6 +105,10 @@ private:
     // VAO storing the map grid.
     VAO!Vertex gridVAO_;
 
+    // Number of vertices in gridVAO_ to draw the bottom level of the map with (for
+    // visual reference)
+    size_t bottomLevelVertices_ = 6;
+
     // VAO of the axis thingy (showing axes in different colors).
     VAO!Vertex axisThingy_;
 
@@ -175,7 +179,8 @@ public:
         modelView_.rotate(PI / 4, vec3(0, 0, 1));
 
         auto vaoSpace = new Vertex[2 * gridW_ * (gridH_ + 1) +
-                                   2 * gridH_ * (gridW_ + 1)];
+                                   2 * gridH_ * (gridW_ + 1) +
+                                   bottomLevelVertices_];
         gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
 
         double x = 0.0;
@@ -204,6 +209,13 @@ public:
             }
             y += cellSizeWorld_.y;
         }
+        const bottomColor = rgb!"101008";
+        gridVAO_.put(Vertex(0, 0, -10, bottomColor));
+        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, 0, -10, bottomColor));
+        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        gridVAO_.put(Vertex(0, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        gridVAO_.put(Vertex(0, 0, -10, bottomColor));
         gridVAO_.lock();
 
 
@@ -249,7 +261,9 @@ public:
                 return;
             }
             scope(exit) { gridVAO_.release(); }
-            gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length);
+            gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length - bottomLevelVertices_);
+            gridVAO_.draw(PrimitiveType.Triangles, gridVAO_.length - bottomLevelVertices_,
+                                               bottomLevelVertices_);
         }
         {
             if(!axisThingy_.bind(program_))
