@@ -11,6 +11,7 @@ import std.logger;
 import entity.entitysystem;
 import platform.inputdevice;
 import platform.videodevice;
+import time.gametime;
 
 
 /// Main event loop of the game.
@@ -20,9 +21,10 @@ import platform.videodevice;
 /// entitySystem = EntitySystem holding all the Processes in the game.
 /// videoDevice  = The video device used for graphics and windowing operations.
 /// inputDevice  = Device used for user input.
+/// time         = Game time subsystem.
 /// log          = Log to write... log messages to.
 bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice input,
-              Logger log) @trusted nothrow
+              GameTime time, Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/entity1.yaml");
 

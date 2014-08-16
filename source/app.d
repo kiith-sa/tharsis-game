@@ -56,12 +56,14 @@ int main(string[] args)
     if(!video.initWindow(width, height, fullscreen)) { return 1; }
     if(!video.initGL()) { return 1; }
 
+    import time.gametime;
+    auto gameTime = scoped!GameTime(1 / 120.0);
 
     import entity.entitysystem;
     import game.mainloop;
-    EntitySystem entitySystem = EntitySystem(video, log);
+    EntitySystem entitySystem = EntitySystem(video, gameTime, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
-    try if(!mainLoop(entitySystem, video, input, log))
+    try if(!mainLoop(entitySystem, video, input, gameTime, log))
     {
         log.critical("Main loop exited with error");
         return 1;

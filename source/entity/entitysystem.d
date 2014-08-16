@@ -47,15 +47,18 @@ private:
     // Process used to render entities' graphics.
     RenderProcess renderer_;
 
+
+    import time.gametime;
 public:
     /** Construct an EntitySystem, initializing Tharsis.
      *
      * Params:
      *
      * video = VideoDevice for any processes that need to draw.
+     * time  = Keeps track of game time.
      * log   = Game log.
      */
-    this(VideoDevice video, Logger log) @safe nothrow //!@nogc
+    this(VideoDevice video, GameTime time, Logger log) @safe nothrow //!@nogc
     {
         log_ = log;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
