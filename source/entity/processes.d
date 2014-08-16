@@ -112,6 +112,9 @@ private:
     // VAO of the axis thingy (showing axes in different colors).
     VAO!Vertex axisThingy_;
 
+    // Entity draws are accumulated here and then drawn at once.
+    VAO!Vertex entitiesBatch_;
+
     // Projection matrix stack.
     MatrixStack!(float, 4) projection_;
 
@@ -229,14 +232,16 @@ public:
         axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
+        entitiesBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
     ~this()
     {
         if(program_ !is null) { program_.__dtor(); }
-        gridVAO_.__dtor();
+        entitiesBatch_.__dtor();
         axisThingy_.__dtor();
+        gridVAO_.__dtor();
     }
 
     /// Draw anything that should be drawn before any entities.
