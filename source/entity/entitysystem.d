@@ -44,9 +44,13 @@ private:
     PrototypeManager prototypeMgr_;
 
 
+
+
     // Process used to render entities' graphics.
     RenderProcess renderer_;
 
+    import tharsis.defaults.components;
+    import tharsis.defaults.processes;
 
     import time.gametime;
 public:
@@ -63,7 +67,10 @@ public:
         log_ = log;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
-                                                  VisualComponent);
+                                                  VisualComponent,
+                                                  SpawnerMultiComponent,
+                                                  TimedTriggerMultiComponent);
+    
         componentTypeMgr_.lock();
 
         entityMgr_ = new DefaultEntityManager(componentTypeMgr_);
@@ -77,10 +84,18 @@ public:
         auto dummyLife     = new CopyProcess!LifeComponent();
         renderer_          = new RenderProcess(video, log);
 
+        auto conditionProc = new TimedTriggerProcess(&time.timeStep);
+        auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
+                                                 componentTypeMgr_);
+
         entityMgr_.registerProcess(dummyPosition);
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
         entityMgr_.registerProcess(renderer_);
+        entityMgr_.registerProcess(conditionProc);
+        entityMgr_.registerProcess(spawner);
+        entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
+
         entityMgr_.registerResourceManager(prototypeMgr_);
 
     /// Spawn entity from specified file as soon as possible.
