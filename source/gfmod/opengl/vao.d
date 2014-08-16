@@ -262,6 +262,15 @@ public:
         return storage_.length;
     }
 
+    /// Is the VAO empty (no vertices) ?
+    bool empty() @safe pure nothrow const @nogc { return length == 0; }
+
+    /** Clear the VAO, deleting all vertices.
+     *
+     * Can only be called while the VAO is unlocked.
+     */
+    void clear() @trusted pure nothrow @nogc { length = 0; }
+
     /** Draw vertices from the VAO directly, without using indices.
      *
      * This is the only way to draw if the VAO has no index type.
