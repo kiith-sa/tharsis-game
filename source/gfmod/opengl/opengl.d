@@ -200,7 +200,7 @@ final class OpenGL
          *
          * Returns: true if at least one OpenGL error was pending. OpenGL error status is cleared.
          */
-        bool runtimeCheck() nothrow
+        bool runtimeCheck() @trusted nothrow
         {
             GLint r = glGetError();
             if (r != GL_NO_ERROR)
