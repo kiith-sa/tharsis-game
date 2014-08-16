@@ -115,10 +115,7 @@ public:
     void ortho(F left, F right, F bottom, F top, F near, F far)
         @safe pure nothrow @nogc
     {
-        // gl3n calculates ortho projection matrix according to the spec,
-        // but for some reason that results in negated near/far.
-        // So we negate them here to cancel the effect.
-        mult(M.orthographic(left, right, bottom, top, -near, -far));
+        mult(M.orthographic(left, right, bottom, top, near, far));
     }
 }
 
