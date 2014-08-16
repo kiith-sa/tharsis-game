@@ -167,7 +167,7 @@ public:
         modelView_  = new MatrixStack!(float, 16)();
         const w = video.width;
         const h = video.height;
-        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -1000, 2000);
+        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -2000, 2000);
 
         import std.math;
         modelView_.rotate(PI / 2 - (PI / 6), vec3(1, 0, 0));
