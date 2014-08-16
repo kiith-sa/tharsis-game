@@ -285,10 +285,40 @@ public:
     }
 
     /// Draw an entity with specified position and visual.
-    void process(ref const PositionComponent position,
-                 ref const VisualComponent visual) @safe nothrow
+    void process(ref const PositionComponent pos,
+                 ref const VisualComponent vis) @safe nothrow
     {
-        // TODO: Do this once we have a grid. 2014-08-12
+        static positions =
+        [
+            vec3( 20, -20, -20),
+            vec3(-20,  20, -20),
+            vec3(-20, -20,  20),
+
+            vec3( 20,  20,  20),
+            vec3(-20,  20, -20),
+            vec3(-20, -20,  20),
+
+            vec3( 20,  20,  20),
+            vec3( 20, -20, -20),
+            vec3(-20,  20, -20),
+
+            vec3( 20,  20,  20),
+            vec3( 20, -20, -20),
+            vec3(-20, -20,  20)
+        ];
+
+        // Draw and empty the batch if we've run out of space.
+        if(entitiesBatch_.capacity - entitiesBatch_.length < positions.length)
+        {
+            drawBatch();
+        }
+
+        foreach(i, v; positions)
+        {
+            entitiesBatch_.put(Vertex(v.x + pos.x, v.y + pos.y, v.z + pos.z,
+                                      Color(vis.r, vis.g, vis.b, vis.a)));
+        }
+    }
 
     /// Draw all batched entities that have not yet been drawn.
     void postProcess() nothrow
@@ -297,5 +327,34 @@ public:
         glDisable(GL_DEPTH_TEST);
     }
 
+private:
+
+    /// Draw all entities batched so far.
+    void drawBatch() @safe nothrow
+    {
+        uniforms_.projection = projection_.top;
+        uniforms_.modelView  = modelView_.top;
+
+        program_.use();
+        scope(exit) { program_.unuse(); }
+
+        entitiesBatch_.lock();
+        scope(exit)
+        {
+            entitiesBatch_.unlock();
+            entitiesBatch_.clear();
+        }
+
+        {
+            if(!entitiesBatch_.bind(program_))
+            {
+                log_.error("Failed to bind a VAO; probably missing vertex attribute "
+                           " in a GLSL program. Will not draw.").assumeWontThrow;
+                return;
+            }
+            scope(exit) { entitiesBatch_.release(); }
+            entitiesBatch_.draw(PrimitiveType.Triangles, 0, entitiesBatch_.length);
+        }
+        gl_.runtimeCheck();
     }
 }
