@@ -21,7 +21,6 @@ import gl3n_extra.color;
 import gl3n_extra.linalg;
 
 
-
 /// Handles rendering of VisualComponents.
 class RenderProcess
 {
@@ -39,9 +38,9 @@ private:
         this(float x, float y, float z) @safe pure nothrow @nogc { position = vec3(x, y, z); }
 
         // Constructor from coords and a color.
-        this(float x, float y, float z, Color c) @safe pure nothrow @nogc 
+        this(float x, float y, float z, Color c) @safe pure nothrow @nogc
         {
-            position = vec3(x, y, z); 
+            position = vec3(x, y, z);
             color    = c;
         }
     }
