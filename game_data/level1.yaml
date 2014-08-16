@@ -1,0 +1,51 @@
+# XXX TRY REMOVING POS
+position:
+    x: 0
+    y: 0
+    z: 0
+spawnerMulti:
+    - spawn:     game_data/entity1.yaml
+      triggerID: 1
+      override:
+        position:
+          x: 100
+          y: 100
+          z: 10
+    - spawn:     game_data/entity1.yaml
+      triggerID: 2
+      override:
+        position:
+          x: 200
+          y: 100
+          z: 10
+    - spawn:     game_data/entity1.yaml
+      triggerID: 3
+      override:
+        position:
+          x: 200
+          y: 200
+          z: 10
+    - spawn:     game_data/entity1.yaml
+      triggerID: 4
+      override:
+        position:
+          x: 200
+          y: 400
+          z: 10
+timedTriggerMulti:
+    - time:      1.0
+      timeLeft:  1.0
+      periodic:  false
+      triggerID: 1
+    - time:      2.0
+      timeLeft:  2.0
+      periodic:  false
+      triggerID: 2
+    - time:      3.0
+      timeLeft:  3.0
+      periodic:  false
+      triggerID: 3
+    - time:      4.0
+      timeLeft:  4.0
+      periodic:  false
+      triggerID: 4

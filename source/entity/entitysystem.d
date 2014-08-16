@@ -105,7 +105,7 @@ public:
     /// fileName = Name of the file to load the entity from.
     void spawnEntityASAP(string fileName) @trusted nothrow
     {
-        auto descriptor = EntityPrototypeResource.Descriptor("game_data/entity1.yaml");
+        auto descriptor = EntityPrototypeResource.Descriptor(fileName);
         const handle    = prototypeMgr_.handle(descriptor);
         prototypesToSpawn_.assumeSafeAppend();
         prototypesToSpawn_ ~= handle;
