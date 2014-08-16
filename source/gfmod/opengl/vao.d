@@ -250,7 +250,7 @@ public:
     {
         assert(state_ == State.Unlocked, "Trying to set length of a locked VAO");
         assert(rhs <= storage_.length, "Can't extend VAO length further than capacity");
-        vertices_ = storage_[0 .. length];
+        vertices_ = storage_[0 .. rhs];
     }
 
     /** Get the maximum number of vertices the VAO can hold.
