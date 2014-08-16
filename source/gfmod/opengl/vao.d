@@ -323,7 +323,7 @@ public:
     {
         assert(state_ == State.Locked,
                "Trying to unlock a buffer that is either bound or not locked");
-        state_ = State.Locked;
+        state_ = State.Unlocked;
     }
 
     /** Bind the VAO for drawing. Must be called before drawing. The VAO must be locked.
