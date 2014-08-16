@@ -10,6 +10,8 @@ module entity.processes;
 import std.exception;
 import std.logger;
 
+import derelict.opengl3.gl3;
+
 import gfmod.opengl.matrixstack;
 import gfmod.opengl.opengl;
 import gfmod.opengl.program;
@@ -231,6 +233,8 @@ public:
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
 
+        glEnable(GL_DEPTH_TEST);
+
         uniforms_.projection = projection_.top;
         uniforms_.modelView  = modelView_.top;
         program_.use();
@@ -266,5 +270,13 @@ public:
                  ref const VisualComponent visual) @safe nothrow
     {
         // TODO: Do this once we have a grid. 2014-08-12
+
+    /// Draw all batched entities that have not yet been drawn.
+    void postProcess() nothrow
+    {
+        if(!entitiesBatch_.empty) { drawBatch(); }
+        glDisable(GL_DEPTH_TEST);
+    }
+
     }
 }
