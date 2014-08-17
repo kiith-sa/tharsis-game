@@ -247,8 +247,11 @@ public:
     /// Draw anything that should be drawn before any entities.
     void preProcess() nothrow
     {
+        //modelView_.rotate(-0.02, vec3(0, 0, 1));
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
+
+        scope(exit) { gl_.runtimeCheck(); }
 
         glEnable(GL_DEPTH_TEST);
 
@@ -258,30 +261,21 @@ public:
 
         scope(exit) { program_.unuse(); }
 
+        if(gridVAO_.bind(program_))
         {
-            if(!gridVAO_.bind(program_))
-            {
-                log_.error("Failed to bind a VAO; probably missing vertex attribute "
-                        " in a GLSL program. Will not draw.").assumeWontThrow;
-                return;
-            }
-            scope(exit) { gridVAO_.release(); }
             gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length - bottomLevelVertices_);
             gridVAO_.draw(PrimitiveType.Triangles, gridVAO_.length - bottomLevelVertices_,
-                                               bottomLevelVertices_);
+                          bottomLevelVertices_);
+            gridVAO_.release();
         }
-        {
-            if(!axisThingy_.bind(program_))
-            {
-                log_.error("Failed to bind a VAO; probably missing vertex attribute "
-                           " in a GLSL program. Will not draw.").assumeWontThrow;
-                return;
-            }
-            scope(exit) { axisThingy_.release(); }
-            axisThingy_.draw(PrimitiveType.Lines, 0, axisThingy_.length);
-        }
+        else { logVAOBindError("gridVAO_"); }
 
-        gl_.runtimeCheck();
+        if(axisThingy_.bind(program_))
+        {
+            axisThingy_.draw(PrimitiveType.Lines, 0, axisThingy_.length);
+            axisThingy_.release();
+        }
+        else { logVAOBindError("axisThingy_"); }
     }
 
     /// Draw an entity with specified position and visual.
@@ -332,6 +326,7 @@ private:
     /// Draw all entities batched so far.
     void drawBatch() @safe nothrow
     {
+        scope(exit) { gl_.runtimeCheck(); }
         uniforms_.projection = projection_.top;
         uniforms_.modelView  = modelView_.top;
 
@@ -345,16 +340,18 @@ private:
             entitiesBatch_.clear();
         }
 
+        if(entitiesBatch_.bind(program_))
         {
-            if(!entitiesBatch_.bind(program_))
-            {
-                log_.error("Failed to bind a VAO; probably missing vertex attribute "
-                           " in a GLSL program. Will not draw.").assumeWontThrow;
-                return;
-            }
-            scope(exit) { entitiesBatch_.release(); }
             entitiesBatch_.draw(PrimitiveType.Triangles, 0, entitiesBatch_.length);
+            entitiesBatch_.release();
         }
-        gl_.runtimeCheck();
+        else { logVAOBindError("entitiesBatch_"); }
+    }
+
+    // Log an error after failing to bind VAO with specified name.
+    void logVAOBindError(string name) @safe nothrow
+    {
+        log_.error("Failed to bind VAO \"%s\"; probably missing vertex attribute in a "
+                  " GLSL program. Will not draw.").assumeWontThrow;
     }
 }
