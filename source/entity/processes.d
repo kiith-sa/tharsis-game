@@ -119,6 +119,8 @@ private:
     // Entity draws are accumulated here and then drawn together.
     VAO!Vertex entitiesBatch_;
 
+    // Bars over selected entities are accumulated here and then drawn together.
+    VAO!Vertex selectionBatch_;
 
     // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
     enum cellSizeScreen_ = vec3u(96, 48, 24);
@@ -224,12 +226,15 @@ public:
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
         entitiesBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
+
+        selectionBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
     ~this()
     {
         if(program_ !is null) { program_.__dtor(); }
+        selectionBatch_.__dtor();
         entitiesBatch_.__dtor();
         axisThingy_.__dtor();
         gridVAO_.__dtor();
@@ -306,12 +311,36 @@ public:
         }
     }
 
+    /// Draw a selected entity.
+    void process(ref const PositionComponent pos,
+                 ref const VisualComponent vis,
+                 ref const SelectionComponent select) @safe nothrow
+    {
+        // Draw and empty the batch if we've run out of space.
+        if(selectionBatch_.capacity - selectionBatch_.length < 2)
+        {
+            uniforms_.projection = camera_.projection;
+            uniforms_.modelView  = mat4.identity;
+            drawBatch(selectionBatch_, PrimitiveType.Lines);
+        }
+
+        // Transform to 2D space, but not screen space.
+        vec2 coords = vec2(camera_.view * vec4(pos.x, pos.y, pos.z, 0));
+        // Z is really far in front so it's in front of all depth-buffered draws.
+        selectionBatch_.put(Vertex(coords.x - 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
+        selectionBatch_.put(Vertex(coords.x + 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
+
+        process(pos, vis);
+    }
+
     /// Draw all batched entities that have not yet been drawn.
     void postProcess() nothrow
     {
         uniforms_.projection = camera_.projection;
         uniforms_.modelView  = camera_.view;
         if(!entitiesBatch_.empty) { drawBatch(entitiesBatch_, PrimitiveType.Triangles); }
+        uniforms_.modelView  = mat4.identity;
+        if(!selectionBatch_.empty) { drawBatch(selectionBatch_, PrimitiveType.Lines); }
         glDisable(GL_DEPTH_TEST);
     }
 
