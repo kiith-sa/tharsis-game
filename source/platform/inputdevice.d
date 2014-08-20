@@ -14,30 +14,40 @@ import derelict.sdl2.sdl;
 
 
 /// Handles user input (keyboard, windowing input such as closing the window, etc.).
-class InputDevice
+final class InputDevice
 {
 private:
     // Game log.
     Logger log_;
 
+    // Keeps track of mouse input.
+    Mouse mouse_;
+
     // Does the user want to quit the program?
     bool quit_;
 
 public:
-    /**
-     * Construct an InputDevice logging to specified log.
+    /** Construct an InputDevice.
+     *
+     * Params:
+     *
+     * getHeight = Delegate that returns window height.
+     * log       = Game log.
      */
-    this(Logger log) @safe pure nothrow @nogc
+    this(long delegate() @safe pure nothrow @nogc getHeight, Logger log) @safe nothrow
     {
-        log_ = log;
+        log_   = log;
+        mouse_ = new Mouse(getHeight);
     }
 
     /// Collect user input.
     void collectInput() @trusted nothrow @nogc 
     {
+        mouse_.update();
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
+            mouse_.handleEvent(e);
             // Quit if the user closes the window or presses Escape.
             if(e.type == SDL_QUIT) { quit_ = true; }
             if(e.type == SDL_KEYDOWN) switch(e.key.keysym.sym)
@@ -47,6 +57,9 @@ public:
             }
         }
     }
+
+    /// Get access to mouse input.
+    const(Mouse) mouse() @safe pure nothrow @nogc { return mouse_; }
 
     /// Does the user want to quit the program?
     bool quit() @safe pure nothrow const @nogc { return quit_; }

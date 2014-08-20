@@ -52,10 +52,10 @@ int main(string[] args)
     import platform.inputdevice;
     import platform.videodevice;
     auto video = scoped!VideoDevice(log);
-    auto input = scoped!InputDevice(log);
     if(!video.initWindow(width, height, fullscreen)) { return 1; }
     if(!video.initGL()) { return 1; }
 
+    auto input = scoped!InputDevice(&video.height, log);
     import time.gametime;
     auto gameTime = scoped!GameTime(1 / 120.0);
 
