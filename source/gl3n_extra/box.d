@@ -224,6 +224,14 @@ public:
         return (min == other.min) && (max == other.max);
     }
 
+    /// Comparison with another Box (for sorting).
+    int opCmp(ref const Box rhs) @safe pure nothrow const @nogc
+    {
+        const cmpMin = min.opCmp(rhs.min);
+        if(cmpMin != 0) { return cmpMin; }
+        return max.opCmp(rhs.max);
+    }
+
 private:
     enum isBox = true;
     enum _size = N;

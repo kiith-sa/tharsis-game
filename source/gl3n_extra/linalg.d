@@ -34,7 +34,7 @@ alias Matrix!(double, 3, 4) mat34d;
 
 // Called setLength() because length() doesn't seem to work correctly with UFCS.
 /// Set length of the vector, resizing it but preserving its direction.
-void setLength(T, size_t dim)(ref Vector!(T, dim) vector, T length) @safe pure nothrow @nogc 
+void setLength(T, size_t dim)(ref Vector!(T, dim) vector, T length) @safe pure nothrow @nogc
 {
     const oldLength = vector.length;
     assert(oldLength != 0.0f, "Cannot set length of a zero vector!");
