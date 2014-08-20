@@ -8,7 +8,7 @@ import gl3n.linalg;
  * This stack always exposes both the top element and its inverse.
  */
 class MatrixStack(F, size_t depth = 32)
-    if(depth > 0 && (is(F == float) || is(F == duble)))
+    if(depth > 0 && (is(F == float) || is(F == double)))
 {
 private:
     size_t _top; // index of top matrix
