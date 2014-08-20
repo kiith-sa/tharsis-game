@@ -116,7 +116,7 @@ private:
     // VAO of the axis thingy (showing axes in different colors).
     VAO!Vertex axisThingy_;
 
-    // Entity draws are accumulated here and then drawn at once.
+    // Entity draws are accumulated here and then drawn together.
     VAO!Vertex entitiesBatch_;
 
 
@@ -213,11 +213,13 @@ public:
 
         axisThingy_ = new VAO!Vertex(gl_, new Vertex[6]);
 
+        // X (red)
         axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
         axisThingy_.put(Vertex(110, 10,  10,  rgb!"FF0000"));
+        // Y (green)
         axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
-
         axisThingy_.put(Vertex(10,  110, 10,  rgb!"00FF00"));
+        // Z (blue)
         axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
