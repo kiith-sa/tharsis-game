@@ -61,7 +61,7 @@ int main(string[] args)
 
     import entity.entitysystem;
     import game.mainloop;
-    EntitySystem entitySystem = EntitySystem(video, gameTime, log);
+    EntitySystem entitySystem = EntitySystem(video, input, gameTime, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
     try if(!mainLoop(entitySystem, video, input, gameTime, log))
     {

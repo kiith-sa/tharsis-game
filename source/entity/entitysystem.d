@@ -59,10 +59,12 @@ public:
      * Params:
      *
      * video = VideoDevice for any processes that need to draw.
+     * input = User input device.
      * time  = Keeps track of game time.
      * log   = Game log.
      */
-    this(VideoDevice video, GameTime time, Logger log) @safe nothrow //!@nogc
+    this(VideoDevice video, InputDevice input, GameTime time, Logger log)
+        @safe nothrow //!@nogc
     {
         log_ = log;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
