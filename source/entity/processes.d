@@ -24,7 +24,7 @@ import gl3n_extra.linalg;
 
 
 /// Handles rendering of VisualComponents.
-class RenderProcess
+final class RenderProcess
 {
 private:
     // A simple 3D vertex.
