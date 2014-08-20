@@ -40,3 +40,34 @@ struct VisualComponent
 
     enum ushort ComponentTypeID = userComponentTypeID!2;
 }
+
+
+/// Added to entities that are picked by the mouse (clicked or hovered over).
+struct PickingComponent
+{
+    /// Picking 'state'; is the entity picked or just hovered over by the mouse?
+    enum State: ubyte
+    {
+        MouseOver,
+        Picked
+    }
+
+    /// Picking 'state'.
+    State state;
+
+    import gl3n_extra.box;
+    /** Area picked by the mouse on the screen.
+     *
+     * If the mouse is dragged, this is a rectangle, otherwise it's a single point.
+     */
+    box2i box;
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// We usually don't pick many entities.
+    enum minPreallocPerEntity = 0.1;
+
+    enum ushort ComponentTypeID = userComponentTypeID!3;
+}
+

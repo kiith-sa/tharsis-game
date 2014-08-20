@@ -347,3 +347,75 @@ private:
                   " GLSL program. Will not draw.").assumeWontThrow;
     }
 }
+
+
+/// Process used to determine which entities are being 'picked' by the mouse.
+final class MousePickingProcess
+{
+private:
+    // Game log.
+    Logger log_;
+
+    // 2D isometric camera used to get screen coordinates of objects.
+    const(Camera) camera_;
+
+    import platform.inputdevice;
+    // Used to read mouse state.
+    const(Mouse) mouse_;
+
+    import gl3n_extra.box;
+    // The area selected by the mouse. Point if clicking, rectangle if dragging.
+    box2i selectionBox_;
+
+    // The radius around selectionBox_ where all entities are picked.
+    size_t pickingRadius_ = 8;
+
+    alias State = PickingComponent.State;
+
+    // 'State' of picking. Picked if LMB is clicked, MouseOver otherwise.
+    State state_ = State.MouseOver;
+
+public:
+    alias PickingComponent FutureComponent;
+
+    /** Construct a MousePickingProcess.
+     *
+     * Params:
+     *
+     * log    = Game log.
+     * mouse  = Provides access to mouse state.
+     * camera = 2D isometric camera.
+     */
+    this(const(Camera) camera, const(Mouse) mouse, Logger log) @safe pure nothrow @nogc
+    {
+        camera_ = camera;
+        mouse_  = mouse;
+        log_    = log;
+    }
+
+    /// Determine the selection area and whether the mouse is clicked or not.
+    void preProcess() @safe pure nothrow @nogc
+    {
+        state_ = mouse_.clicked(Mouse.Button.Left) ? State.Picked : State.MouseOver;
+        vec2i mousePos = vec2i(mouse_.x, mouse_.y);
+
+        selectionBox_ = box2i(mouse_.pressedCoords(Mouse.Button.Left), mousePos);
+    }
+
+    /// Determine if an entity is being picked.
+    void process(ref const PositionComponent pos, ref PickingComponent* picking)
+        nothrow
+    {
+        const screenCoords = camera_.worldToScreen(vec3(pos.x, pos.y, pos.z));
+
+        // If there is a PickingComponent from the previous frame, remove it.
+        if(selectionBox_.distance(screenCoords) < pickingRadius_)
+        {
+            *picking = PickingComponent(state_, selectionBox_);
+            return;
+        }
+        picking = null;
+    }
+}
+
+

@@ -18,6 +18,7 @@ import tharsis.entity.prototypemanager;
 
 import entity.components;
 import entity.processes;
+import platform.inputdevice;
 import platform.videodevice;
 
 
@@ -70,6 +71,7 @@ public:
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
                                                   VisualComponent,
+                                                  PickingComponent,
                                                   SpawnerMultiComponent,
                                                   TimedTriggerMultiComponent);
 
@@ -87,6 +89,7 @@ public:
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
         renderer_          = new RenderProcess(video, camera, log);
+        auto picking       = new MousePickingProcess(camera, input.mouse, log);
 
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
         auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
@@ -96,6 +99,7 @@ public:
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
         entityMgr_.registerProcess(renderer_);
+        entityMgr_.registerProcess(picking);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
         entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
