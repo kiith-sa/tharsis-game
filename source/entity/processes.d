@@ -183,8 +183,8 @@ public:
             y = 0.0;
             foreach(yCell; 0 .. gridH_)
             {
-                gridVAO_.put(Vertex(x, y, 10, white));
-                gridVAO_.put(Vertex(x, y + cellSizeWorld_.y, 10, white));
+                gridVAO_.put(Vertex(x, y, 0, white));
+                gridVAO_.put(Vertex(x, y + cellSizeWorld_.y, 0, white));
                 y += cellSizeWorld_.y;
             }
             x += cellSizeWorld_.x;
@@ -195,8 +195,8 @@ public:
             x = 0.0;
             foreach(xCell; 0 .. gridW_)
             {
-                gridVAO_.put(Vertex(x, y, 10, white));
-                gridVAO_.put(Vertex(x + cellSizeWorld_.x, y, 10, white));
+                gridVAO_.put(Vertex(x, y, 0, white));
+                gridVAO_.put(Vertex(x + cellSizeWorld_.x, y, 0, white));
                 x += cellSizeWorld_.x;
             }
             y += cellSizeWorld_.y;
