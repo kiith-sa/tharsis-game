@@ -17,6 +17,7 @@ import gfmod.opengl.opengl;
 import gfmod.opengl.program;
 import gfmod.opengl.vao;
 
+import game.camera;
 import entity.components;
 import platform.videodevice;
 import gl3n_extra.color;
@@ -85,6 +86,9 @@ private:
     // The video device (screen + GL).
     VideoDevice video_;
 
+    // 2D isometric camera used for projection and view matrices.
+    const(Camera) camera_;
+
     // OpenGL wrapper.
     OpenGL gl_;
 
@@ -115,12 +119,6 @@ private:
     // Entity draws are accumulated here and then drawn at once.
     VAO!Vertex entitiesBatch_;
 
-    // Projection matrix stack.
-    MatrixStack!(float, 4) projection_;
-
-    // Modelview matrix stack.
-    MatrixStack!(float, 16) modelView_;
-
 
     // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
     enum cellSizeScreen_ = vec3u(96, 48, 24);
@@ -139,13 +137,15 @@ public:
      * Params:
      *
      * video = The video device.
+     * camera = Isometric camera.
      * log   = Game log.
      */
-    this(VideoDevice video, Logger log) @trusted nothrow
+    this(VideoDevice video, const(Camera) camera, Logger log) @trusted nothrow
     {
-        log_   = log;
-        video_ = video;
-        gl_    = video_.gl;
+        log_    = log;
+        video_  = video;
+        camera_ = camera;
+        gl_     = video_.gl;
 
         gridW_ = 64;
         gridH_ = 64;
@@ -169,17 +169,6 @@ public:
             assert(false, "Unexpected exception in mainLoop()");
         }
 
-
-        // 4 levels should be enough for projection.
-        projection_ = new MatrixStack!(float, 4)();
-        modelView_  = new MatrixStack!(float, 16)();
-        const w = video.width;
-        const h = video.height;
-        projection_.ortho(-w / 2, w / 2, -h / 2, h / 2, -2000, 2000);
-
-        import std.math;
-        modelView_.rotate(PI / 2 - (PI / 6), vec3(1, 0, 0));
-        modelView_.rotate(PI / 4, vec3(0, 0, 1));
 
         auto vaoSpace = new Vertex[2 * gridW_ * (gridH_ + 1) +
                                    2 * gridH_ * (gridW_ + 1) +
@@ -247,7 +236,6 @@ public:
     /// Draw anything that should be drawn before any entities.
     void preProcess() nothrow
     {
-        //modelView_.rotate(-0.02, vec3(0, 0, 1));
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
 
@@ -255,8 +243,8 @@ public:
 
         glEnable(GL_DEPTH_TEST);
 
-        uniforms_.projection = projection_.top;
-        uniforms_.modelView  = modelView_.top;
+        uniforms_.projection = camera_.projection;
+        uniforms_.modelView  = camera_.view;
         program_.use();
 
         scope(exit) { program_.unuse(); }
@@ -304,7 +292,9 @@ public:
         // Draw and empty the batch if we've run out of space.
         if(entitiesBatch_.capacity - entitiesBatch_.length < positions.length)
         {
-            drawBatch();
+            uniforms_.projection = camera_.projection;
+            uniforms_.modelView  = camera_.view;
+            drawBatch(entitiesBatch_, PrimitiveType.Triangles);
         }
 
         foreach(i, v; positions)
@@ -317,35 +307,35 @@ public:
     /// Draw all batched entities that have not yet been drawn.
     void postProcess() nothrow
     {
-        if(!entitiesBatch_.empty) { drawBatch(); }
+        uniforms_.projection = camera_.projection;
+        uniforms_.modelView  = camera_.view;
+        if(!entitiesBatch_.empty) { drawBatch(entitiesBatch_, PrimitiveType.Triangles); }
         glDisable(GL_DEPTH_TEST);
     }
 
 private:
 
     /// Draw all entities batched so far.
-    void drawBatch() @safe nothrow
+    void drawBatch(VAO!Vertex batch, PrimitiveType type) @safe nothrow
     {
         scope(exit) { gl_.runtimeCheck(); }
-        uniforms_.projection = projection_.top;
-        uniforms_.modelView  = modelView_.top;
 
         program_.use();
         scope(exit) { program_.unuse(); }
 
-        entitiesBatch_.lock();
+        batch.lock();
         scope(exit)
         {
-            entitiesBatch_.unlock();
-            entitiesBatch_.clear();
+            batch.unlock();
+            batch.clear();
         }
 
-        if(entitiesBatch_.bind(program_))
+        if(batch.bind(program_))
         {
-            entitiesBatch_.draw(PrimitiveType.Triangles, 0, entitiesBatch_.length);
-            entitiesBatch_.release();
+            batch.draw(type, 0, batch.length);
+            batch.release();
         }
-        else { logVAOBindError("entitiesBatch_"); }
+        else { logVAOBindError("some batch"); }
     }
 
     // Log an error after failing to bind VAO with specified name.
