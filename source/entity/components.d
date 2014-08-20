@@ -71,3 +71,18 @@ struct PickingComponent
     enum ushort ComponentTypeID = userComponentTypeID!3;
 }
 
+
+/// Added to entities that are selected.
+struct SelectionComponent
+{
+    // Empty for now.
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// We usually don't select many entities.
+    enum minPreallocPerEntity = 0.1;
+
+    enum ushort ComponentTypeID = userComponentTypeID!4;
+}
+

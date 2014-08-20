@@ -419,3 +419,76 @@ public:
 }
 
 
+/// Handles entity selection (player selecting units).
+final class SelectionProcess
+{
+private:
+    // Game log.
+    Logger log_;
+    import platform.inputdevice;
+    //  Mouse input access (for deselecting with left click).
+    const(Mouse) mouse_;
+
+    // Should any selected entities be deselected during this frame?
+    bool deselect_;
+
+public:
+    alias FutureComponent = SelectionComponent;
+    /** Construct a SelectionProcess.
+     *
+     * Params:
+     *
+     * mouse = Mouse input access (for deselecting with left click).
+     * log   = Game log.
+     */
+    this(const(Mouse) mouse, Logger log) @safe pure nothrow @nogc
+    {
+        mouse_ = mouse;
+        log_   = log;
+    }
+
+    /// Determine if we should deselect current selection.
+    void preProcess() nothrow
+    {
+        // If LMB is pressed, deselect current selection.
+        deselect_ = mouse_.clicked(Mouse.Button.Left);
+    }
+
+    /// Select a picked entity (if really picked, not just hovered).
+    void process(ref const PickingComponent pick, ref SelectionComponent* select)
+        nothrow
+    {
+        if(pick.state == PickingComponent.State.Picked)
+        {
+            *select = SelectionComponent();
+            return;
+        }
+        select = null;
+    }
+
+    /// Keep an entity selected or deselect it depending on mouse input this frame.
+    void process(ref const SelectionComponent past, ref SelectionComponent* future)
+        nothrow
+    {
+        if(deselect_)
+        {
+            future = null;
+            return;
+        }
+        *future = past;
+    }
+
+    /// Handle an entity that is both picked/hovered and selected.
+    void process(ref const PickingComponent pick,
+                 ref const SelectionComponent selectPast,
+                 ref SelectionComponent* selectFuture)
+        nothrow
+    {
+        // If a selected entity is picked again, just 're-select' it.
+        // If it's not picked, check if we need to deselect it.
+        (pick.state == PickingComponent.State.Picked) ? process(pick, selectFuture)
+                                                      : process(selectPast, selectFuture);
+    }
+}
+
+
