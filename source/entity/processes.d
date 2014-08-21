@@ -641,3 +641,106 @@ import tharsis.defaults.copyprocess;
 /// Until a need to modify engines at runtime comes up, this can be a simple CopyProcess.
 alias EngineProcess = CopyProcess!EngineComponent;
 
+/// Updates DynamicComponents of entities (velocity for now).
+final class DynamicProcess
+{
+private:
+    // Game log.
+    Logger log_;
+
+public:
+    alias FutureComponent = DynamicComponent;
+
+    /** Construct a DynamicProcess.
+     *
+     * Params:
+     *
+     * log = The game log.
+     */
+    this(Logger log) @safe pure nothrow @nogc
+    {
+        log_ = log;
+    }
+
+    /** Update dynamics of entities with an engine.
+     *
+     * CommandComponent is used to tell the engine what to do (this will change once
+     * there is a PathingProcess between here and CommandProcess)
+     *
+     * PositionComponent is needed to determine how we need to use the engine to get
+     * to the command's target position. This may change too once PathingProcess exists.
+     */
+    void process(ref const DynamicComponent dynamicPast,
+                 ref const EngineComponent engine,
+                 ref const CommandComponent command,
+                 ref const PositionComponent pos,
+                 out DynamicComponent dynamicFuture)
+        nothrow
+    {
+        // By default, don't change the component.
+        dynamicFuture = dynamicPast;
+        with(CommandComponent.Type) final switch(command.type)
+        {
+            case MoveTo:
+                // Current position.
+                const vec3 p      = vec3(pos.x, pos.y, pos.z);
+                const vec3 target = command.moveTo;
+                // Vector from current position to target.
+                const vec3 toTarget = target - p;
+                const vec3 velocity = vec3(dynamicPast.velocityX,
+                                           dynamicPast.velocityY,
+                                           dynamicPast.velocityZ);
+                const vec3 currentDir = velocity.normalized;
+                // Direction we want to go in.
+                const vec3 wantedDir  = toTarget.normalized;
+
+                // Direction to apply the acceleration in. We want to cancel the current
+                // direction and replace it with wanted direction.
+                const vec3 accelDir = (wantedDir - currentDir * 0.5).normalized;
+                const vec3 accel = engine.acceleration * accelDir;
+
+                vec3 futureVelocity = velocity + accel;
+                if(futureVelocity.length >= engine.maxSpeed)
+                {
+                    futureVelocity.setLength(engine.maxSpeed);
+                }
+
+                log_.info(futureVelocity).assumeWontThrow();
+
+                dynamicFuture = DynamicComponent(futureVelocity.x,
+                                                 futureVelocity.y,
+                                                 futureVelocity.z);
+                return;
+        }
+    }
+
+    /// Keep dynamic components of entities that are not being accelerated by anything.
+    void process(ref const DynamicComponent dynamicPast,
+                 out DynamicComponent dynamicFuture)
+        nothrow
+    {
+        dynamicFuture = dynamicPast;
+    }
+
+    /// Decelerate entities with that have an engine but no command to move anywhere.
+    void process(ref const DynamicComponent dynamicPast,
+                 ref const EngineComponent engine,
+                 ref const PositionComponent pos,
+                 out DynamicComponent dynamicFuture)
+        nothrow
+    {
+        vec3 velocity = vec3(dynamicPast.velocityX,
+                             dynamicPast.velocityY,
+                             dynamicPast.velocityZ);
+        if(velocity.length == 0.0f)
+        {
+            dynamicFuture = dynamicPast;
+            return;
+        }
+
+        import std.algorithm;
+        velocity.setLength(max(0.0f, velocity.length - engine.acceleration));
+        dynamicFuture = DynamicComponent(velocity.x, velocity.y, velocity.z);
+    }
+}
+

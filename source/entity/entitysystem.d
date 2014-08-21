@@ -75,6 +75,7 @@ public:
                                                   SelectionComponent,
                                                   CommandComponent,
                                                   EngineComponent,
+                                                  DynamicComponent,
                                                   SpawnerMultiComponent,
                                                   TimedTriggerMultiComponent);
 
@@ -96,6 +97,7 @@ public:
         auto selection     = new SelectionProcess(input.mouse, log);
         auto command       = new CommandProcess(input.mouse, camera, log);
         auto engine        = new EngineProcess();
+        auto dynamic       = new DynamicProcess(log);
 
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
         auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
@@ -111,6 +113,7 @@ public:
         entityMgr_.registerProcess(engine);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
+        entityMgr_.registerProcess(dynamic);
         entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
 
         entityMgr_.registerResourceManager(prototypeMgr_);

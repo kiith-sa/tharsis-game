@@ -12,6 +12,7 @@ import tharsis.entity.componenttypeinfo;
 /// Component storing the position (and only the position) of an entity.
 struct PositionComponent
 {
+    // TODO: (PREREQ: OBJECTS MOVING ON GRID) 2014-08-10
     /// X/Y/Z coordinates of the entity.
     @("relative") float x;
     @("relative") float y;
@@ -140,3 +141,23 @@ struct EngineComponent
 }
 
 
+/// Represents physical movement of an entity (for now just its velocity).
+struct DynamicComponent
+{
+    // XXX really need vec3 support in Source...
+    /// Velocity of the entity.
+    @("relative") float velocityX;
+    /// Ditto.
+    @("relative") float velocityY;
+    /// Ditto.
+    @("relative") float velocityZ;
+
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// Most entities are capable of movement.
+    enum minPreallocPerEntity = 0.7;
+
+    enum ushort ComponentTypeID = userComponentTypeID!7;
+}
