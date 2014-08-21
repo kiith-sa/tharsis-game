@@ -85,11 +85,11 @@ public:
 
         prototypeMgr_ = new PrototypeManager(componentTypeMgr_, entityMgr_);
 
-        import tharsis.defaults.copyprocess;
         import game.camera;
         auto camera = new Camera(video.width, video.height);
         
         auto dummyPosition = new CopyProcess!PositionComponent();
+        import tharsis.defaults.copyprocess;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
         renderer_          = new RenderProcess(video, camera, log);
@@ -98,12 +98,12 @@ public:
         auto command       = new CommandProcess(input.mouse, camera, log);
         auto engine        = new EngineProcess();
         auto dynamic       = new DynamicProcess(log);
+        auto position      = new PositionProcess(time, log);
 
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
         auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
                                                  componentTypeMgr_);
 
-        entityMgr_.registerProcess(dummyPosition);
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
         entityMgr_.registerProcess(renderer_);
@@ -111,6 +111,7 @@ public:
         entityMgr_.registerProcess(selection);
         entityMgr_.registerProcess(command);
         entityMgr_.registerProcess(engine);
+        entityMgr_.registerProcess(position);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
         entityMgr_.registerProcess(dynamic);

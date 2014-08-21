@@ -744,3 +744,49 @@ public:
     }
 }
 
+
+/// Applies DynamicComponents to PositionComponents, updating entity positions.
+final class PositionProcess
+{
+private:
+    // Game log.
+    Logger log_;
+
+    import time.gametime;
+    // Game time for access to time step.
+    const(GameTime) gameTime_;
+
+public:
+    alias FutureComponent = PositionComponent;
+
+    /** Construct a PositionProcess.
+     *
+     * Params:
+     *
+     * gameTime = Game time for access to time step.
+     * log      = The game log.
+     */
+    this(const(GameTime) gameTime, Logger log) @safe pure nothrow @nogc
+    {
+        gameTime_ = gameTime;
+        log_      = log;
+    }
+
+    /// Update position of an entity with a dynamic component.
+    void process(ref const PositionComponent posPast,
+                 ref const DynamicComponent dynamic,
+                 out PositionComponent posFuture) nothrow
+    {
+        const timeStep = gameTime_.timeStep;
+        posFuture.x = posPast.x + timeStep * dynamic.velocityX;
+        posFuture.y = posPast.y + timeStep * dynamic.velocityY;
+        posFuture.z = posPast.z + timeStep * dynamic.velocityZ;
+    }
+
+    /// Keep position of an entity that has no DynamicComponent.
+    void process(ref const PositionComponent posPast, out PositionComponent posFuture)
+        nothrow
+    {
+        posFuture = posPast;
+    }
+}

@@ -12,7 +12,10 @@ import tharsis.entity.componenttypeinfo;
 /// Component storing the position (and only the position) of an entity.
 struct PositionComponent
 {
-    // TODO: (PREREQ: OBJECTS MOVING ON GRID) 2014-08-10
+    // TODO: (PREREQ: NONE) 2014-08-10
+    // vec3 (need to make it work with Tharsis - probably need custom
+    // construction in D:YAML) - somehow add that constructor in defaults so it's
+    // reusable by users of tharsis-full
     /// X/Y/Z coordinates of the entity.
     @("relative") float x;
     @("relative") float y;
