@@ -43,8 +43,7 @@ SDL_Window* createGLWindow(size_t w, size_t h, Flag!"fullscreen" fullscreen)
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,   8);
     // Double buffering to avoid tearing
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    // Depth buffer. Not useful when drawing a triangle, but almost always
-    // useful when drawing 3D
+    // Depth buffer. Needed for 3D.
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
 
     auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
