@@ -705,8 +705,6 @@ public:
                     futureVelocity.setLength(engine.maxSpeed);
                 }
 
-                log_.info(futureVelocity).assumeWontThrow();
-
                 dynamicFuture = DynamicComponent(futureVelocity.x,
                                                  futureVelocity.y,
                                                  futureVelocity.z);
