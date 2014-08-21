@@ -2,6 +2,10 @@ position:
     x: 100
     y: 200
     z: 50
+dynamic:
+    velocityX: 0
+    velocityY: 0
+    velocityZ: 0
 visual:
     r: 255
     g: 0

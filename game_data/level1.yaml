@@ -33,19 +33,19 @@ spawnerMulti:
           y: 400
           z: 10
 timedTriggerMulti:
+    - time:      0.5
+      timeLeft:  0.5
+      periodic:  false
+      triggerID: 1
     - time:      1.0
       timeLeft:  1.0
       periodic:  false
-      triggerID: 1
-    - time:      2.0
-      timeLeft:  2.0
-      periodic:  false
       triggerID: 2
-    - time:      3.0
-      timeLeft:  3.0
+    - time:      1.5
+      timeLeft:  1.5
       periodic:  false
       triggerID: 3
-    - time:      4.0
-      timeLeft:  4.0
+    - time:      2.0
+      timeLeft:  2.0
       periodic:  false
       triggerID: 4
