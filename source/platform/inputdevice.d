@@ -82,29 +82,30 @@ private:
     import std.typecons;
     import gl3n_extra.linalg;
     // Did the user finish a click with a button during this update?
-    Flag!"click"[5] click_;
+    Flag!"click"[Button.max + 1] click_;
 
     // Did the user finish a doubleclick with a button during this update?
-    Flag!"doubleClick"[5] doubleClick_;
+    Flag!"doubleClick"[Button.max + 1] doubleClick_;
 
     // State of all (well, at most 5) mouse buttons.
-    Flag!"pressed"[5] buttons_;
+    Flag!"pressed"[Button.max + 1] buttons_;
 
     // Coordinates where each button was last pressed (for dragging).
-    vec2i[5] pressedCoords_;
+    vec2i[Button.max + 1] pressedCoords_;
 
     // Gets the current window height.
     long delegate() @safe pure nothrow @nogc getHeight_;
 
 public:
     /// Enumerates mouse buttons.
-    enum Button
+    enum Button: ubyte
     {
-        Left   = 0,
-        Middle = 1,
-        Right  = 2,
-        X1     = 3,
-        X2     = 4
+        Left    = 0,
+        Middle  = 1,
+        Right   = 2,
+        X1      = 3,
+        X2      = 4,
+        Unknown = ubyte.max
     }
 
     /** Construct a Mouse and initialize button states.
@@ -174,8 +175,8 @@ private:
                 case SDL_BUTTON_RIGHT:  return Button.Right;
                 case SDL_BUTTON_X1:     return Button.X1;
                 case SDL_BUTTON_X2:     return Button.X2;
-                // SDL should not report events even if there are other buttons
-                default: assert(false, "Unknown mouse button");
+                // SDL should not report any other value for mouse buttons... but it does.
+                default: return Button.Unknown; // assert(false, "Unknown mouse button");
             }
         }
         switch(e.type)
