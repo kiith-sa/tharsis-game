@@ -74,10 +74,20 @@ private:
     // Y coordinate of mouse position.
     int y_;
 
+    // Y movement of mouse since the last update.
+    int xMovement_;
+    // Y movement of mouse since the last update.
+    int yMovement_;
+
     // X coordinate of the mouse wheel (if the wheel supports horizontal scrolling).
     int wheelX_;
     // Y coordinate of the mouse wheel (aka scrolling with a normal wheel).
     int wheelY_;
+
+    // X movement of the wheel since the last update.
+    int wheelYMovement_;
+    // Y movement of the wheel since the last update.
+    int wheelXMovement_;
 
     import std.typecons;
     import gl3n_extra.linalg;
@@ -118,6 +128,7 @@ public:
     {
         getHeight_ = getHeight;
         const bits = SDL_GetMouseState(&x_, &y_);
+        xMovement_ = yMovement_ = 0;
         y_ = cast(int)(getHeight_() - y_);
         buttons_[0] = bits & SDL_BUTTON_LMASK  ? Yes.pressed : No.pressed;
         buttons_[1] = bits & SDL_BUTTON_MMASK  ? Yes.pressed : No.pressed;
@@ -132,11 +143,23 @@ public:
     /// Get Y coordinate of mouse position.
     int y() @safe pure nothrow const @nogc { return y_; }
 
+    /// Get X movement of mouse since the last update.
+    int xMovement() @safe pure nothrow const @nogc { return xMovement_; }
+
+    /// Get Y movement of mouse since the last update.
+    int yMovement() @safe pure nothrow const @nogc { return yMovement_; }
+
     /// Get X coordinate of the mouse wheel (if it supports horizontal scrolling).
     int wheelX() @safe pure nothrow const @nogc { return wheelX_; }
 
     /// Get Y coordinate of the mouse wheel.
     int wheelY() @safe pure nothrow const @nogc { return wheelY_; }
+
+    /// Get the X movement of the wheel since the last update.
+    int wheelXMovement() @safe pure nothrow const @nogc { return wheelXMovement_; }
+
+    /// Get the Y movement of the wheel since the last update.
+    int wheelYMovement() @safe pure nothrow const @nogc { return wheelYMovement_; }
 
     /// Did the user finish a double click during this update?
     Flag!"doubleClick" doubleClicked(Button button) @safe pure nothrow const @nogc
@@ -185,6 +208,8 @@ private:
             case SDL_MOUSEWHEEL:
                 wheelX_ += e.wheel.x;
                 wheelY_ += e.wheel.y;
+                wheelXMovement_ = e.wheel.x;
+                wheelYMovement_ = e.wheel.y;
                 break;
             case SDL_MOUSEBUTTONUP:
                 const b = button(e.button.button);
@@ -204,9 +229,15 @@ private:
     /// Update any mouse state that must be updated every frame.
     void update() @system nothrow @nogc
     {
+        wheelXMovement_ = 0;
+        wheelYMovement_ = 0;
         click_[]       = No.click;
         doubleClick_[] = No.doubleClick;
+        const oldX = x_;
+        const oldY = y_;
         SDL_GetMouseState(&x_, &y_);
         y_ = cast(int)(getHeight_() - y_);
+        xMovement_ = x_ - oldX;
+        yMovement_ = y_ - oldY;
     }
 }
