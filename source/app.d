@@ -64,11 +64,14 @@ int main(string[] args)
 
     import game.camera;
     auto camera        = new Camera(video.width, video.height);
+    auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
+
     import entity.entitysystem;
-    import game.mainloop;
     auto entitySystem = EntitySystem(video, input, gameTime, camera, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
-    try if(!mainLoop(entitySystem, video, input, gameTime, log))
+
+    import game.mainloop;
+    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, log))
     {
         log.critical("Main loop exited with error");
         return 1;

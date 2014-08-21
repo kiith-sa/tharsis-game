@@ -8,6 +8,7 @@ module game.mainloop;
 
 import std.logger;
 
+import game.camera;
 import entity.entitysystem;
 import platform.inputdevice;
 import platform.videodevice;
@@ -18,13 +19,18 @@ import time.gametime;
 ///
 /// Params:
 ///
-/// entitySystem = EntitySystem holding all the Processes in the game.
-/// videoDevice  = The video device used for graphics and windowing operations.
-/// inputDevice  = Device used for user input.
-/// time         = Game time subsystem.
-/// log          = Log to write... log messages to.
-bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice input,
-              GameTime time, Logger log) @trusted nothrow
+/// entitySystem  = EntitySystem holding all the Processes in the game.
+/// videoDevice   = The video device used for graphics and windowing operations.
+/// inputDevice   = Device used for user input.
+/// time          = Game time subsystem.
+/// cameraControl = Handles camera control by the user.
+/// log           = Log to write... log messages to.
+bool mainLoop(ref EntitySystem entitySystem,
+              VideoDevice video,
+              InputDevice input,
+              GameTime time,
+              CameraControl cameraControl,
+              Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
 
@@ -36,6 +42,7 @@ bool mainLoop(ref EntitySystem entitySystem, VideoDevice video, InputDevice inpu
         while(time.timeToUpdate())
         {
             input.collectInput();
+            cameraControl.update();
             if(input.quit) { return true; }
 
             import derelict.opengl3.gl3;
