@@ -10,8 +10,123 @@ module game.camera;
 import gl3n_extra.linalg;
 import gfmod.opengl.matrixstack;
 
+import platform.inputdevice;
 import platform.videodevice;
 
+
+/** Controls the camera according to user input.
+ *
+ * Note that the camera should only be changed between frames, when Tharsis processes
+ * are not running, as many processes have (const) access to camera.
+ */
+final class CameraControl
+{
+private:
+    import time.gametime;
+    // Game time (for time step).
+    const(GameTime) time_;
+    // Video device for screen size access.
+    const(VideoDevice) video_;
+
+    // Access to user input.
+    const(InputDevice) input_;
+
+    import std.logger;
+    // Game log.
+    Logger log_;
+
+    // Isometric camera.
+    Camera camera_;
+
+    // Time in seconds the 'fast scroll' button (RMB by default) has been pressed for so far.
+    double fastScrollPressedDuration_ = 0.0;
+
+    // TODO: Params such as borderSize_, scrollSpeed_, zoomSpeedBase_,
+    //                      fastScrollTriggerTime_, fastScrollSpeed_ should be loaded
+    //       from YAML 2014-08-21
+    /* Size of the border for moving the camera.
+     *
+     * (If the cursor is within this border, the camera is moved)
+     */
+    size_t borderSize_ = 24;
+
+    // Camera movement speed in pixels per second.
+    double scrollSpeed_ = 1024.0;
+
+    // Base for zooming speed (zooming is exponential, this is base for that exponent).
+    double zoomSpeedBase_ = 512.0;
+
+    // Time the 'fast scroll trigger' (RMB by default) must be held for fast scroll to kick in.
+    double fastScrollTriggerTime_ = 0.1;
+
+    // Speed of fast scrolling
+    double fastScrollSpeed_ = 8192.0;
+
+public:
+    /** Construct a CameraControl.
+     *
+     * Params:
+     *
+     * time   = Game time (for time step).
+     * input  = Access to user input.
+     * video  = Video device for screen size access.
+     * camera = Isometric camera.
+     * log    = Game log.
+     */
+    this(const(GameTime) time, const(VideoDevice) video, const(InputDevice) input,
+         Camera camera, Logger log)
+        @safe pure nothrow @nogc
+    {
+        time_   = time;
+        video_  = video;
+        input_  = input;
+        camera_ = camera;
+        log_    = log;
+    }
+
+    /// Update the camera based on user input.
+    void update() @safe nothrow
+    {
+        import std.exception;
+        vec2 center    = camera_.center;
+        const zoom     = camera_.zoom;
+        auto mouse     = input_.mouse;
+        const timeStep = time_.timeStep;
+        const scrollSpeed = (scrollSpeed_ / zoom) * timeStep;
+        // Conventional scrolling by moving mouse to window border.
+        if(mouse.x < borderSize_)                 { center.x -= scrollSpeed; }
+        if(mouse.x > video_.width - borderSize_)  { center.x += scrollSpeed; }
+        if(mouse.y < borderSize_)                 { center.y -= scrollSpeed; }
+        if(mouse.y > video_.height - borderSize_) { center.y += scrollSpeed; }
+
+        // Fast scrolling by dragging RMB.
+        fastScrollPressedDuration_ = mouse.button(Mouse.Button.Right)
+                                   ? fastScrollPressedDuration_ + timeStep : 0.0;
+        if(fastScrollPressedDuration_ >= fastScrollTriggerTime_)
+        {
+            const fastScrollSpeed = (fastScrollSpeed_ / zoom) * timeStep;
+            import std.math;
+            center += vec2(mouse.xMovement.sgn * fastScrollSpeed,
+                           mouse.yMovement.sgn * fastScrollSpeed);
+        }
+
+        // Apply the new camera position.
+        camera_.center = center;
+
+        // Zooming.
+        const wheelMovement = mouse.wheelYMovement;
+        camera_.zoom = zoom * (zoomSpeedBase_ ^^ (timeStep * wheelMovement));
+
+        // TODO: Make zooming work like other RTS'ses: Wheel movement will trigger a
+        //       gradual speed up-slow down zoom effect that will last multiple frames
+        //       and end up at a discrete zoom level (e.g. 1.5 times the old zoom). 2014-08-21
+
+        // TODO: Zoom towards the mouse cursor. This will require world coords of the
+        //       cursor, or rather, of the entity/tile under the cursor. We can get that 
+        //       through a const deleg that will ask PickingProcess, SpatialSystem or
+        //       whatever will handle this - but without affecting that whatever. 2014-08-21
+    }
+}
 
 /// 2D isometric camera.
 final class Camera
