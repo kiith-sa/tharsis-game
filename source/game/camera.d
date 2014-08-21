@@ -30,7 +30,7 @@ private:
     // negative values.
     long width_, height_;
     // Center of the camera (the point the camera is looking at in 2D space).
-    long centerX_, centerY_;
+    vec2 center_;
     // Zoom of the camera (higher is closer).
     float zoom_ = 1.0f;
 
@@ -46,7 +46,7 @@ public:
     {
         width_  = width;
         height_ = height;
-        centerX_ = centerY_ = 0;
+        center_ = vec2(0.0f, 0.0f);
         projectionStack_ = new MatrixStack!(float, 4)();
         viewStack_       = new MatrixStack!(float, 4)();
         updateOrtho();
@@ -61,13 +61,13 @@ public:
     mat4 view() const { return viewStack_.top; }
 
     /// Get the center of the camera (the point the camera is looking at).
-    vec2i center() const { return vec2i(cast(int)centerX_, cast(int)centerY_); }
+    vec2 center() const { return center_; }
+
 
     /// Set the center of the camera (the point the camera is looking at).
-    void center(int x, int y)
+    void center(const vec2 rhs)
     {
-        centerX_ = x;
-        centerY_ = y;
+        center_ = rhs;
         updateOrtho();
     }
 
@@ -108,7 +108,7 @@ public:
     vec3 screenToWorld(vec3 screen) const
     {
         const invZoom  = 1.0 / zoom_;
-        const center   = vec3(centerX_, centerY_, 0.0f);
+        const center   = vec3(center_, 0.0f);
         const halfSize = vec3(width_ / 2, height_ / 2, 0.0f);
         return vec3(viewStack_.invTop * vec4((screen * invZoom - halfSize + center), 1.0f));
     }
