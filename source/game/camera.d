@@ -121,8 +121,9 @@ private:
         const invZoom = 1.0 / zoom_;
         const hWidth  = max(width_  * 0.5f * invZoom, 1.0f);
         const hHeight = max(height_ * 0.5f * invZoom, 1.0f);
-        projectionStack_.ortho(centerX_ - hWidth, centerX_ + hWidth,
-                               centerY_ - hHeight, centerY_ + hHeight, -2000, 2000);
+        projectionStack_.loadIdentity();
+        projectionStack_.ortho(center_.x - hWidth, center_.x + hWidth,
+                               center_.y - hHeight, center_.y + hHeight, -8000, 8000);
     }
 
     /// Update the view matrix.
