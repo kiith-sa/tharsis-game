@@ -59,7 +59,7 @@ public:
     }
 
     /// Get access to mouse input.
-    const(Mouse) mouse() @safe pure nothrow @nogc { return mouse_; }
+    const(Mouse) mouse() @safe pure nothrow const @nogc { return mouse_; }
 
     /// Does the user want to quit the program?
     bool quit() @safe pure nothrow const @nogc { return quit_; }
