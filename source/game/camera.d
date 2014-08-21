@@ -32,7 +32,7 @@ private:
     // Center of the camera (the point the camera is looking at in 2D space).
     vec2 center_;
     // Zoom of the camera (higher is closer).
-    float zoom_ = 1.0f;
+    double zoom_ = 1.0f;
 
 public:
 @safe pure nothrow:
@@ -63,6 +63,8 @@ public:
     /// Get the center of the camera (the point the camera is looking at).
     vec2 center() const { return center_; }
 
+    /// Get camera zoom.
+    double zoom() @safe pure nothrow const @nogc { return zoom_; }
 
     /// Set the center of the camera (the point the camera is looking at).
     void center(const vec2 rhs)
@@ -76,7 +78,7 @@ public:
      * Values over 1 result in magnified view. Values between 0 and 1 result in minified
      * (more distant) view. Must be greater than zero.
      */
-    void zoom(float rhs)
+    void zoom(double rhs)
     {
         assert(rhs > 0.0, "Zoom must be greater than zero");
         zoom_ = rhs;
