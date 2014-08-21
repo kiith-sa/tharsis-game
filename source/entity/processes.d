@@ -637,3 +637,7 @@ public:
     }
 }
 
+import tharsis.defaults.copyprocess;
+/// Until a need to modify engines at runtime comes up, this can be a simple CopyProcess.
+alias EngineProcess = CopyProcess!EngineComponent;
+

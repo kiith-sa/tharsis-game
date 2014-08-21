@@ -7,6 +7,9 @@ visual:
     g: 0
     b: 0
     a: 255
+engine:
+    acceleration: 90.0
+    maxSpeed:     450.0
 # spawnerMulti:
 #     - spawn:     game_data/entity1.yaml
 #       triggerID: 1

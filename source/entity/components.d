@@ -122,3 +122,21 @@ struct CommandComponent
 }
 
 
+/// Accelerates and decelerates entities.
+struct EngineComponent
+{
+    /// Acceleration of the engine.
+    float acceleration;
+    /// Max speed the entity can be accelerated to by this engine (in any direction).
+    float maxSpeed;
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// Quite a few entities have engines.
+    enum minPreallocPerEntity = 0.5;
+
+    enum ushort ComponentTypeID = userComponentTypeID!6;
+}
+
+
