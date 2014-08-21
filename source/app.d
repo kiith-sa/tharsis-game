@@ -49,19 +49,21 @@ int main(string[] args)
     const height       = 600;
     const fullscreen   = No.fullscreen;
 
-    import platform.inputdevice;
     import platform.videodevice;
     auto video = scoped!VideoDevice(log);
     if(!video.initWindow(width, height, fullscreen)) { return 1; }
     if(!video.initGL()) { return 1; }
 
+    import platform.inputdevice;
     auto input = scoped!InputDevice(&video.height, log);
     import time.gametime;
     auto gameTime = scoped!GameTime(1 / 120.0);
 
+    import game.camera;
+    auto camera        = new Camera(video.width, video.height);
     import entity.entitysystem;
     import game.mainloop;
-    EntitySystem entitySystem = EntitySystem(video, input, gameTime, log);
+    auto entitySystem = EntitySystem(video, input, gameTime, camera, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
     try if(!mainLoop(entitySystem, video, input, gameTime, log))
     {

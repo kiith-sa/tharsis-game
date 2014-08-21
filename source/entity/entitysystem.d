@@ -53,18 +53,21 @@ private:
     import tharsis.defaults.components;
     import tharsis.defaults.processes;
 
+    import game.camera;
     import time.gametime;
+    
 public:
     /** Construct an EntitySystem, initializing Tharsis.
      *
      * Params:
      *
-     * video = VideoDevice for any processes that need to draw.
-     * input = User input device.
-     * time  = Keeps track of game time.
-     * log   = Game log.
+     * video  = VideoDevice for any processes that need to draw.
+     * input  = User input device.
+     * time   = Keeps track of game time.
+     * camera = Isometric amera.
+     * log    = Game log.
      */
-    this(VideoDevice video, InputDevice input, GameTime time, Logger log)
+    this(VideoDevice video, InputDevice input, GameTime time, Camera camera, Logger log)
         @safe nothrow //!@nogc
     {
         log_ = log;
@@ -84,11 +87,7 @@ public:
         entityMgr_ = new DefaultEntityManager(componentTypeMgr_);
 
         prototypeMgr_ = new PrototypeManager(componentTypeMgr_, entityMgr_);
-
-        import game.camera;
-        auto camera = new Camera(video.width, video.height);
         
-        auto dummyPosition = new CopyProcess!PositionComponent();
         import tharsis.defaults.copyprocess;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
