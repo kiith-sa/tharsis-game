@@ -86,3 +86,39 @@ struct SelectionComponent
     enum ushort ComponentTypeID = userComponentTypeID!4;
 }
 
+
+/** Added to entities to give them a command to execute
+ *
+ * This is for simple, low-level commands an entity may receive, such as 'move to',
+ * 'attack', etc.
+ */
+struct CommandComponent
+{
+    /// Command type.
+    enum Type
+    {
+        // Move to coordinates.
+        MoveTo
+    }
+
+    /// Command type.
+    Type type;
+
+    union
+    {
+        import gl3n_extra.linalg;
+        /// Coordinates to move to if type == Type.MoveTo
+        vec3 moveTo;
+    }
+
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// Not that many entities receive commands.
+    enum minPreallocPerEntity = 0.1;
+
+    enum ushort ComponentTypeID = userComponentTypeID!5;
+}
+
+
