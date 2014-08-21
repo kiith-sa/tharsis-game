@@ -72,15 +72,15 @@ public:
     }
 
     /// Get current game time.
-    real gameTime() @safe const pure nothrow const { return gameTime_; }
+    real gameTime() @safe pure nothrow const @nogc { return gameTime_; }
 
     /// Get current time step (always constant, but kept non-static just in case).
-    real timeStep() @safe const pure nothrow const { return timeStep_; }
+    real timeStep() @safe pure nothrow const @nogc { return timeStep_; }
 
     /// Get time speed.
-    real timeSpeed() @safe const pure nothrow const { return timeSpeed_; }
+    real timeSpeed() @safe pure nothrow const @nogc { return timeSpeed_; }
 
     /// Set time speed.
-    void timeSpeed(const real rhs) @safe pure nothrow { timeSpeed_ = rhs; }
+    void timeSpeed(const real rhs) @safe pure nothrow @nogc { timeSpeed_ = rhs; }
 }
 
