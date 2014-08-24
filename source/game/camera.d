@@ -214,7 +214,7 @@ public:
     {
         const halfSize = vec2(width_ / 2, height_ / 2);
         // transform to 2D space, then subtract the center
-        return zoom_ * (vec2(view * vec4(world, 1.0f)) - vec2(center) + halfSize);
+        return zoom_ * (vec2(view * vec4(world, 1.0f)) - vec2(center)) + halfSize;
     }
 
     /** Get world coordinates corresponding to a 3D point in screen space.
@@ -227,7 +227,7 @@ public:
         const invZoom  = 1.0 / zoom_;
         const center   = vec3(center_, 0.0f);
         const halfSize = vec3(width_ / 2, height_ / 2, 0.0f);
-        return vec3(viewStack_.invTop * vec4((screen * invZoom - halfSize + center), 1.0f));
+        return vec3(viewStack_.invTop * vec4(((screen - halfSize) * invZoom + center), 1.0f));
     }
 
 private:
