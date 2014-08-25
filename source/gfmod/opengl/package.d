@@ -30,5 +30,5 @@ public
            gfmod.opengl.texture,
            gfmod.opengl.textureunit,
            gfmod.opengl.fbo,
-           gfmod.opengl.vao;
+           gfmod.opengl.vertexarray;
 }

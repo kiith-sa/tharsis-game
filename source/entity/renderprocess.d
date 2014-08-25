@@ -14,7 +14,7 @@ import derelict.opengl3.gl3;
 import gfmod.opengl.matrixstack;
 import gfmod.opengl.opengl;
 import gfmod.opengl.program;
-import gfmod.opengl.vao;
+import gfmod.opengl.vertexarray;
 
 import gl3n_extra.color;
 import gl3n_extra.linalg;
@@ -106,21 +106,21 @@ private:
     // Provides access to uniform variables in program_.
     GLUniforms!UniformsSpec uniforms_;
 
-    // VAO storing the map grid.
-    VAO!Vertex gridVAO_;
+    // VertexArray storing the map grid.
+    VertexArray!Vertex grid_;
 
-    // Number of vertices in gridVAO_ to draw the bottom level of the map with (for
+    // Number of vertices in grid_ to draw the bottom level of the map with (for
     // visual reference)
     size_t bottomLevelVertices_ = 6;
 
-    // VAO of the axis thingy (showing axes in different colors).
-    VAO!Vertex axisThingy_;
+    // VertexArray of the axis thingy (showing axes in different colors).
+    VertexArray!Vertex axisThingy_;
 
     // Entity draws are accumulated here and then drawn together.
-    VAO!Vertex entitiesBatch_;
+    VertexArray!Vertex entitiesBatch_;
 
     // Bars over selected entities are accumulated here and then drawn together.
-    VAO!Vertex selectionBatch_;
+    VertexArray!Vertex selectionBatch_;
 
     // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
     enum cellSizeScreen_ = vec3u(96, 48, 24);
@@ -173,7 +173,7 @@ public:
         auto vaoSpace = new Vertex[2 * gridW_ * (gridH_ + 1) +
                                    2 * gridH_ * (gridW_ + 1) +
                                    bottomLevelVertices_];
-        gridVAO_ = new VAO!Vertex(gl_, vaoSpace);
+        grid_ = new VertexArray!Vertex(gl_, vaoSpace);
 
         double x = 0.0;
         double y = 0.0;
@@ -183,8 +183,8 @@ public:
             y = 0.0;
             foreach(yCell; 0 .. gridH_)
             {
-                gridVAO_.put(Vertex(x, y, 0, white));
-                gridVAO_.put(Vertex(x, y + cellSizeWorld_.y, 0, white));
+                grid_.put(Vertex(x, y, 0, white));
+                grid_.put(Vertex(x, y + cellSizeWorld_.y, 0, white));
                 y += cellSizeWorld_.y;
             }
             x += cellSizeWorld_.x;
@@ -195,24 +195,23 @@ public:
             x = 0.0;
             foreach(xCell; 0 .. gridW_)
             {
-                gridVAO_.put(Vertex(x, y, 0, white));
-                gridVAO_.put(Vertex(x + cellSizeWorld_.x, y, 0, white));
+                grid_.put(Vertex(x, y, 0, white));
+                grid_.put(Vertex(x + cellSizeWorld_.x, y, 0, white));
                 x += cellSizeWorld_.x;
             }
             y += cellSizeWorld_.y;
         }
         const bottomColor = rgb!"101008";
-        gridVAO_.put(Vertex(0, 0, -10, bottomColor));
-        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, 0, -10, bottomColor));
-        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        gridVAO_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        gridVAO_.put(Vertex(0, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        gridVAO_.put(Vertex(0, 0, -10, bottomColor));
-        gridVAO_.lock();
+        grid_.put(Vertex(0, 0, -10, bottomColor));
+        grid_.put(Vertex(cellSizeWorld_.x * gridW_, 0, -10, bottomColor));
+        grid_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        grid_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        grid_.put(Vertex(0, cellSizeWorld_.y * gridH_, -10, bottomColor));
+        grid_.put(Vertex(0, 0, -10, bottomColor));
+        grid_.lock();
 
 
-        axisThingy_ = new VAO!Vertex(gl_, new Vertex[6]);
-
+        axisThingy_ = new VertexArray!Vertex(gl_, new Vertex[6]);
         // X (red)
         axisThingy_.put(Vertex(10,  10,  10,  rgb!"FFFFFF"));
         axisThingy_.put(Vertex(110, 10,  10,  rgb!"FF0000"));
@@ -224,8 +223,8 @@ public:
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
 
-        entitiesBatch_  = new VAO!Vertex(gl_, new Vertex[10000]);
-        selectionBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
+        entitiesBatch_  = new VertexArray!Vertex(gl_, new Vertex[10000]);
+        selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[10000]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
@@ -235,7 +234,7 @@ public:
         selectionBatch_.__dtor();
         entitiesBatch_.__dtor();
         axisThingy_.__dtor();
-        gridVAO_.__dtor();
+        grid_.__dtor();
     }
 
     /// Draw anything that should be drawn before any entities.
@@ -254,21 +253,21 @@ public:
 
         scope(exit) { program_.unuse(); }
 
-        if(gridVAO_.bind(program_))
+        if(grid_.bind(program_))
         {
-            gridVAO_.draw(PrimitiveType.Lines, 0, gridVAO_.length - bottomLevelVertices_);
-            gridVAO_.draw(PrimitiveType.Triangles, gridVAO_.length - bottomLevelVertices_,
+            grid_.draw(PrimitiveType.Lines, 0, grid_.length - bottomLevelVertices_);
+            grid_.draw(PrimitiveType.Triangles, grid_.length - bottomLevelVertices_,
                           bottomLevelVertices_);
-            gridVAO_.release();
+            grid_.release();
         }
-        else { logVAOBindError("gridVAO_"); }
+        else { logVArrayBindError("grid_"); }
 
         if(axisThingy_.bind(program_))
         {
             axisThingy_.draw(PrimitiveType.Lines, 0, axisThingy_.length);
             axisThingy_.release();
         }
-        else { logVAOBindError("axisThingy_"); }
+        else { logVArrayBindError("axisThingy_"); }
     }
 
     /// Draw an entity with specified position and visual.
@@ -345,7 +344,7 @@ public:
 private:
 
     /// Draw all entities batched so far.
-    void drawBatch(VAO!Vertex batch, PrimitiveType type) @safe nothrow
+    void drawBatch(VertexArray!Vertex batch, PrimitiveType type) @safe nothrow
     {
         scope(exit) { gl_.runtimeCheck(); }
 
@@ -364,13 +363,13 @@ private:
             batch.draw(type, 0, batch.length);
             batch.release();
         }
-        else { logVAOBindError("some batch"); }
+        else { logVArrayBindError("some batch"); }
     }
 
     // Log an error after failing to bind VAO with specified name.
-    void logVAOBindError(string name) @safe nothrow
+    void logVArrayBindError(string name) @safe nothrow
     {
-        log_.error("Failed to bind VAO \"%s\"; probably missing vertex attribute in a "
-                  " GLSL program. Will not draw.").assumeWontThrow;
+        log_.error("Failed to bind VertexArray \"%s\"; probably missing vertex "
+                   " attribute in a GLSL program. Will not draw.").assumeWontThrow;
     }
 }
