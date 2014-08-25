@@ -14,27 +14,19 @@ visual:
 engine:
     acceleration: 90.0
     maxSpeed:     450.0
-# spawnerMulti:
-#     - spawn:     game_data/entity1.yaml
-#       triggerID: 1
-#       override:
-#         position:
-#           x: 0.1
-#           y: 0.3
-#           z: 0.5
-#     - spawn:     game_data/entity1.yaml
-#       triggerID: 2
-#       override:
-#         position:
-#           x: 0.1
-#           y: -0.3
-#           z: 0.5
-# timedTriggerMulti:
-#     - time:      4.0
-#       timeLeft:  0.03
-#       periodic:  true
-#       triggerID: 1
-#     - time:      1.03
-#       timeLeft:  0.5
-#       periodic:  false
-#       triggerID: 2
+weaponMulti:
+  - secsTillBurst: 0.3
+    weapon:
+        burstPeriod: 0.3
+        projectiles:
+          - spawn: game_data/projectile1.yaml
+            triggerID: 1
+            override:
+                position:
+                    x: 0.5
+                    y: 0.0
+                    z: 0.2
+                dynamic:
+                    velocityX: 200.0
+                    velocityY: 0
+                    velocityZ: 100.0
