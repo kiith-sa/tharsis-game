@@ -164,3 +164,41 @@ struct DynamicComponent
 
     enum ushort ComponentTypeID = userComponentTypeID!7;
 }
+
+
+import tharsis.defaults.components;
+/** Minimum spawner triggerID for weapons.
+ *
+ * Any spawner components with a triggerID greater or equal to this are considered to
+ * be projectile. There is one trigger ID per weapon (we could use 32 instead of 1024,
+ * we're only using so much to have room for more weapons if ever needed).
+ *
+ * WeaponizedSpawnerProcess removes any spawner components with weapon trigger IDs 
+ * matching weapons not in the entity (e.g. after a weapon is removed (should weapon
+ * removing be added in future)).
+ */
+enum minWeaponTriggerID = SpawnerMultiComponent.triggerID.max - 1024;
+
+/// Represents a single weapon of an entity.
+struct WeaponMultiComponent
+{
+    import tharsis.entity.resourcemanager;
+    import entity.resources;
+
+    /// Handle to the resource storing the weapon itself.
+    ResourceHandle!WeaponResource weapon;
+
+    /// Time until next weapon burst. If lower than 0, it's time to fire/spawn the projectiles.
+    float secsTillBurst = 0.0f;
+
+    /// Small for testing. Will increase.
+    enum minPrealloc = 64;
+
+    /// Most entities have 1 weapon. Some have 0, some have 2, very few have more.
+    enum minPreallocPerEntity = 1.0;
+
+    /// No more than 32 WeaponMultiComponents per entity.
+    enum maxComponentsPerEntity = 32;
+
+    enum ushort ComponentTypeID = userComponentTypeID!8;
+}
