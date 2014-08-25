@@ -103,6 +103,7 @@ public:
         auto dynamic       = new DynamicProcess(log);
         auto position      = new PositionProcess(time, log);
         auto weapon        = new WeaponProcess(time, weaponMgr_, log);
+        auto spawnerAttach = new SpawnerAttachProcess(time, weaponMgr_, log);
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
         auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
                                                  componentTypeMgr_);
@@ -117,9 +118,9 @@ public:
         entityMgr_.registerProcess(dynamic);
         entityMgr_.registerProcess(position);
         entityMgr_.registerProcess(weapon);
+        entityMgr_.registerProcess(spawnerAttach);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
-        entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
 
         entityMgr_.registerResourceManager(prototypeMgr_);
         entityMgr_.registerResourceManager(weaponMgr_);
