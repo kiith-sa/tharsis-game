@@ -130,7 +130,6 @@ private:
     // Map grid width and height in cells.
     size_t gridW_, gridH_;
 
-
 public:
     /** Construct a RenderProcess.
      *
@@ -225,8 +224,7 @@ public:
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
 
-        entitiesBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
-
+        entitiesBatch_  = new VAO!Vertex(gl_, new Vertex[10000]);
         selectionBatch_ = new VAO!Vertex(gl_, new Vertex[10000]);
     }
 
