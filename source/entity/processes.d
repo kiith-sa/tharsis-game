@@ -431,3 +431,75 @@ public:
         posFuture = posPast;
     }
 }
+
+
+/** Implements weapon logic and updates weapon components.
+ *
+ * Projectile spawning is actually handled by SpawnerAttachProcess, which attaches 
+ * spawner components to spawn projectiles and WeaponizedSpawnerProcess which spawns
+ * them when a WeaponMultiComponent has negative $(D secsWithBurst).
+ */
+final class WeaponProcess 
+{
+private:
+    // Game log.
+    Logger log_;
+
+    import time.gametime;
+    // Game time for access to time step.
+    const GameTime gameTime_;
+
+    import entity.resources;
+    // Weapon resource manager.
+    WeaponManager weaponMgr_;
+
+public:
+    alias FutureComponent = WeaponMultiComponent;
+
+    /** Construct a WeaponProcess.
+     *
+     * Params:
+     *
+     * gameTime      = Game time for access to time step.
+     * weaponManager = Weapon resource manager.
+     * log           = The game log.
+     */
+    this(const GameTime gameTime, WeaponManager weaponManager, Logger log)
+        @safe pure nothrow @nogc
+    {
+        gameTime_  = gameTime;
+        weaponMgr_ = weaponManager;
+        log_       = log;
+    }
+
+    void process(const WeaponMultiComponent[] weaponsPast,
+                 ref WeaponMultiComponent[] weaponsFuture) nothrow
+    {
+        const timeStep    = gameTime_.timeStep;
+        const weaponCount = weaponsPast.length;
+        weaponsFuture     = weaponsFuture[0 .. weaponCount];
+
+        weaponsFuture[] = weaponsPast[];
+        foreach(ref weapon; weaponsFuture)
+        {
+            import tharsis.entity.resourcemanager;
+
+            const handle = weapon.weapon;
+            const state  = weaponMgr_.state(handle);
+            // If the weapon is not loaded yet, load it and don't update weapon logic.
+            if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
+            if(state != ResourceState.Loaded) { continue; }
+
+            // First check if we've reached time to fire, then update secsTillBurst.
+            // If secsTillBurst will become lower than 0, SpawnerProcess 
+            // will notice in the next frame and spawn projectiles.
+            const burstPeriod = weaponMgr_.resource(handle).burstPeriod;
+            if(weapon.secsTillBurst <= 0.0f)
+            {
+                weapon.secsTillBurst += burstPeriod;
+            }
+            weapon.secsTillBurst -= timeStep;
+
+        }
+    }
+}
