@@ -79,6 +79,7 @@ public:
                                                   CommandComponent,
                                                   EngineComponent,
                                                   DynamicComponent,
+                                                  WeaponMultiComponent,
                                                   SpawnerMultiComponent,
                                                   TimedTriggerMultiComponent);
 
@@ -101,7 +102,7 @@ public:
         auto engine        = new EngineProcess();
         auto dynamic       = new DynamicProcess(log);
         auto position      = new PositionProcess(time, log);
-
+        auto weapon        = new WeaponProcess(time, weaponMgr_, log);
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
         auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
                                                  componentTypeMgr_);
@@ -114,6 +115,7 @@ public:
         entityMgr_.registerProcess(command);
         entityMgr_.registerProcess(engine);
         entityMgr_.registerProcess(position);
+        entityMgr_.registerProcess(weapon);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
         entityMgr_.registerProcess(dynamic);
