@@ -105,8 +105,8 @@ public:
         auto weapon        = new WeaponProcess(time, weaponMgr_, log);
         auto spawnerAttach = new SpawnerAttachProcess(time, weaponMgr_, log);
         auto conditionProc = new TimedTriggerProcess(&time.timeStep);
-        auto spawner = new DefaultSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
-                                                 componentTypeMgr_);
+        auto spawner       = new WeaponizedSpawnerProcess(&entityMgr_.addEntity, prototypeMgr_,
+                                                          componentTypeMgr_, log);
 
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
