@@ -503,3 +503,120 @@ public:
         }
     }
 }
+
+
+/** Attaches spawner components to entities.
+ *
+ * Currently only attaches spawner components used to spawn weapon projectiles.
+ */
+final class SpawnerAttachProcess
+{
+private:
+    // Game log.
+    Logger log_;
+
+    import time.gametime;
+    // Game time for access to time step.
+    const(GameTime) gameTime_;
+
+    import entity.resources;
+    // Weapon resource manager.
+    WeaponManager weaponMgr_;
+
+public:
+    import tharsis.defaults.components;
+    alias FutureComponent = SpawnerMultiComponent;
+
+    /** Construct a SpawnerAttachProcess.
+     *
+     * Params:
+     *
+     * gameTime      = Game time for access to time step.
+     * weaponManager = Weapon resource manager.
+     * log           = The game log.
+     */
+    this(const(GameTime) gameTime, WeaponManager weaponManager, Logger log)
+        @safe pure nothrow @nogc
+    {
+        gameTime_  = gameTime;
+        weaponMgr_ = weaponManager;
+        log_       = log;
+    }
+
+    /** Add projectile spawners to an entity that has no spawners yet.
+     *
+     * Also called by the 3rd process() overload to readd the projectile spawners
+     * on every new frames.
+     */
+    void process(const WeaponMultiComponent[] weapons,
+                 ref SpawnerMultiComponent[] spawners) nothrow
+    {
+        size_t spawnerCount = 0;
+        foreach(size_t weaponIdx, ref weapon; weapons)
+        {
+            const handle = weapon.weapon;
+            const state  = weaponMgr_.state(handle);
+            import tharsis.entity.resourcemanager;
+            if(state == ResourceState.New)    { weaponMgr_.requestLoad(handle); }
+            if(state != ResourceState.Loaded) { continue; }
+
+            foreach(ref projectileSpawner; weaponMgr_.resource(handle).projectiles)
+            {
+                spawners[spawnerCount] = projectileSpawner;
+                // Trigger ID must correspond to the weapon so SpawnerProcess knows it
+                // should spawn when the weapon fires. Without this, trigger ID of the
+                // weapon would have to be set in projectile spawner components in a
+                // weapon resource, which would require any entities using the weapon to
+                // always have that weapon at the same index among weapon components.
+                const weaponTriggerID = cast(ushort)(minWeaponTriggerID + weaponIdx);
+                spawners[spawnerCount].triggerID = weaponTriggerID;
+                ++spawnerCount;
+            }
+        }
+
+        spawners = spawners[0 .. spawnerCount];
+    }
+
+    /** The entity has no weapon, so no need to add components; just preserve them.
+     *
+     * Does not preserve spawner components used to spawn weapon projectiles (in case
+     * this is called after weapons are removed). Also called by the 3rd process()
+     * overload to preserve non-projectile spawners.
+     */
+    void process(const SpawnerMultiComponent[] spawnersPast,
+                 ref SpawnerMultiComponent[] spawnersFuture) nothrow
+    {
+        size_t count = 0;
+        // Spawners spawning weapon projectiles are not carried over; if this process()
+        // is called, we either have no weapon or it's called by a caller process() that
+        // will add spawners for those projectiles.
+        foreach(ref spawner; spawnersPast) if(spawner.triggerID < minWeaponTriggerID)
+        {
+            spawnersFuture[count++] = spawner;
+        }
+        spawnersFuture = spawnersFuture[0 .. count];
+    }
+
+    /** The entity has both weapons and spawners.
+     *
+     * Preserves non-weapon spawners and re-adds weapon projectile spawners for whatever
+     * weapons the entity has $(D right now).
+     */
+    void process(const SpawnerMultiComponent[] spawnersPast,
+                 const WeaponMultiComponent[] weapons,
+                 ref SpawnerMultiComponent[] spawnersFuture) nothrow
+    {
+        alias Spawner = SpawnerMultiComponent;
+
+        // Copy any spawner components not originated from weapons to spawnersFuture.
+        Spawner[] spawnersNoWeap = spawnersFuture;
+        process(spawnersPast, spawnersNoWeap);
+        // Add spawner components for weapon projectiles of weapons this entity
+        // currently has. If we add support for weapon changing in future, this will
+        // still work correctly.
+        Spawner[] spawnersWeap = spawnersFuture[spawnersNoWeap.length .. $];
+        process(weapons, spawnersWeap);
+        spawnersFuture = spawnersFuture[0 .. spawnersNoWeap.length + spawnersWeap.length];
+    }
+}
+
