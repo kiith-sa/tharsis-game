@@ -84,10 +84,13 @@ public:
 
         componentTypeMgr_.lock();
 
-        entityMgr_ = new DefaultEntityManager(componentTypeMgr_);
+        entityMgr_      = new DefaultEntityManager(componentTypeMgr_);
 
-        prototypeMgr_ = new PrototypeManager(componentTypeMgr_, entityMgr_);
-        
+        import entity.resources;
+        prototypeMgr_   = new PrototypeManager(componentTypeMgr_, entityMgr_);
+        auto weaponMgr_ = new WeaponManager(entityMgr_, componentTypeMgr_.sourceLoader,
+                                            componentTypeMgr_);
+
         import tharsis.defaults.copyprocess;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
@@ -117,6 +120,7 @@ public:
         entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
 
         entityMgr_.registerResourceManager(prototypeMgr_);
+        entityMgr_.registerResourceManager(weaponMgr_);
 
     /// Spawn entity from specified file as soon as possible.
     ///
