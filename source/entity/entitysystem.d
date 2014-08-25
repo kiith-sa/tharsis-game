@@ -55,7 +55,7 @@ private:
 
     import game.camera;
     import time.gametime;
-    
+
 public:
     /** Construct an EntitySystem, initializing Tharsis.
      *
@@ -114,11 +114,11 @@ public:
         entityMgr_.registerProcess(selection);
         entityMgr_.registerProcess(command);
         entityMgr_.registerProcess(engine);
+        entityMgr_.registerProcess(dynamic);
         entityMgr_.registerProcess(position);
         entityMgr_.registerProcess(weapon);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
-        entityMgr_.registerProcess(dynamic);
         entityMgr_.registerProcess(new CopyProcess!SpawnerMultiComponent());
 
         entityMgr_.registerResourceManager(prototypeMgr_);
