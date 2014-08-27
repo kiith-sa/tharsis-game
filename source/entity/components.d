@@ -17,9 +17,9 @@ struct PositionComponent
     // construction in D:YAML) - somehow add that constructor in defaults so it's
     // reusable by users of tharsis-full
     /// X/Y/Z coordinates of the entity.
-    @("relative") float x;
-    @("relative") float y;
-    @("relative") float z;
+    @("relative") float x = 0.0f;
+    @("relative") float y = 0.0f;
+    @("relative") float z = 0.0f;
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
@@ -34,7 +34,7 @@ struct PositionComponent
 struct VisualComponent
 {
     /// R/G/B/A color channels.
-    ubyte r, g, b, a;
+    ubyte r, g, b, a = 255;
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
@@ -130,9 +130,9 @@ struct CommandComponent
 struct EngineComponent
 {
     /// Acceleration of the engine.
-    float acceleration;
+    float acceleration = 0.0f;
     /// Max speed the entity can be accelerated to by this engine (in any direction).
-    float maxSpeed;
+    float maxSpeed = 0.0f;
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
@@ -149,11 +149,11 @@ struct DynamicComponent
 {
     // XXX really need vec3 support in Source...
     /// Velocity of the entity.
-    @("relative") float velocityX;
+    @("relative") float velocityX = 0.0f;
     /// Ditto.
-    @("relative") float velocityY;
+    @("relative") float velocityY = 0.0f;
     /// Ditto.
-    @("relative") float velocityZ;
+    @("relative") float velocityZ = 0.0f;
 
 
     /// Small for testing. Will increase.
