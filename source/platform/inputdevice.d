@@ -349,7 +349,6 @@ private:
     // Y movement of the wheel since the last update.
     int wheelXMovement_;
 
-    import std.typecons;
     import gl3n_extra.linalg;
     // Did the user finish a click with a button during this update?
     Flag!"click"[Button.max + 1] click_;
@@ -367,6 +366,7 @@ private:
     long delegate() @safe pure nothrow @nogc getHeight_;
 
 public:
+nothrow @nogc:
     /// Enumerates mouse buttons.
     enum Button: ubyte
     {
@@ -384,7 +384,7 @@ public:
      *
      * getHeight = Delegate that returns current window height.
      */
-    this(long delegate() @safe pure nothrow @nogc getHeight) @trusted nothrow @nogc
+    this(long delegate() @safe pure nothrow @nogc getHeight) @trusted
     {
         getHeight_ = getHeight;
         const bits = SDL_GetMouseState(&x_, &y_);
@@ -398,56 +398,56 @@ public:
     }
 
     /// Get X coordinate of mouse position.
-    int x() @safe pure nothrow const @nogc { return x_; }
+    int x() @safe pure const { return x_; }
 
     /// Get Y coordinate of mouse position.
-    int y() @safe pure nothrow const @nogc { return y_; }
+    int y() @safe pure const { return y_; }
 
     /// Get X movement of mouse since the last update.
-    int xMovement() @safe pure nothrow const @nogc { return xMovement_; }
+    int xMovement() @safe pure const { return xMovement_; }
 
     /// Get Y movement of mouse since the last update.
-    int yMovement() @safe pure nothrow const @nogc { return yMovement_; }
+    int yMovement() @safe pure const { return yMovement_; }
 
     /// Get X coordinate of the mouse wheel (if it supports horizontal scrolling).
-    int wheelX() @safe pure nothrow const @nogc { return wheelX_; }
+    int wheelX() @safe pure const { return wheelX_; }
 
     /// Get Y coordinate of the mouse wheel.
-    int wheelY() @safe pure nothrow const @nogc { return wheelY_; }
+    int wheelY() @safe pure const { return wheelY_; }
 
     /// Get the X movement of the wheel since the last update.
-    int wheelXMovement() @safe pure nothrow const @nogc { return wheelXMovement_; }
+    int wheelXMovement() @safe pure const { return wheelXMovement_; }
 
     /// Get the Y movement of the wheel since the last update.
-    int wheelYMovement() @safe pure nothrow const @nogc { return wheelYMovement_; }
+    int wheelYMovement() @safe pure const { return wheelYMovement_; }
 
     /// Did the user finish a double click during this update?
-    Flag!"doubleClick" doubleClicked(Button button) @safe pure nothrow const @nogc
+    Flag!"doubleClick" doubleClicked(Button button) @safe pure const
     {
         return doubleClick_[button];
     }
 
     /// Did the user finish a click during this update?
-    Flag!"click" clicked(Button button) @safe pure nothrow const @nogc
+    Flag!"click" clicked(Button button) @safe pure const
     {
         return click_[button];
     }
 
     /// Get the state of specified mouse button.
-    Flag!"pressed" button(Button button) @safe pure nothrow const @nogc
+    Flag!"pressed" button(Button button) @safe pure const
     {
         return buttons_[button];
     }
 
     /// Get the coordinates at which button was last pressed. Useful for dragging.
-    vec2i pressedCoords(Button button) @safe pure nothrow const @nogc
+    vec2i pressedCoords(Button button) @safe pure const
     {
         return pressedCoords_[button];
     }
 
 private:
     /// Handle an SDL event (which may be a mouse event).
-    void handleEvent(ref const SDL_Event e) @system nothrow @nogc
+    void handleEvent(ref const SDL_Event e) @system
     {
         static Button button(Uint8 sdlButton) @safe pure nothrow @nogc
         {
@@ -487,7 +487,7 @@ private:
     }
 
     /// Update any mouse state that must be updated every frame.
-    void update() @system nothrow @nogc
+    void update() @system
     {
         wheelXMovement_ = 0;
         wheelYMovement_ = 0;
