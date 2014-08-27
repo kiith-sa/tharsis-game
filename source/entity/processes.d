@@ -696,6 +696,18 @@ private:
     // Game log.
     Logger log_;
 
+    // Pointer to the currently processed weapon component.
+    //
+    // Only set while spawning a projectile entity, must be null otherwise.
+    //
+    // process() reads weapon components to determine when to spawn projectile entities.
+    // When it spawns a projectile, we still need to override that projectile's direction
+    // (DynamicComponent), since by default the direction will always be the same - as it
+    // was loaded from YAML. We set the direction in spawnHook(), which is called by
+    // parent SpawnerProcess code after the prototype of the spawned entity has been
+    // constructed but still before spawning the entity.
+    immutable(WeaponMultiComponent)* currentWeapon_;
+
     import tharsis.defaults.components;
     import tharsis.entity.componenttypemanager;
     import tharsis.entity.entitymanager;
@@ -733,17 +745,42 @@ public:
         super(addEntity, prototypeManager, componentTypeManager);
     }
 
+    import std.typecons;
+    import tharsis.entity.componenttypeinfo;
+
+    override void spawnHook(ref EntityPrototype.GenericComponentRange!(No.isConst) components)
+        @system nothrow
+    {
+        const zero = vec3(0, 0, 0);
+        if(currentWeapon_ is null || currentWeapon_.firingDirection == zero) { return; }
+        for(; !components.empty; components.popFront)
+        {
+            RawComponent* comp = &(components.front());
+            if(comp.typeID != DynamicComponent.ComponentTypeID) { continue; }
+
+            DynamicComponent* dynamic = &(comp.as!DynamicComponent());
+            // Keep the same velocity, but redirect it in firing direction.
+            const baseVelocity = vec3(dynamic.velocityX, dynamic.velocityY, dynamic.velocityZ);
+            const speed        = baseVelocity.length;
+            const velocity     = speed * currentWeapon_.firingDirection;
+
+            dynamic.velocityX = velocity.x;
+            dynamic.velocityY = velocity.y;
+            dynamic.velocityZ = velocity.z;
+        }
+    }
+
     /// Shortcut alias.
     alias Context = DefaultEntityManager.Context;
 
-    /** A simple forward for SpawnerProcess process(). 
-     * 
+    /** A simple forward for SpawnerProcess process().
+     *
      * Needed because user code doesn't see SpawnerProcess.process() for some reason,
      * probably a DMD bug (as of DMD 2.066).
      */
     override void process(ref const(Context) context,
-                 immutable SpawnerMultiComponent[] spawners,
-                 immutable TimedTriggerMultiComponent[] triggers) nothrow
+                          immutable SpawnerMultiComponent[] spawners,
+                          immutable TimedTriggerMultiComponent[] triggers) nothrow
     {
         super.process(context, spawners, triggers);
     }
@@ -771,7 +808,12 @@ public:
             if(!spawnerReady(spawner)) { continue outer; }
 
             // We've not reached the time to spawn yet.
-            if(weapon.secsTillBurst <= 0.0f) { spawn(context, spawner); }
+            if(weapon.secsTillBurst <= 0.0f)
+            {
+                currentWeapon_ = &weapon;
+                spawn(context, spawner);
+                currentWeapon_ = null;
+            }
         }
     }
 
