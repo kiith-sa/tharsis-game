@@ -20,6 +20,9 @@ private:
     // Game log.
     Logger log_;
 
+    // Keeps track of keyboard input.
+    Keyboard keyboard_;
+
     // Keeps track of mouse input.
     Mouse mouse_;
 
@@ -36,14 +39,16 @@ public:
      */
     this(long delegate() @safe pure nothrow @nogc getHeight, Logger log) @safe nothrow
     {
-        log_   = log;
-        mouse_ = new Mouse(getHeight);
+        log_      = log;
+        keyboard_ = new Keyboard();
+        mouse_    = new Mouse(getHeight);
     }
 
     /// Collect user input.
-    void collectInput() @trusted nothrow @nogc 
+    void collectInput() @trusted nothrow @nogc
     {
         mouse_.update();
+        keyboard_.update();
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
@@ -57,6 +62,9 @@ public:
             }
         }
     }
+
+    /// Get access to keyboard input.
+    const(Keyboard) keyboard() @safe pure nothrow const @nogc { return keyboard_; }
 
     /// Get access to mouse input.
     const(Mouse) mouse() @safe pure nothrow const @nogc { return mouse_; }
