@@ -43,7 +43,7 @@ bool mainLoop(ref EntitySystem entitySystem,
         {
             input.collectInput();
             cameraControl.update();
-            if(input.quit) { return true; }
+            if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
 
             import derelict.opengl3.gl3;
             // Clear the back buffer with a red background (parameters are R, G, B, A)

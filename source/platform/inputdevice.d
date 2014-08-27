@@ -55,11 +55,6 @@ public:
             mouse_.handleEvent(e);
             // Quit if the user closes the window or presses Escape.
             if(e.type == SDL_QUIT) { quit_ = true; }
-            if(e.type == SDL_KEYDOWN) switch(e.key.keysym.sym)
-            {
-                case SDLK_ESCAPE: quit_ = true; break;
-                default:          break;
-            }
         }
     }
 
@@ -69,7 +64,7 @@ public:
     /// Get access to mouse input.
     const(Mouse) mouse() @safe pure nothrow const @nogc { return mouse_; }
 
-    /// Does the user want to quit the program?
+    /// Does the user want to quit the program (e.g. by pressing the close window button).
     bool quit() @safe pure nothrow const @nogc { return quit_; }
 }
 
