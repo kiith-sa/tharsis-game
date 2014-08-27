@@ -462,11 +462,11 @@ public:
 
 /** Implements weapon logic and updates weapon components.
  *
- * Projectile spawning is actually handled by SpawnerAttachProcess, which attaches 
+ * Projectile spawning is actually handled by SpawnerAttachProcess, which attaches
  * spawner components to spawn projectiles and WeaponizedSpawnerProcess which spawns
  * them when a WeaponMultiComponent has negative $(D secsWithBurst).
  */
-final class WeaponProcess 
+final class WeaponProcess
 {
 private:
     // Game log.
@@ -499,7 +499,10 @@ public:
         log_       = log;
     }
 
-    void process(const WeaponMultiComponent[] weaponsPast,
+    /// Update weapons of one entity.
+    void process(ref const PositionComponent pos,
+                 ref const CommandComponent command,
+                 immutable WeaponMultiComponent[] weaponsPast,
                  ref WeaponMultiComponent[] weaponsFuture) nothrow
     {
         const timeStep    = gameTime_.timeStep;
@@ -507,7 +510,7 @@ public:
         weaponsFuture     = weaponsFuture[0 .. weaponCount];
 
         weaponsFuture[] = weaponsPast[];
-        foreach(ref weapon; weaponsFuture)
+        outer: foreach(ref weapon; weaponsFuture)
         {
             import tharsis.entity.resourcemanager;
 
@@ -517,8 +520,21 @@ public:
             if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
             if(state != ResourceState.Loaded) { continue; }
 
+            // Only check command type after ensuring the weapons are loaded.
+
+            // Only using final switch to ensure we don't miss any new commands.
+            with(CommandComponent.Type) final switch(command.type)
+            {
+                case MoveTo:
+                    continue outer;
+                case StaticFireAt:
+                    const position = vec3(pos.x, pos.y, pos.z);
+                    weapon.firingDirection = (command.staticFireAt - position).normalized;
+                    break;
+            }
+
             // First check if we've reached time to fire, then update secsTillBurst.
-            // If secsTillBurst will become lower than 0, SpawnerProcess 
+            // If secsTillBurst will become lower than 0, SpawnerProcess
             // will notice in the next frame and spawn projectiles.
             const burstPeriod = weaponMgr_.resource(handle).burstPeriod;
             if(weapon.secsTillBurst <= 0.0f)
@@ -527,6 +543,22 @@ public:
             }
             weapon.secsTillBurst -= timeStep;
 
+        }
+    }
+
+    void process(immutable WeaponMultiComponent[] weaponsPast,
+                 ref WeaponMultiComponent[] weaponsFuture) nothrow
+    {
+        weaponsFuture = weaponsFuture[0 .. weaponsPast.length];
+        weaponsFuture[] = weaponsPast[];
+
+        // Request to load any weapons that are not loaded yet.
+        foreach(ref weapon; weaponsFuture)
+        {
+            import tharsis.entity.resourcemanager;
+            const handle = weapon.weapon;
+            const state  = weaponMgr_.state(handle);
+            if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
         }
     }
 }
