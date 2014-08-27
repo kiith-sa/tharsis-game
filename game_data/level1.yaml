@@ -1,8 +1,4 @@
-# XXX TRY REMOVING POS
-position:
-    x: 0
-    y: 0
-    z: 0
+# position:
 spawnerMulti:
     - spawn:     game_data/entity1.yaml
       triggerID: 1
@@ -35,17 +31,13 @@ spawnerMulti:
 timedTriggerMulti:
     - time:      0.5
       timeLeft:  0.5
-      periodic:  false
       triggerID: 1
     - time:      1.0
       timeLeft:  1.0
-      periodic:  false
       triggerID: 2
     - time:      1.5
       timeLeft:  1.5
-      periodic:  false
       triggerID: 3
     - time:      2.0
       timeLeft:  2.0
-      periodic:  false
       triggerID: 4

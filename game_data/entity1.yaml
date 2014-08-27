@@ -3,9 +3,6 @@ position:
     y: 200
     z: 50
 dynamic:
-    velocityX: 0
-    velocityY: 0
-    velocityZ: 0
 visual:
     r: 255
     g: 0
@@ -24,9 +21,7 @@ weaponMulti:
             override:
                 position:
                     x: 0.5
-                    y: 0.0
                     z: 0.2
                 dynamic:
-                    velocityX: 200.0
-                    velocityY: 0
-                    velocityZ: 100.0
+                    velocityX: 1200.0
+                    velocityZ: 600.0
