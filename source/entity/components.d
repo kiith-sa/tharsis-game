@@ -197,6 +197,14 @@ struct WeaponMultiComponent
     /// Time until next weapon burst. If lower than 0, it's time to fire/spawn the projectiles.
     float secsTillBurst = 0.0f;
 
+    import gl3n_extra.linalg;
+    /** Direction the weapon is firing in. 
+     *
+     * Zero vector means 'default', i.e. the DynamicComponent of the projectile specified
+     * in the weapon will be used without changing the direction.
+     */
+    vec3 firingDirection = vec3(0.0f, 0.0f, 0.0f);
+
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
 
