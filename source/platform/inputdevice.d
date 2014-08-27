@@ -325,6 +325,45 @@ enum Key: SDL_Keycode
     Eject              = SDLK_EJECT,
     Sleep              = SDLK_SLEEP
 }
+
+/// Keeps track of which keys are pressed on the keyboard.
+final class Keyboard
+{
+private:
+    import std.container;
+    // Unlikely to have more than 256 keys pressed at any one time (we ignore any more).
+    SDL_Keycode[256] pressedKeys_;
+    // The number of values used in pressedKeys_.
+    size_t pressedKeyCount_;
+
+
+public:
+    /// Get the state of specified keyboard key.
+    Flag!"pressed" key(const Key isPressed) @safe pure nothrow const @nogc 
+    {
+        import std.algorithm;
+        auto keys = pressedKeys_[0 .. pressedKeyCount_];
+        return keys.canFind(cast(SDL_Keycode)isPressed) ? Yes.pressed : No.pressed;
+    }
+
+private:
+    // Get current keyboard state.
+    void update() @system nothrow @nogc
+    {
+        SDL_PumpEvents();
+
+        int numKeys;
+        const Uint8* allKeys = SDL_GetKeyboardState(&numKeys);
+        pressedKeyCount_ = 0;
+        foreach(SDL_Scancode scancode, Uint8 state; allKeys[0 .. numKeys])
+        {
+            if(!state) { continue; }
+            pressedKeys_[pressedKeyCount_++] = SDL_GetKeyFromScancode(scancode);
+        }
+    }
+}
+
+
 /// Keeps track of mouse position, buttons, dragging, etc.
 final class Mouse
 {
