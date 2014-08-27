@@ -213,27 +213,45 @@ public:
     void preProcess() nothrow
     {
         noCommandForSelected_ = true;
-        // Right click means 'move to'
-        if(mouse_.clicked(Mouse.Button.Right))
+        immutable mousePos = vec2(mouse_.x, mouse_.y);
+
+        /* Get the point on the map where the mouse cursor points.
+         *
+         * Writes the point to mapPoint. Returns false if there is no such point, true
+         * otherwise.
+         */
+        bool mouseOnMap(out vec3 mapPoint) @safe pure nothrow @nogc
         {
             import gl3n_extra.plane;
             // For now we assume the map is one big flat plane.
             const mapPlane = planeFromPointNormal(vec3(0, 0, 0), vec3(0, 0, 1));
 
             // Create a line in world space from a point on the screen.
-            const linePoint1 = camera_.screenToWorld(vec3(mouse_.x, mouse_.y, 0.0f));
-            const linePoint2 = camera_.screenToWorld(vec3(mouse_.x, mouse_.y, -100.0f));
+            const linePoint1 = camera_.screenToWorld(vec3(mousePos, 0.0f));
+            const linePoint2 = camera_.screenToWorld(vec3(mousePos, -100.0f));
             const lineVector = linePoint2 - linePoint1;
 
-            // Intersect the line with the map to find the point to move to.
-            vec3 mapPoint;
-            if(mapPlane.intersectsLine(linePoint1, lineVector, mapPoint))
+            // Intersect the line with the map to find the point where the mouse id.
+            return mapPlane.intersectsLine(linePoint1, lineVector, mapPoint);
+
+        }
+
+        // Right click means 'move to' by default, 'fire at without moving' if ctrl is
+        // pressed (Of course this will change later as commands get more advanced).
+        vec3 mapPoint;
+        if(mouse_.clicked(Mouse.Button.Right) && mouseOnMap(mapPoint))
+        {
+            noCommandForSelected_ = false;
+            if(keyboard_.key(Key.LCtrl))
             {
-                noCommandForSelected_      = false;
+                commandForSelected_.type         = CommandComponent.Type.StaticFireAt;
+                commandForSelected_.staticFireAt = mapPoint;
+            }
+            else
+            {
                 commandForSelected_.type   = CommandComponent.Type.MoveTo;
                 commandForSelected_.moveTo = mapPoint;
             }
-
         }
     }
 
