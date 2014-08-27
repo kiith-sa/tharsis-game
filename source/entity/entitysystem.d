@@ -98,7 +98,7 @@ public:
         renderer_          = new RenderProcess(video, camera, log);
         auto picking       = new MousePickingProcess(camera, input.mouse, log);
         auto selection     = new SelectionProcess(input.mouse, log);
-        auto command       = new CommandProcess(input.mouse, camera, log);
+        auto command       = new CommandProcess(input.mouse, input.keyboard, camera, log);
         auto engine        = new EngineProcess();
         auto dynamic       = new DynamicProcess(log);
         auto position      = new PositionProcess(time, log);

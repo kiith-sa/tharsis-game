@@ -172,8 +172,10 @@ private:
     Logger log_;
 
     import platform.inputdevice;
-    // Access for mouse input.
+    // Access to mouse input.
     const(Mouse) mouse_;
+    // Access to keyboard input.
+    const(Keyboard) keyboard_;
     // Camera to transform mouse coords to world space.
     const(Camera) camera_;
 
@@ -198,11 +200,13 @@ public:
      * camera = Camera to transform mouse coords to world space.
      * log    = Game log.
      */
-    this(const(Mouse) mouse, const(Camera) camera, Logger log) @safe pure nothrow @nogc
+    this(const(Mouse) mouse, const(Keyboard) keyboard, const(Camera) camera, Logger log)
+        @safe pure nothrow @nogc
     {
-        log_    = log;
-        mouse_  = mouse;
-        camera_ = camera;
+        log_      = log;
+        mouse_    = mouse;
+        keyboard_ = keyboard;
+        camera_   = camera;
     }
 
     /// Determine which commands to give this frame.
