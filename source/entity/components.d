@@ -93,7 +93,7 @@ struct SelectionComponent
 
 /** Added to entities to give them a command to execute
  *
- * This is for simple, low-level commands an entity may receive, such as 'move to',
+ * This is for simple, mid-level commands an entity may receive, such as 'move to',
  * 'attack', etc.
  */
 struct CommandComponent
@@ -102,7 +102,11 @@ struct CommandComponent
     enum Type
     {
         // Move to coordinates.
-        MoveTo
+        MoveTo,
+        // TODO: This will be used for static artillery, turrets, and will eventually
+        //       include firing at moving targets. 2014-08-26
+        // Fire at a target without moving towards to it.
+        StaticFireAt
     }
 
     /// Command type.
@@ -113,6 +117,8 @@ struct CommandComponent
         import gl3n_extra.linalg;
         /// Coordinates to move to if type == Type.MoveTo
         vec3 moveTo;
+        /// Coordinates to fire at if type == Type.StaticFireAt
+        vec3 staticFireAt;
     }
 
 

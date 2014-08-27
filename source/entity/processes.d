@@ -265,6 +265,9 @@ public:
                 }
                 *commandFuture = commandPast;
                 break;
+            case StaticFireAt:
+                *commandFuture = commandPast;
+                break;
         }
     }
 
@@ -352,6 +355,8 @@ public:
                                                  futureVelocity.y,
                                                  futureVelocity.z);
                 return;
+            case StaticFireAt:
+                break;
         }
     }
 
