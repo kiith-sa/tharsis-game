@@ -44,6 +44,8 @@ private:
     // Resource manager handling entity prototypes.
     PrototypeManager prototypeMgr_;
 
+    // Keyboard and mouse input.
+    const InputDevice input_;
 
 
 
@@ -70,7 +72,8 @@ public:
     this(VideoDevice video, InputDevice input, GameTime time, Camera camera, Logger log)
         @safe nothrow //!@nogc
     {
-        log_ = log;
+        log_   = log;
+        input_ = input;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
                                                   VisualComponent,
@@ -169,5 +172,14 @@ public:
         prototypesToSpawn_.length = handleCount;
 
         entityMgr_.executeFrame();
+
+        if(input_.keyboard.pressed(Key.F1))
+        {
+            import tharsis.defaults.diagnostics;
+            import io.yaml;
+
+            const diagnostics = entityMgr_.diagnostics;
+            log_.info(diagnostics.toYAML.dumpToString).assumeWontThrow;
+        }
     }
 }
