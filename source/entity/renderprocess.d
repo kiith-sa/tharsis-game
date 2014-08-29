@@ -97,6 +97,20 @@ private:
     // OpenGL wrapper.
     OpenGL gl_;
 
+    // Specifies how the RenderProcess should draw.
+    enum RenderMode
+    {
+        // Draw everything.
+        Full,
+        // Draw everything, but only as a point.
+        Points,
+        // Don't draw anything, don't even update vertex arrays.
+        None
+    }
+
+    // Current render mode.
+    RenderMode renderMode_ = RenderMode.Full;
+
     // GLSL program used for drawing, compiled from shaderSrc.
     GLProgram program_;
 
@@ -251,6 +265,14 @@ public:
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
 
+        if(keyboard_.key(Key.One))   { renderMode_ = RenderMode.Full; }
+        if(keyboard_.key(Key.Two))   { renderMode_ = RenderMode.Points; }
+        if(keyboard_.key(Key.Three)) { renderMode_ = RenderMode.None; }
+
+        // The rest of preProcess() is just rendering.
+        if(renderMode_ == RenderMode.None) { return; }
+
+
         scope(exit) { gl_.runtimeCheck(); }
 
         glEnable(GL_DEPTH_TEST);
@@ -261,18 +283,21 @@ public:
 
         scope(exit) { program_.unuse(); }
 
+        const pointsOnly = renderMode_ == RenderMode.Points;
+        const lines      = pointsOnly ? PrimitiveType.Points : PrimitiveType.Lines;
+        const triangles  = pointsOnly ? PrimitiveType.Points : PrimitiveType.Triangles;
+
         if(grid_.bind(program_))
         {
-            grid_.draw(PrimitiveType.Lines, 0, grid_.length - bottomLevelVertices_);
-            grid_.draw(PrimitiveType.Triangles, grid_.length - bottomLevelVertices_,
-                          bottomLevelVertices_);
+            grid_.draw(lines, 0, grid_.length - bottomLevelVertices_);
+            grid_.draw(triangles, grid_.length - bottomLevelVertices_, bottomLevelVertices_);
             grid_.release();
         }
         else { logVArrayBindError("grid_"); }
 
         if(axisThingy_.bind(program_))
         {
-            axisThingy_.draw(PrimitiveType.Lines, 0, axisThingy_.length);
+            axisThingy_.draw(lines, 0, axisThingy_.length);
             axisThingy_.release();
         }
         else { logVArrayBindError("axisThingy_"); }
@@ -282,8 +307,11 @@ public:
     void process(ref const PositionComponent pos,
                  ref const VisualComponent vis) @safe nothrow
     {
-        static positions =
+        if(renderMode_ == RenderMode.None) { return; }
+
+        static allPositions =
         [
+            /*
             vec3( 20, -20, -20),
             vec3(-20,  20, -20),
             vec3(-20, -20,  20),
@@ -295,11 +323,15 @@ public:
             vec3( 20,  20,  20),
             vec3( 20, -20, -20),
             vec3(-20,  20, -20),
+            */
 
             vec3( 20,  20,  20),
             vec3( 20, -20, -20),
             vec3(-20, -20,  20)
         ];
+
+        const pointsOnly = renderMode_ == RenderMode.Points;
+        auto positions = pointsOnly ? allPositions[0 .. 1] : allPositions[];
 
         // Draw and empty the batch if we've run out of space.
         if(entitiesBatch_.capacity - entitiesBatch_.length < positions.length)
@@ -321,6 +353,10 @@ public:
                  ref const VisualComponent vis,
                  ref const SelectionComponent select) @safe nothrow
     {
+        if(renderMode_ == RenderMode.None) { return; }
+
+        const pointsOnly = renderMode_ == RenderMode.Points;
+
         // Draw and empty the batch if we've run out of space.
         if(selectionBatch_.capacity - selectionBatch_.length < 2)
         {
@@ -341,12 +377,15 @@ public:
     /// Draw all batched entities that have not yet been drawn.
     void postProcess() nothrow
     {
+        scope(exit) { glDisable(GL_DEPTH_TEST); }
+
+        if(renderMode_ == RenderMode.None) { return; }
+
         uniforms_.projection = camera_.projection;
         uniforms_.modelView  = camera_.view;
         if(!entitiesBatch_.empty) { drawBatch(entitiesBatch_, PrimitiveType.Triangles); }
         uniforms_.modelView  = mat4.identity;
         if(!selectionBatch_.empty) { drawBatch(selectionBatch_, PrimitiveType.Lines); }
-        glDisable(GL_DEPTH_TEST);
     }
 
 private:
@@ -368,7 +407,8 @@ private:
 
         if(batch.bind(program_))
         {
-            batch.draw(type, 0, batch.length);
+            const pointsOnly = renderMode_ == RenderMode.Points;
+            batch.draw(pointsOnly ? PrimitiveType.Points : type, 0, batch.length);
             batch.release();
         }
         else { logVArrayBindError("some batch"); }
