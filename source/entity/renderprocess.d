@@ -231,8 +231,8 @@ public:
         axisThingy_.put(Vertex(10,  10,  110, rgb!"0000FF"));
         axisThingy_.lock();
 
-        entitiesBatch_  = new VertexArray!Vertex(gl_, new Vertex[10000]);
-        selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[10000]);
+        entitiesBatch_  = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[32768]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
