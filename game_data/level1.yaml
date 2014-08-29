@@ -1,33 +1,41 @@
 # position:
 spawnerMulti:
-    - spawn:     game_data/entity1.yaml
-      triggerID: 1
+    # - spawn:     game_data/entity1.yaml
+    #   triggerID: 1
+    #   override:
+    #     position:
+    #       x: 100
+    #       y: 100
+    #       z: 10
+    # - spawn:     game_data/entity1.yaml
+    #   triggerID: 2
+    #   override:
+    #     position:
+    #       x: 200
+    #       y: 100
+    #       z: 10
+    # - spawn:     game_data/entity1.yaml
+    #   triggerID: 3
+    #   override:
+    #     position:
+    #       x: 200
+    #       y: 200
+    #       z: 10
+    # - spawn:     game_data/entity1.yaml
+    #   triggerID: 4
+    #   override:
+    #     position:
+    #       x: 200
+    #       y: 400
+    #       z: 10
+    - spawn:     game_data/megaspawner.yaml
+      triggerID: 5
       override:
         position:
-          x: 100
-          y: 100
-          z: 10
-    - spawn:     game_data/entity1.yaml
-      triggerID: 2
-      override:
-        position:
-          x: 200
-          y: 100
-          z: 10
-    - spawn:     game_data/entity1.yaml
-      triggerID: 3
-      override:
-        position:
-          x: 200
-          y: 200
-          z: 10
-    - spawn:     game_data/entity1.yaml
-      triggerID: 4
-      override:
-        position:
-          x: 200
-          y: 400
-          z: 10
+          x: 2172
+          y: 2172
+          z: 15
+
 timedTriggerMulti:
     - time:      0.5
       timeLeft:  0.5
@@ -41,3 +49,6 @@ timedTriggerMulti:
     - time:      2.0
       timeLeft:  2.0
       triggerID: 4
+    - time:      0.1
+      timeLeft:  0.1
+      triggerID: 5

@@ -1,0 +1,71 @@
+spawnerMulti:
+    - spawn:     game_data/entity1.yaml
+      triggerID: 1
+      override:
+        position:
+          x: 100
+          y: 100
+        dynamic:
+          velocityX: 200
+          velocityY: 200
+        engine:
+            acceleration: 11
+            maxSpeed:     450.0
+    - spawn:     game_data/entity1.yaml
+      triggerID: 2
+      override:
+        position:
+          x: 100
+          y: -100
+        dynamic:
+          velocityX: 200
+          velocityY: -200
+        engine:
+            acceleration: 11
+            maxSpeed:     450.0
+    - spawn:     game_data/entity1.yaml
+      triggerID: 3
+      override:
+        position:
+          x: -100
+          y: -100
+        dynamic:
+          velocityX: -200
+          velocityY: -200
+        engine:
+            acceleration: 11
+            maxSpeed:     450.0
+    - spawn:     game_data/entity1.yaml
+      triggerID: 4
+      override:
+        position:
+          x: -100
+          y: 100
+        dynamic:
+          velocityX: -200
+          velocityY: 200
+        engine:
+            acceleration: 11
+            maxSpeed:     450.0
+visual:
+    r: 255
+    g: 255
+    b: 0
+    a: 255
+engine:
+    acceleration: 45.0
+    maxSpeed:     900.0
+dynamic:
+timedTriggerMulti:
+    - time:      0.5
+      triggerID: 1
+      periodic: true
+    - time:      0.5
+      triggerID: 2
+      periodic: true
+    - time:      0.5
+      triggerID: 3
+      periodic: true
+    - time:      0.5
+      triggerID: 4
+      periodic: true
