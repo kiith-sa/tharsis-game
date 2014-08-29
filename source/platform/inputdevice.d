@@ -336,8 +336,12 @@ private:
     import std.container;
     // Unlikely to have more than 256 keys pressed at any one time (we ignore any more).
     SDL_Keycode[256] pressedKeys_;
+    // pressedKeys_ from the last update, to detect that a key has just been pressed/released.
+    SDL_Keycode[256] pressedKeysLastUpdate_;
     // The number of values used in pressedKeys_.
     size_t pressedKeyCount_;
+    // The number of values used in pressedKeysLastUpdate_.
+    size_t pressedKeyCountLastUpdate_;
 
 
 public:
@@ -357,6 +361,8 @@ private:
 
         int numKeys;
         const Uint8* allKeys = SDL_GetKeyboardState(&numKeys);
+        pressedKeysLastUpdate_[]   = pressedKeys_[];
+        pressedKeyCountLastUpdate_ = pressedKeyCount_;
         pressedKeyCount_ = 0;
         foreach(SDL_Scancode scancode, Uint8 state; allKeys[0 .. numKeys])
         {
