@@ -346,12 +346,24 @@ private:
 
 public:
     /// Get the state of specified keyboard key.
-    Flag!"pressed" key(const Key isPressed) @safe pure nothrow const @nogc 
+    Flag!"isPressed" key(const Key keycode) @safe pure nothrow const @nogc
     {
         import std.algorithm;
         auto keys = pressedKeys_[0 .. pressedKeyCount_];
-        return keys.canFind(cast(SDL_Keycode)isPressed) ? Yes.pressed : No.pressed;
+        return keys.canFind(cast(SDL_Keycode)keycode) ? Yes.isPressed : No.isPressed;
     }
+
+    /// Determine if specified key was just pressed.
+    Flag!"pressed" pressed(const Key keycode) @safe pure nothrow const @nogc
+    {
+        import std.algorithm;
+        // If it is pressed now but wasn't pressed the last frame, it has just been
+        // pressed.
+        auto keys = pressedKeysLastUpdate_[0 .. pressedKeyCountLastUpdate_];
+        const sdlKey = cast(SDL_Keycode)keycode;
+        return (key(keycode) && !keys.canFind(sdlKey)) ? Yes.pressed : No.pressed;
+    }
+
 
 private:
     // Get current keyboard state.
