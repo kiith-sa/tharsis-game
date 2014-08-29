@@ -8,6 +8,7 @@ module entity.renderprocess;
 
 import std.exception;
 import std.logger;
+import std.typecons;
 
 import derelict.opengl3.gl3;
 
@@ -21,6 +22,7 @@ import gl3n_extra.linalg;
 
 import entity.components;
 import game.camera;
+import platform.inputdevice;
 import platform.videodevice;
 
 
@@ -86,8 +88,11 @@ private:
     // The video device (screen + GL).
     VideoDevice video_;
 
+    // Access to keyboard input.
+    const Keyboard keyboard_;
+
     // 2D isometric camera used for projection and view matrices.
-    const(Camera) camera_;
+    const Camera camera_;
 
     // OpenGL wrapper.
     OpenGL gl_;
@@ -137,16 +142,19 @@ public:
      *
      * Params:
      *
-     * video = The video device.
-     * camera = Isometric camera.
-     * log   = Game log.
+     * video    = The video device.
+     * keyboard = Access to keyboard input.
+     * camera   = Isometric camera.
+     * log      = Game log.
      */
-    this(VideoDevice video, const(Camera) camera, Logger log) @trusted nothrow
+    this(VideoDevice video, const Keyboard keyboard, const Camera camera, Logger log)
+        @trusted nothrow
     {
-        log_    = log;
-        video_  = video;
-        camera_ = camera;
-        gl_     = video_.gl;
+        log_      = log;
+        video_    = video;
+        keyboard_ = keyboard;
+        camera_   = camera;
+        gl_       = video_.gl;
 
         gridW_ = 64;
         gridH_ = 64;
