@@ -100,7 +100,7 @@ public:
         auto selection     = new SelectionProcess(input.mouse, log);
         auto command       = new CommandProcess(input.mouse, input.keyboard, camera, log);
         auto engine        = new EngineProcess();
-        auto dynamic       = new DynamicProcess(log);
+        auto dynamic       = new DynamicProcess(time, log);
         auto position      = new PositionProcess(time, log);
         auto weapon        = new WeaponProcess(time, weaponMgr_, log);
         auto spawnerAttach = new SpawnerAttachProcess(time, weaponMgr_, log);

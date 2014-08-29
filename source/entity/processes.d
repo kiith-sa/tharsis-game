@@ -175,6 +175,10 @@ alias EngineProcess = CopyProcess!EngineComponent;
 final class DynamicProcess
 {
 private:
+    import time.gametime;
+    // Game time, for time step.
+    const GameTime time_;
+
     // Game log.
     Logger log_;
 
@@ -185,11 +189,13 @@ public:
      *
      * Params:
      *
-     * log = The game log.
+     * time = Game time, for time step.
+     * log  = The game log.
      */
-    this(Logger log) @safe pure nothrow @nogc
+    this(const GameTime time, Logger log) @safe pure nothrow @nogc
     {
-        log_ = log;
+        time_ = time;
+        log_  = log;
     }
 
     /** Update dynamics of entities with an engine.
@@ -209,6 +215,9 @@ public:
     {
         // By default, don't change the component.
         dynamicFuture = dynamicPast;
+
+        const timeStep = time_.timeStep;
+
         with(CommandComponent.Type) final switch(command.type)
         {
             case MoveTo:
@@ -227,7 +236,7 @@ public:
                 // Direction to apply the acceleration in. We want to cancel the current
                 // direction and replace it with wanted direction.
                 const vec3 accelDir = (wantedDir - currentDir * 0.5).normalized;
-                const vec3 accel = engine.acceleration * accelDir;
+                const vec3 accel = engine.acceleration * accelDir * timeStep;
 
                 vec3 futureVelocity = velocity + accel;
                 if(futureVelocity.length >= engine.maxSpeed)
@@ -269,7 +278,8 @@ public:
         }
 
         import std.algorithm;
-        velocity.setLength(max(0.0f, velocity.length - engine.acceleration));
+        const timeStep = time_.timeStep;
+        velocity.setLength(max(0.0f, velocity.length - engine.acceleration * timeStep));
         dynamicFuture = DynamicComponent(velocity.x, velocity.y, velocity.z);
     }
 }
