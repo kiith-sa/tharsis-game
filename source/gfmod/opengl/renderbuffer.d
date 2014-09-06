@@ -5,9 +5,9 @@ import std.string;
 import derelict.opengl3.gl3;
 
 import /*gfmod.core.log,*/
-       gfm.math.funcs,
+       // gfm.math.funcs,
        gfmod.opengl.opengl;
-
+/*
 /// OpenGL Renderbuffer wrapper.
 final class GLRenderBuffer
 {
@@ -118,3 +118,4 @@ final class GLRenderBuffer
         bool _initialized;
     }
 }
+*/

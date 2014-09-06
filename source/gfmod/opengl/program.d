@@ -13,8 +13,8 @@ import std.conv,
 import derelict.opengl3.gl3;
 
 import gfmod.core.text,
-       gfm.math.vector,
-       gfm.math.matrix,
+     //  gfm.math.vector,
+     //  gfm.math.matrix,
        gfmod.opengl.opengl,
        gfmod.opengl.shader,
        gfmod.opengl.uniform,

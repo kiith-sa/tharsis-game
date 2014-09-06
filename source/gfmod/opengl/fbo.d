@@ -9,7 +9,7 @@ import std.logger;
 import gfmod.opengl.opengl,
        gfmod.opengl.texture, 
        gfmod.opengl.renderbuffer;
-
+/*
 /// OpenGL FrameBuffer Object wrapper.
 final class GLFBO
 {
@@ -387,4 +387,4 @@ class GLFBOAttachment
             }
         }
     }
-}
+}*/
