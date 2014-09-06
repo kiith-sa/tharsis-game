@@ -60,7 +60,7 @@ int main(string[] args)
     import time.gametime;
     // Good for printf debugging:
     // auto gameTime = scoped!GameTime(1 / 3.0);
-    auto gameTime = scoped!GameTime(1 / 120.0);
+    auto gameTime = scoped!GameTime(1 / 60.0);
 
     import game.camera;
     auto camera        = new Camera(video.width, video.height);
