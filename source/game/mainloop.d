@@ -6,6 +6,7 @@
 /// Main event loop of the game.
 module game.mainloop;
 
+import std.exception;
 import std.logger;
 
 import game.camera;
@@ -33,6 +34,9 @@ bool mainLoop(ref EntitySystem entitySystem,
               Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
+    import tharsis.prof;
+    import std.typecons;
+    auto profiler = new Profiler(new ubyte[4096]);
 
     for(;;)
     {
@@ -41,23 +45,37 @@ bool mainLoop(ref EntitySystem entitySystem,
         // and 0% is 0. 2014-08-16
         while(time.timeToUpdate())
         {
-            input.collectInput();
-            cameraControl.update();
-            if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
+            profiler.reset();
+            {
+                auto fullUpdate = Zone(profiler, "fullUpdate");
+                input.collectInput();
+                cameraControl.update();
+                if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
 
-            import derelict.opengl3.gl3;
-            // Clear the back buffer with a red background (parameters are R, G, B, A)
-            glClearColor(0.01, 0.01, 0.04, 1.0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                import derelict.opengl3.gl3;
+                // Clear the back buffer with a red background (parameters are R, G, B, A)
+                glClearColor(0.01, 0.01, 0.04, 1.0);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            entitySystem.frame();
-            // Log GL errors, if any.
-            video.gl.runtimeCheck();
+                entitySystem.frame();
+                // Log GL errors, if any.
+                video.gl.runtimeCheck();
+            }
 
             // Swap the back buffer to the front, showing it in the window.
+            // Outside of fullUpdate because VSync could break our profiling.
             video.swapBuffers();
 
             time.finishedUpdate();
+
+            if(input.keyboard.pressed(Key.F2)) foreach(zone; profiler.profileData.zoneRange)
+            {
+                log.infof("%s took %s hnsecs (%s %% of time step) from %s to %s",
+                          zone.info, zone.duration, 
+                          zone.duration / (time.timeStep * 1000_000_0) * 100,
+                          zone.startTime, zone.endTime)
+                    .assumeWontThrow;
+            }
         }
     }
 
