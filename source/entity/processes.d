@@ -20,6 +20,10 @@ public import entity.renderprocess;
 public import entity.weaponizedspawnerprocess;
 
 
+// TODO: Low-frequency components such as picking, selection and command should possibly
+// be replaced by some other mechanism. Look at the EntityX entity system and its
+// events.
+// 2014-08-20
 
 
 
@@ -128,6 +132,9 @@ public:
         deselect_ = mouse_.clicked(Mouse.Button.Left);
     }
 
+    // TODO In future, SelectionProcess will use other mechanisms besides picking
+    // (e.g. keyboard shortcuts like T in RA2 and maybe pentadactyl-style keyboard
+    // selection) 2014-08-19
     /// Select a picked entity (if really picked, not just hovered).
     void process(ref const PickingComponent pick, ref SelectionComponent* select)
         nothrow

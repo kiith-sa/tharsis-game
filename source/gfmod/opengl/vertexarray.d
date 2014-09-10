@@ -78,6 +78,10 @@ enum isVertex(V) = is(V == struct) &&
                    !hasElaborateAssign!V &&
                    allSatisfy!(isVertexAttribute, FieldTypeTuple!V);
 
+// TODO: Currently, integral vertex attributes are automatically normalized into 
+//       the 0-1 range. Add a @nonormalize UDA to be able to disable this 
+//       (e.g. @nonormalize vec4ub thisIsNotAColor) 2014-08-14
+
 /// A wrapper around GL Vertex Attribute Object that also manages its vertex storage.
 ///
 /// Acts as a dynamic array of vertex type V. 

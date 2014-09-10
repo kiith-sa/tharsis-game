@@ -332,6 +332,8 @@ public:
             vec3(-20,  20, -20),
             vec3(-20, -20,  20),
 
+            // TODO: For now we just draw a triangle. Will draw something
+            //       more complex later. 2014-08-27
             vec3( 20,  20,  20),
             vec3(-20,  20, -20),
             vec3(-20, -20,  20),
