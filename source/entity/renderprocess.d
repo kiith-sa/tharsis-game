@@ -90,6 +90,8 @@ private:
 
     // Access to keyboard input.
     const Keyboard keyboard_;
+    // Access to mouse input.
+    const Mouse mouse_;
 
     // 2D isometric camera used for projection and view matrices.
     const Camera camera_;
@@ -158,15 +160,18 @@ public:
      *
      * video    = The video device.
      * keyboard = Access to keyboard input.
+     * mouse    = Access to mouse input.
      * camera   = Isometric camera.
      * log      = Game log.
      */
-    this(VideoDevice video, const Keyboard keyboard, const Camera camera, Logger log)
+    this(VideoDevice video, const Keyboard keyboard, const Mouse mouse, 
+         const Camera camera, Logger log)
         @trusted nothrow
     {
         log_      = log;
         video_    = video;
         keyboard_ = keyboard;
+        mouse_    = mouse;
         camera_   = camera;
         gl_       = video_.gl;
 

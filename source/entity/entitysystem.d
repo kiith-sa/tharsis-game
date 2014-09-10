@@ -98,7 +98,7 @@ public:
         import tharsis.defaults.copyprocess;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
-        renderer_          = new RenderProcess(video, input.keyboard, camera, log);
+        renderer_          = new RenderProcess(video, input.keyboard, input.mouse, camera, log);
         auto picking       = new MousePickingProcess(camera, input.mouse, log);
         auto selection     = new SelectionProcess(input.mouse, log);
         auto command       = new CommandProcess(input.mouse, input.keyboard, camera, log);
