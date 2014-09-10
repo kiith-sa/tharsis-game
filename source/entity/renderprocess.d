@@ -143,6 +143,9 @@ private:
     // Bars over selected entities are accumulated here and then drawn together.
     VertexArray!Vertex selectionBatch_;
 
+    // Batch used to draw UI elements that are drawn as triangles and redrawn every frame.
+    VertexArray!Vertex uiBatch_;
+
     // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
     enum cellSizeScreen_ = vec3u(96, 48, 24);
     // Size of a map cell in world space.
@@ -252,12 +255,14 @@ public:
 
         entitiesBatch_  = new VertexArray!Vertex(gl_, new Vertex[32768]);
         selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        uiBatch_        = new VertexArray!Vertex(gl_, new Vertex[8192]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
     ~this()
     {
         if(program_ !is null) { program_.__dtor(); }
+        uiBatch_.__dtor();
         selectionBatch_.__dtor();
         entitiesBatch_.__dtor();
         axisThingy_.__dtor();
@@ -306,6 +311,12 @@ public:
             axisThingy_.release();
         }
         else { logVArrayBindError("axisThingy_"); }
+
+        const mouse = camera_.screenToOrtho(vec2(mouse_.x, mouse_.y));
+        // const mouse = vec2(mouse_.x, mouse_.y) - camera_.size * 0.5;
+        uiBatch_.put(Vertex(mouse.x,      mouse.y - 20, 1000.0f, rgb!"FFFFEE"));
+        uiBatch_.put(Vertex(mouse.x + 14, mouse.y - 13, 1000.0f, rgb!"FFFFEE"));
+        uiBatch_.put(Vertex(mouse.x,      mouse.y,      1000.0f, rgb!"FFFFFF"));
     }
 
     /// Draw an entity with specified position and visual.
@@ -391,6 +402,8 @@ public:
         if(!entitiesBatch_.empty) { drawBatch(entitiesBatch_, PrimitiveType.Triangles); }
         uniforms_.modelView  = mat4.identity;
         if(!selectionBatch_.empty) { drawBatch(selectionBatch_, PrimitiveType.Lines); }
+        uniforms_.projection = camera_.ortho;
+        if(!uiBatch_.empty)        { drawBatch(uiBatch_, PrimitiveType.Triangles); }
     }
 
 private:
