@@ -135,7 +135,10 @@ private:
     // TODO: Pushing/popping camera state can be added when needed since we use
     //       MatrixStack 2014-08-17
 
-    // Orthographic projection matrix stack.
+    // Orthographic matrix stack (moved to position, but no zoom).
+    MatrixStack!(float, 4) orthoStack_;
+
+    // Projection matrix stack (ortho + zoom).
     MatrixStack!(float, 4) projectionStack_;
 
     // View matrix stack.
@@ -162,14 +165,21 @@ public:
         width_  = width;
         height_ = height;
         center_ = vec2(0.0f, 0.0f);
+        orthoStack_      = new MatrixStack!(float, 4)();
         projectionStack_ = new MatrixStack!(float, 4)();
         viewStack_       = new MatrixStack!(float, 4)();
-        updateOrtho();
+        updateProjection();
         updateView();
     }
 
 @nogc:
-    /// Get the current projection matrix.
+    /** Get the current plain ortho matrix.
+     *
+     * Useful to transform e.g. UI elements in non-zoomed 2D space.
+     */
+    mat4 ortho() const { return orthoStack_.top; }
+
+    /// Get the current projection (ortho + zoom) matrix.
     mat4 projection() const { return projectionStack_.top; }
 
     /// Get the current view matrix.
@@ -185,7 +195,7 @@ public:
     void center(const vec2 rhs)
     {
         center_ = rhs;
-        updateOrtho();
+        updateProjection();
     }
 
     /** Set camera zoom.
@@ -197,7 +207,7 @@ public:
     {
         assert(rhs > 0.0, "Zoom must be greater than zero");
         zoom_ = rhs;
-        updateOrtho();
+        updateProjection();
     }
 
     /// Set camera size in pixels. Both width and height must be greater than zero.
@@ -206,7 +216,7 @@ public:
         assert(width > 0 && height > 0, "Can't have camera width/height of 0");
         width_  = width;
         height_ = height;
-        updateOrtho();
+        updateProjection();
     }
 
     /// Get screen coordinates (in pixels) corresponding to 3D point in world space.
@@ -230,17 +240,28 @@ public:
         return vec3(viewStack_.invTop * vec4(((screen - halfSize) * invZoom + center), 1.0f));
     }
 
+    /// Transform a screen position to ortho (projection with no zoom) coordinates.
+    vec2 screenToOrtho(vec2 screen) const
+    {
+        const halfSize = vec2(width_ / 2, height_ / 2);
+        return (screen - halfSize) + center_;
+    }
+
 private:
     /// Update the orthographic projection matrix.
-    void updateOrtho()
+    void updateProjection()
     {
-        // Ensure we don't reach 0.
+        const hWidth  = max(width_  * 0.5f, 1.0f);
+        const hHeight = max(height_ * 0.5f, 1.0f);
+        orthoStack_.loadIdentity();
+        orthoStack_.ortho(center_.x - hWidth, center_.x + hWidth,
+                          center_.y - hHeight, center_.y + hHeight, -8000, 8000);
         const invZoom = 1.0 / zoom_;
-        const hWidth  = max(width_  * 0.5f * invZoom, 1.0f);
-        const hHeight = max(height_ * 0.5f * invZoom, 1.0f);
         projectionStack_.loadIdentity();
-        projectionStack_.ortho(center_.x - hWidth, center_.x + hWidth,
-                               center_.y - hHeight, center_.y + hHeight, -8000, 8000);
+        projectionStack_.setTop(orthoStack_.top);
+        projectionStack_.translate(vec3(center_, 0.0f));
+        projectionStack_.scale(zoom_, zoom_, zoom_);
+        projectionStack_.translate(vec3(-center_, 0.0f));
     }
 
     /// Update the view matrix.
