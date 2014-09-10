@@ -57,7 +57,7 @@ private:
     double zoomSpeedBase_ = 512.0;
 
     // Time the 'fast scroll trigger' (RMB by default) must be held for fast scroll to kick in.
-    double fastScrollTriggerTime_ = 0.1;
+    double fastScrollTriggerTime_ = 0.12;
 
     // Speed of fast scrolling
     double fastScrollSpeed_ = 8192.0;
