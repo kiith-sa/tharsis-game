@@ -7,6 +7,7 @@
 module platform.inputdevice;
 
 
+import std.algorithm;
 import std.exception;
 import std.logger;
 
@@ -87,12 +88,10 @@ private:
     // The number of values used in pressedKeysLastUpdate_.
     size_t pressedKeyCountLastUpdate_;
 
-
 public:
     /// Get the state of specified keyboard key.
     Flag!"isPressed" key(const Key keycode) @safe pure nothrow const @nogc
     {
-        import std.algorithm;
         auto keys = pressedKeys_[0 .. pressedKeyCount_];
         return keys.canFind(cast(SDL_Keycode)keycode) ? Yes.isPressed : No.isPressed;
     }
@@ -100,14 +99,11 @@ public:
     /// Determine if specified key was just pressed.
     Flag!"pressed" pressed(const Key keycode) @safe pure nothrow const @nogc
     {
-        import std.algorithm;
-        // If it is pressed now but wasn't pressed the last frame, it has just been
-        // pressed.
+        // If it is pressed now but wasn't pressed the last frame, it has just been pressed.
         auto keys = pressedKeysLastUpdate_[0 .. pressedKeyCountLastUpdate_];
         const sdlKey = cast(SDL_Keycode)keycode;
         return (key(keycode) && !keys.canFind(sdlKey)) ? Yes.pressed : No.pressed;
     }
-
 
 private:
     // Get current keyboard state.
@@ -126,8 +122,8 @@ private:
             pressedKeys_[pressedKeyCount_++] = SDL_GetKeyFromScancode(scancode);
         }
     }
-}
 
+}
 
 /// Keeps track of mouse position, buttons, dragging, etc.
 final class Mouse
