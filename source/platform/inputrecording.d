@@ -32,6 +32,146 @@ enum RecordingState
 }
 
 
+/** Records input received by an InputDevice. Used to generate recorded input benchmarking
+ *  demos (and possibly input macros in future?).
+ */
+final class InputRecordingDevice
+{
+private:
+    /// Current recording state (are we recording?).
+    RecordingState state_ = RecordingState.NotRecording;
+
+    import std.container;
+    /// Recorded keyboard input is copied here whenever mouseRecorder_ runs out of space.
+    Array!ubyte recordedDataMouse_;
+    /// Recorded keyboard input is copied here whenever keyboardRecorder_ runs out of space.
+    Array!ubyte recordedDataKeyboard_;
+
+    /// Buffer used by mouseRecorder_ to record data to.
+    ubyte[] mouseRecordBuffer_;
+    /// Buffer used by keyboardRecorder_ to record data to.
+    ubyte[] keyboardRecordBuffer_;
+
+    /// Records mouse input.
+    Recorder!Mouse    mouseRecorder_;
+    /// Records keyboard input.
+    Recorder!Keyboard keyboardRecorder_;
+
+    /// Input device to record input from.
+    const InputDevice input_;
+
+public:
+nothrow:
+    /// Construct a recording device capable of recording input from specified input device.
+    this(const InputDevice input) @trusted
+    {
+        input_ = input;
+        enum recBufLength = 64 * 1024;
+        import core.stdc.stdlib: malloc;
+        mouseRecordBuffer_    = (cast(ubyte*)malloc(recBufLength))[0 .. recBufLength];
+        keyboardRecordBuffer_ = (cast(ubyte*)malloc(recBufLength))[0 .. recBufLength];
+    }
+
+    /** Destroy a recording device.
+     *
+     * Must be called to ensure deletion of any buffers used.
+     */
+    ~this() @trusted @nogc
+    {
+        import core.stdc.stdlib: free;
+        free(mouseRecordBuffer_.ptr);
+        free(keyboardRecordBuffer_.ptr);
+    }
+
+    /** Start recording.
+     *
+     * Clears previously recorded data, if any, and starts recording from scratch. The
+     * frame immediately after startRecording() will not be recorded to avoid recording
+     * the input that triggered recording in the first place. Actual recording will start
+     * with the second frame.
+     */
+    void startRecording() @trusted
+    {
+        assert(state_ == RecordingState.NotRecording,
+               "Trying to start recording when we're already recording");
+        state_ = RecordingState.FirstFrame;
+        mouseRecorder_    = Recorder!Mouse(mouseRecordBuffer_);
+        keyboardRecorder_ = Recorder!Keyboard(keyboardRecordBuffer_);
+        recordedDataMouse_.reserve(256 * 1024).assumeWontThrow;
+        recordedDataKeyboard_.reserve(256 * 1024).assumeWontThrow;
+    }
+
+    /** Stop recording.
+     *
+     * Can be called only after startRecording(), and only once per a startRecording()
+     * call.
+     */
+    void stopRecording() @trusted
+    {
+        assert(state_ != RecordingState.NotRecording,
+               "Trying to end recording when we're not recording");
+
+        delegate
+        {
+            recordedDataMouse_    ~= mouseRecorder_.recordedData;
+            recordedDataKeyboard_ ~= keyboardRecorder_.recordedData;
+            mouseRecorder_.reset();
+            keyboardRecorder_.reset();
+            destroy(mouseRecorder_);
+            destroy(keyboardRecorder_);
+        }().assumeWontThrow;
+        state_ = RecordingState.NotRecording;
+    }
+
+    /// Get the current recording state (are we recording? first frame before recording?).
+    RecordingState state() @safe pure const @nogc
+    {
+        return state_;
+    }
+
+    /// Get input recorded from the mouse since the last startRecording() call.
+    Recording!Mouse mouseRecording() @safe
+    {
+        return new BinaryRecording!Mouse(recordedDataMouse_);
+    }
+
+    /// Get input recorded from the keyboard since the last startRecording() call.
+    Recording!Keyboard keyboardRecording() @safe
+    {
+        return new BinaryRecording!Keyboard(recordedDataKeyboard_);
+    }
+
+    /// Update the recording device. If recording enabled, record input for the current frame.
+    void update() @trusted
+    {
+        if(state_ == RecordingState.Recording)
+        {
+            record(mouseRecorder_, input_.mouse, recordedDataMouse_);
+            record(keyboardRecorder_, input_.keyboard, recordedDataKeyboard_);
+        }
+        if(state_ == RecordingState.FirstFrame) { state_ = RecordingState.Recording; }
+    }
+
+private:
+    /** Record input for current frame from specified source.
+     *
+     * Params:
+     *
+     * recorder     = Recorder to record into.
+     * input        = Source of input to record (e.g. Keyboard or Mouse).
+     * recordedData = Sink to write recorded data to if recorder runs out of space/
+     */
+    static void record(Input)(ref Recorder!Input recorder, Input input, ref Array!ubyte recordedData)
+        @system
+    {
+        if(recorder.notEnoughSpace)
+        {
+            (recordedData ~= recorder.recordedData).assumeWontThrow;
+            recorder.reset();
+        }
+        recorder.recordFrame(input);
+    }
+}
 
 /** Convert an input recording to YAML.
  *
