@@ -201,53 +201,38 @@ nothrow @nogc:
         buttons_[4] = bits & SDL_BUTTON_X2MASK ? Yes.pressed : No.pressed;
     }
 
+@safe pure const
+{
     /// Get X coordinate of mouse position.
-    int x() @safe pure const { return x_; }
-
+    int x() { return x_; }
     /// Get Y coordinate of mouse position.
-    int y() @safe pure const { return y_; }
+    int y() { return y_; }
 
     /// Get X movement of mouse since the last update.
-    int xMovement() @safe pure const { return xMovement_; }
-
+    int xMovement() { return xMovement_; }
     /// Get Y movement of mouse since the last update.
-    int yMovement() @safe pure const { return yMovement_; }
+    int yMovement() { return yMovement_; }
 
     /// Get X coordinate of the mouse wheel (if it supports horizontal scrolling).
-    int wheelX() @safe pure const { return wheelX_; }
-
+    int wheelX() { return wheelX_; }
     /// Get Y coordinate of the mouse wheel.
-    int wheelY() @safe pure const { return wheelY_; }
+    int wheelY() { return wheelY_; }
 
     /// Get the X movement of the wheel since the last update.
-    int wheelXMovement() @safe pure const { return wheelXMovement_; }
-
+    int wheelXMovement() { return wheelXMovement_; }
     /// Get the Y movement of the wheel since the last update.
-    int wheelYMovement() @safe pure const { return wheelYMovement_; }
+    int wheelYMovement() { return wheelYMovement_; }
 
     /// Did the user finish a double click during this update?
-    Flag!"doubleClick" doubleClicked(Button button) @safe pure const
-    {
-        return doubleClick_[button];
-    }
-
+    Flag!"doubleClick" doubleClicked(Button button) { return doubleClick_[button]; }
     /// Did the user finish a click during this update?
-    Flag!"click" clicked(Button button) @safe pure const
-    {
-        return click_[button];
-    }
-
+    Flag!"click" clicked(Button button) { return click_[button]; }
     /// Get the state of specified mouse button.
-    Flag!"pressed" button(Button button) @safe pure const
-    {
-        return buttons_[button];
-    }
+    Flag!"pressed" button(Button button) { return buttons_[button]; }
 
     /// Get the coordinates at which button was last pressed. Useful for dragging.
-    vec2i pressedCoords(Button button) @safe pure const
-    {
-        return pressedCoords_[button];
-    }
+    vec2i pressedCoords(Button button) { return pressedCoords_[button]; }
+}
 
 private:
     /// Handle an SDL event (which may be a mouse event).
