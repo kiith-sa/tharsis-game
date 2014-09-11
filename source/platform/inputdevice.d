@@ -282,8 +282,9 @@ private:
                 break;
             case SDL_MOUSEBUTTONUP:
                 const b = button(e.button.button);
-                click_[b]       = e.button.clicks > 0 ? Yes.click : No.click;
-                doubleClick_[b] = (e.button.clicks % 2 == 0) ? Yes.doubleClick : No.doubleClick;
+                // Don't set to No.click so we don't override clicks from any playing recording.
+                if(e.button.clicks > 0)      { click_[b]       = Yes.click; }
+                if(e.button.clicks % 2 == 0) { doubleClick_[b] = Yes.doubleClick; }
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 // Save the coords where the button was pressed (for dragging).
