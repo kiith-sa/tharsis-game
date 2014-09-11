@@ -183,6 +183,7 @@ private:
     int wheelXMovement_;
 
     // State of all (well, at most 5) mouse buttons.
+    Flag!"pressed"[Button.max + 1] buttonsLastUpdate_;
 
     // Coordinates where each button was last pressed (for dragging).
     vec2i[Button.max + 1] pressedCoords_;
@@ -212,17 +213,11 @@ nothrow @nogc:
      *
      * getHeight = Delegate that returns current window height.
      */
-    this(long delegate() @safe pure nothrow @nogc getHeight) @trusted
+    this(long delegate() @safe pure nothrow @nogc getHeight) @safe nothrow
     {
         getHeight_ = getHeight;
-        const bits = SDL_GetMouseState(&x_, &y_);
         xMovement_ = yMovement_ = 0;
-        y_ = cast(int)(getHeight_() - y_);
-        buttons_[0] = bits & SDL_BUTTON_LMASK  ? Yes.pressed : No.pressed;
-        buttons_[1] = bits & SDL_BUTTON_MMASK  ? Yes.pressed : No.pressed;
-        buttons_[2] = bits & SDL_BUTTON_RMASK  ? Yes.pressed : No.pressed;
-        buttons_[3] = bits & SDL_BUTTON_X1MASK ? Yes.pressed : No.pressed;
-        buttons_[4] = bits & SDL_BUTTON_X2MASK ? Yes.pressed : No.pressed;
+        getMouseState();
     }
 
 @safe pure const
@@ -289,11 +284,9 @@ private:
                 const b = button(e.button.button);
                 click_[b]       = e.button.clicks > 0 ? Yes.click : No.click;
                 doubleClick_[b] = (e.button.clicks % 2 == 0) ? Yes.doubleClick : No.doubleClick;
-                buttons_[b] = No.pressed;
                 break;
             case SDL_MOUSEBUTTONDOWN:
                 // Save the coords where the button was pressed (for dragging).
-                buttons_[button(e.button.button)]       = Yes.pressed;
                 pressedCoords_[button(e.button.button)] = vec2i(x_, y_);
                 break;
             default: break;
@@ -301,17 +294,27 @@ private:
     }
 
     /// Update any mouse state that must be updated every frame.
-    void update() @system
+    void update() @safe nothrow
     {
-        wheelXMovement_ = 0;
-        wheelYMovement_ = 0;
+        wheelXMovement_ = 0; wheelYMovement_ = 0;
         click_[]       = No.click;
         doubleClick_[] = No.doubleClick;
-        const oldX = x_;
-        const oldY = y_;
-        SDL_GetMouseState(&x_, &y_);
+        const oldX = x_; const oldY = y_;
+        getMouseState();
+        xMovement_ = x_ - oldX; yMovement_ = y_ - oldY;
+    }
+
+
+    /// Get mouse position and button state.
+    void getMouseState() @trusted nothrow
+    {
+        const buttons = SDL_GetMouseState(&x_, &y_);
+        buttonsLastUpdate_[] = buttons_[];
+        buttons_[Button.Left]   = buttons & SDL_BUTTON_LMASK  ? Yes.pressed : No.pressed;
+        buttons_[Button.Middle] = buttons & SDL_BUTTON_MMASK  ? Yes.pressed : No.pressed;
+        buttons_[Button.Right]  = buttons & SDL_BUTTON_RMASK  ? Yes.pressed : No.pressed;
+        buttons_[Button.X1]     = buttons & SDL_BUTTON_X1MASK ? Yes.pressed : No.pressed;
+        buttons_[Button.X2]     = buttons & SDL_BUTTON_X2MASK ? Yes.pressed : No.pressed;
         y_ = cast(int)(getHeight_() - y_);
-        xMovement_ = x_ - oldX;
-        yMovement_ = y_ - oldY;
     }
 }
