@@ -77,14 +77,26 @@ import std.typecons;
 /// Keeps track of which keys are pressed on the keyboard.
 final class Keyboard
 {
+package:
+    // Keyboard data members separated into a struct for easy recording.
+    //
+    // "Base" state because all other state (movement) can be derived from this data
+    // (movement - change of BaseState between frames).
+    struct BaseState
+    {
+        // Unlikely to have more than 256 keys pressed at any one time (we ignore any more).
+        SDL_Keycode[256] pressedKeys_;
+        // The number of values used in pressedKeys_.
+        size_t pressedKeyCount_;
+
+    }
+
+    BaseState baseState_;
+    alias baseState_ this;
+
 private:
-    import std.container;
-    // Unlikely to have more than 256 keys pressed at any one time (we ignore any more).
-    SDL_Keycode[256] pressedKeys_;
     // pressedKeys_ from the last update, to detect that a key has just been pressed/released.
     SDL_Keycode[256] pressedKeysLastUpdate_;
-    // The number of values used in pressedKeys_.
-    size_t pressedKeyCount_;
     // The number of values used in pressedKeysLastUpdate_.
     size_t pressedKeyCountLastUpdate_;
 
