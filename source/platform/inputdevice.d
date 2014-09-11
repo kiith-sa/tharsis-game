@@ -194,7 +194,8 @@ nothrow @nogc:
         Right   = 2,
         X1      = 3,
         X2      = 4,
-        Unknown = ubyte.max
+        // Using 16 to avoid too big BaseState arrays.
+        Unknown = 16
     }
 
     /** Construct a Mouse and initialize button states.
