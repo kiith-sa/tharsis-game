@@ -132,42 +132,57 @@ private:
 /// Keeps track of mouse position, buttons, dragging, etc.
 final class Mouse
 {
-private:
-    // X coordinate of mouse position.
-    int x_;
-    // Y coordinate of mouse position.
-    int y_;
+package:
+    // Mouse data members separated into a struct for easy recording.
+    //
+    // "Base" state because all other state (movement) can be derived from this data
+    // (movement - change of BaseState between frames).
+    struct BaseState
+    {
+        // X coordinate of mouse position.
+        int x_;
+        // Y coordinate of mouse position.
+        int y_;
 
+        // X coordinate of the mouse wheel (if the wheel supports horizontal scrolling).
+        int wheelX_;
+        // Y coordinate of the mouse wheel (aka scrolling with a normal wheel).
+        int wheelY_;
+
+        // Did the user finish a click with a button during this update?
+        Flag!"click"[Button.max + 1] click_;
+
+        // Did the user finish a doubleclick with a button during this update?
+        Flag!"doubleClick"[Button.max + 1] doubleClick_;
+
+        // State of all (well, at most 5) mouse buttons.
+        Flag!"pressed"[Button.max + 1] buttons_;
+
+    }
+
+    BaseState baseState_;
+    alias baseState_ this;
+
+private:
     // Y movement of mouse since the last update.
     int xMovement_;
     // Y movement of mouse since the last update.
     int yMovement_;
-
-    // X coordinate of the mouse wheel (if the wheel supports horizontal scrolling).
-    int wheelX_;
-    // Y coordinate of the mouse wheel (aka scrolling with a normal wheel).
-    int wheelY_;
 
     // X movement of the wheel since the last update.
     int wheelYMovement_;
     // Y movement of the wheel since the last update.
     int wheelXMovement_;
 
-    import gl3n_extra.linalg;
-    // Did the user finish a click with a button during this update?
-    Flag!"click"[Button.max + 1] click_;
-
-    // Did the user finish a doubleclick with a button during this update?
-    Flag!"doubleClick"[Button.max + 1] doubleClick_;
-
     // State of all (well, at most 5) mouse buttons.
-    Flag!"pressed"[Button.max + 1] buttons_;
 
     // Coordinates where each button was last pressed (for dragging).
     vec2i[Button.max + 1] pressedCoords_;
 
     // Gets the current window height.
     long delegate() @safe pure nothrow @nogc getHeight_;
+
+    import gl3n_extra.linalg;
 
 public:
 nothrow @nogc:
