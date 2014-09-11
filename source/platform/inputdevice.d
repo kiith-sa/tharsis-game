@@ -8,6 +8,8 @@ module platform.inputdevice;
 
 
 import std.algorithm;
+import std.array;
+import std.conv;
 import std.exception;
 import std.logger;
 
@@ -15,6 +17,7 @@ import derelict.sdl2.sdl;
 
 public import platform.key;
 
+import io.yaml;
 
 /// Handles user input (keyboard, windowing input such as closing the window, etc.).
 final class InputDevice
@@ -89,6 +92,31 @@ package:
         // The number of values used in pressedKeys_.
         size_t pressedKeyCount_;
 
+        // Convert a BaseState to a YAML node.
+        YAMLNode toYAML() @safe nothrow const
+        {
+            auto pressedKeys = pressedKeys_[0 .. pressedKeyCount_];
+            return YAMLNode(pressedKeys.map!(to!string).array.assumeWontThrow);
+        }
+
+        /* Load a BaseState from a YAML node (produced by BaseState.toYAML()).
+         *
+         * Throws:
+         *
+         * ConvException if any value in the YAML has unexpected format.
+         * YAMLException if the YAML has unexpected layout.
+         */
+        static BaseState fromYAML(ref YAMLNode yaml) @safe
+        {
+            enforce(yaml.length <= pressedKeys_.length,
+                    new YAMLException("Too many pressed keys in a record"));
+            BaseState result;
+            foreach(string key; yaml)
+            {
+                result.pressedKeys_[result.pressedKeyCount_++] = to!SDL_Keycode(key);
+            }
+            return result;
+        }
     }
 
     BaseState baseState_;
@@ -166,6 +194,56 @@ package:
         // State of all (well, at most 5) mouse buttons.
         Flag!"pressed"[Button.max + 1] buttons_;
 
+        // Convert a BaseState to a YAML node.
+        YAMLNode toYAML() @safe nothrow const
+        {
+            string[] keys;
+            YAMLNode[] values;
+            keys ~= "x"; values ~= YAMLNode(x_);
+            keys ~= "y"; values ~= YAMLNode(y_);
+            keys ~= "wheelX"; values ~= YAMLNode(wheelX_);
+            keys ~= "wheelY"; values ~= YAMLNode(wheelY_);
+
+            keys ~= "click";
+            values ~= YAMLNode(click_[].map!(to!string).array.assumeWontThrow);
+            keys ~= "doubleClick";
+            values ~= YAMLNode(doubleClick_[].map!(to!string).array.assumeWontThrow);
+            keys ~= "buttons";
+            values ~= YAMLNode(buttons_[].map!(to!string).array.assumeWontThrow);
+            return YAMLNode(keys, values);
+        }
+
+        /* Load a BaseState from a YAML node (produced by BaseState.toYAML()).
+         *
+         * Throws:
+         *
+         * ConvException if any value in the YAML has unexpected format.
+         * YAMLException if the YAML has unexpected layout.
+         */
+        static BaseState fromYAML(ref YAMLNode yaml) @safe
+        {
+            // Used to load button arrays (buttons_, click_, doubleClick_)
+            void buttonsFromYAML(F)(F[] flags, ref YAMLNode seq)
+            {
+                enforce(seq.length <= flags.length,
+                        new YAMLException("Too many mouse buttons in recording"));
+                size_t idx = 0;
+                foreach(string button; seq) { flags[idx++] = button.to!F; }
+            }
+            BaseState result;
+            foreach(string key, ref YAMLNode value; yaml) switch(key)
+            {
+                case "x":           result.x_      = value.as!int;                 break;
+                case "y":           result.y_      = value.as!int;                 break;
+                case "wheelX":      result.wheelX_ = value.as!int;                 break;
+                case "wheelY":      result.wheelY_ = value.as!int;                 break;
+                case "click":       buttonsFromYAML(result.click_[],       value); break;
+                case "doubleClick": buttonsFromYAML(result.doubleClick_[], value); break;
+                case "buttons":     buttonsFromYAML(result.buttons_[],     value); break;
+                default: throw new YAMLException("Unknown key in mouse record: " ~ key);
+            }
+            return result;
+        }
     }
 
     BaseState baseState_;
