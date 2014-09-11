@@ -184,6 +184,19 @@ private:
         }
     }
 
+    /** Load base state from a record.
+     *
+     * Pressed keys on the keyboard are combined with pressed keys loaded from the record.
+     */
+    void handleRecord(ref const BaseState state) @safe pure nothrow @nogc
+    {
+        foreach(key; state.pressedKeys_[0 .. state.pressedKeyCount_])
+        {
+            // Ignore more than 256 keys pressed at the same time.
+            if(pressedKeyCount_ >= pressedKeys_.length) { return; }
+            pressedKeys_[pressedKeyCount_++] = key;
+        }
+    }
 }
 
 /// Keeps track of mouse position, buttons, dragging, etc.
@@ -404,6 +417,37 @@ private:
         xMovement_ = x_ - oldX; yMovement_ = y_ - oldY;
     }
 
+    /** Load base state from a record.
+     *
+     * Mouse cursor and wheel coordinates are considered absolute; i.e. recorded coords
+     * override current cursor/wheel position.
+     *
+     * Button clicks are not absolute; any clicks from the record are added to clicks
+     * registered from current input. Same for pressed buttons.
+     */
+    void handleRecord(ref const BaseState state) @safe pure nothrow @nogc
+    {
+        xMovement_ += state.x_ - x_;
+        yMovement_ += state.y_ - y_;
+        x_ = state.x_;
+        y_ = state.y_;
+
+        wheelXMovement_ += state.wheelX_ - wheelX_;
+        wheelYMovement_ += state.wheelY_ - wheelY_;
+        wheelX_ = state.wheelX_;
+        wheelY_ = state.wheelY_;
+
+        foreach(button; 0 .. Button.max + 1)
+        {
+            // A button has been 'pressed' from the recording
+            const justPressed = !buttonsLastUpdate_[button] && state.buttons_[button];
+            // If no click in record, we keep the click/no click from user input.
+            if(state.click_[button])       { click_[button]         = Yes.click;       }
+            if(state.doubleClick_[button]) { doubleClick_[button]   = Yes.doubleClick; }
+            if(state.buttons_[button])     { buttons_[button]       = Yes.pressed;     }
+            if(justPressed)                { pressedCoords_[button] = vec2i(x_, y_);   }
+        }
+    }
 
     /// Get mouse position and button state.
     void getMouseState() @trusted nothrow
