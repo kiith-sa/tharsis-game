@@ -30,3 +30,31 @@ enum RecordingState
     /// The InputRecordingDevice is recording.
     Recording
 }
+
+/** Base class for input recordings of specified Input type (Mouse or Keyboard).
+ *
+ * Input type must define a BaseState type defining all state to be recorded (all input
+ * state in Input should be either in BaseState or calculated from BaseState data).
+ *
+ * Acts as an input range of Input.BaseState.
+ */
+abstract class Recording(Input)
+{
+protected:
+    // Input for the current frame in the recording.
+    Input.BaseState inputState_;
+
+public:
+    /// Move to the next frame in the recording.
+    void popFront() @safe nothrow;
+
+    /// Get input for the current frame in the recording.
+    final ref const(Input.BaseState) front() @safe pure nothrow const @nogc
+    {
+        return inputState_;
+    }
+
+    /// Is the recording at the end? (no more recorded frames of input)
+    bool empty() @safe pure nothrow const @nogc;
+}
+
