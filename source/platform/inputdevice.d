@@ -20,13 +20,14 @@ public import platform.key;
 
 import io.yaml;
 
-/// Handles user input (keyboard, windowing input such as closing the window, etc.).
+/// Handles user input (keyboard, mouse, windowing input such as closing the window, etc.).
 final class InputDevice
 {
-private:
+package:
     // Game log.
     Logger log_;
 
+private:
     // Keeps track of keyboard input.
     Keyboard keyboard_;
 
