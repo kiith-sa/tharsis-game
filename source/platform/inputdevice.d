@@ -39,6 +39,25 @@ private:
     // Recording device used for recording input for benchmark demos.
     InputRecordingDevice recorder_;
 
+    // Currently playing mouse input recording. Null if no recording is playing.
+    Recording!Mouse replayMouse_ = null;
+    // Currently playing keyboard input recording. Null if no recording is playing.
+    Recording!Keyboard replayKeyboard_ = null;
+
+    // A HACK to ensure game state during a replay 'lines up' to state during recording.
+    //
+    // Specifies number of frames after replay() is called to wait before really starting
+    // to replay.
+    //
+    // Without this, replaying recorded input is slightly 'off', e.g. the camera is moved
+    // slightly less far, resulting in entities that were selected when recording not
+    // being selected when replaying, etc.
+    //
+    // TODO: Try to figure out a way to fix this problem without this hack.
+    //       (Note: the one-frame recording delay does not seem to be responsible)
+    //       2014-09-11
+    size_t replayMouseDelay_, replayKeyboardDelay_;
+
 public:
     /** Construct an InputDevice.
      *
@@ -67,6 +86,34 @@ public:
         return recorder_;
     }
 
+    /** Start replaying mouse input from a recording.
+     *
+     * The recording will continue to play until it is spent.
+     * Will consume the recording.
+     *
+     * If something is already replaying (from a previous replay() call), it will be
+     * overridden.
+     */
+    void replay(Recording!Mouse recording) @safe pure nothrow @nogc
+    {
+        replayMouse_ = recording;
+        replayMouseDelay_ = 1;
+    }
+
+    /** Start replaying keyboard input from a recording.
+     *
+     * The recording will continue to play until it is spent.
+     * Will consume the recording.
+     *
+     * If something is already replaying (from a previous replay() call), it will be
+     * overridden.
+     */
+    void replay(Recording!Keyboard recording) @safe pure nothrow @nogc
+    {
+        replayKeyboard_ = recording;
+        replayKeyboardDelay_ = 1;
+    }
+
     /// Collect user input.
     void update() @trusted nothrow // @nogc
     {
@@ -76,6 +123,10 @@ public:
 
         mouse_.update();
         keyboard_.update();
+
+        handleRecord(replayMouse_, mouse_, replayMouseDelay_);
+        handleRecord(replayKeyboard_, keyboard_, replayKeyboardDelay_);
+
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
@@ -93,6 +144,30 @@ public:
 
     /// Does the user want to quit the program (e.g. by pressing the close window button).
     bool quit() @safe pure nothrow const @nogc { return quit_; }
+
+private:
+    /** If specified input recording is not null, attempts to play one frame from the recording.
+     *
+     * Params:
+     *
+     * rec   = The recording to play. If null, handleRecord() will do nothing.
+     * input = Input affected by the recording. E.g. mouse for a mouse input recording.
+     * delay = Delay, in frames, to start replaying. See $(D replayMouseDelay_),
+     *         $(D replayKeyboardDelay_)
+     */
+    static void handleRecord(Input)(ref Recording!Input rec, Input input, ref size_t delay)
+        @safe
+    {
+        scope(exit) if(delay > 0) { --delay; }
+        if(rec is null || delay > 0) { return; }
+
+        if(rec.empty) { rec = null; }
+        else
+        {
+            input.handleRecord(rec.front);
+            rec.popFront();
+        }
+    }
 }
 
 
