@@ -31,6 +31,37 @@ enum RecordingState
     Recording
 }
 
+
+
+/** Convert an input recording to YAML.
+ *
+ * Params:
+ *
+ * recording = Recording to convert. Will be (or should be assumed to be) consumed.
+ */
+YAMLNode toYAML(Input)(Recording!Input recording) @trusted nothrow
+{
+    Input.BaseState lastState;
+    // Not particularly GC-efficient, can be optimized (prealloc) if needed.
+    string[] keys;
+    YAMLNode[] values;
+    foreach(state; recording)
+    {
+        if(state == lastState)
+        {
+            keys   ~= "NoChange";
+            values ~= YAMLNode(YAMLNull());
+            continue;
+        }
+
+        lastState = state;
+        keys   ~= "Change";
+        values ~= state.toYAML();
+    }
+    return YAMLNode(keys, values, "tag:yaml.org,2002:pairs");
+}
+
+
 /** Base class for input recordings of specified Input type (Mouse or Keyboard).
  *
  * Input type must define a BaseState type defining all state to be recorded (all input
