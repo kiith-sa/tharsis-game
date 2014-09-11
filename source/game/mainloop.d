@@ -48,7 +48,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             profiler.reset();
             {
                 auto fullUpdate = Zone(profiler, "fullUpdate");
-                input.collectInput();
+                input.update();
                 cameraControl.update();
                 if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
 

@@ -48,7 +48,7 @@ public:
     }
 
     /// Collect user input.
-    void collectInput() @trusted nothrow @nogc
+    void update() @trusted nothrow // @nogc
     {
         mouse_.update();
         keyboard_.update();
