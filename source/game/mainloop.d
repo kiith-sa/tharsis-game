@@ -76,6 +76,33 @@ bool mainLoop(ref EntitySystem entitySystem,
                           zone.startTime, zone.endTime)
                     .assumeWontThrow;
             }
+
+            if(input.keyboard.pressed(Key.F3))
+            {
+                auto recorder = input.recorder;
+                if(recorder.state == RecordingState.Recording)
+                {
+                    recorder.stopRecording();
+                    input.replay(recorder.mouseRecording);
+                    input.replay(recorder.keyboardRecording);
+
+                    // TODO: Replace this with something better, and use VFS 2014-09-08
+                    // Just a quick-and-dirty hack to record input for demos.
+                    import io.yaml;
+                    try
+                    {
+                        Dumper("mouse_keyboard.yaml").dump(recorder.recordingAsYAML);
+                    }
+                    catch(Exception e)
+                    {
+                        log.warning("Failed to dump input recording").assumeWontThrow;
+                    }
+                }
+                else
+                {
+                    recorder.startRecording();
+                }
+            }
         }
     }
 
