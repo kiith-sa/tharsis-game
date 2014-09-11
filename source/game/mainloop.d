@@ -40,7 +40,7 @@ bool mainLoop(ref EntitySystem entitySystem,
 
     for(;;)
     {
-        // TODO: measure time taken by an update (iteration of this while loop) 
+        // TODO: measure time taken by an update (iteration of this while loop)
         // Instead of an FPS display, have a 'Load' display, where 100% is timeStep
         // and 0% is 0. 2014-08-16
         while(time.timeToUpdate())
@@ -71,7 +71,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             if(input.keyboard.pressed(Key.F2)) foreach(zone; profiler.profileData.zoneRange)
             {
                 log.infof("%s took %s hnsecs (%s %% of time step) from %s to %s",
-                          zone.info, zone.duration, 
+                          zone.info, zone.duration,
                           zone.duration / (time.timeStep * 1000_000_0) * 100,
                           zone.startTime, zone.endTime)
                     .assumeWontThrow;
