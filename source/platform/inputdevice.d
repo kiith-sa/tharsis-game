@@ -333,7 +333,7 @@ nothrow @nogc:
 
 private:
     /// Handle an SDL event (which may be a mouse event).
-    void handleEvent(ref const SDL_Event e) @system
+    void handleEvent(ref const SDL_Event e) @system nothrow
     {
         static Button button(Uint8 sdlButton) @safe pure nothrow @nogc
         {
