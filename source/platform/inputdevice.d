@@ -257,8 +257,9 @@ private:
             case SDL_MOUSEWHEEL:
                 wheelX_ += e.wheel.x;
                 wheelY_ += e.wheel.y;
-                wheelXMovement_ = e.wheel.x;
-                wheelYMovement_ = e.wheel.y;
+                // += is needed because there might be multiple wheel events per frame.
+                wheelXMovement_ += e.wheel.x;
+                wheelYMovement_ += e.wheel.y;
                 break;
             case SDL_MOUSEBUTTONUP:
                 const b = button(e.button.button);
