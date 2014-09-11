@@ -15,6 +15,7 @@ import std.logger;
 
 import derelict.sdl2.sdl;
 
+public import platform.inputrecording;
 public import platform.key;
 
 import io.yaml;
@@ -35,6 +36,9 @@ private:
     // Does the user want to quit the program?
     bool quit_;
 
+    // Recording device used for recording input for benchmark demos.
+    InputRecordingDevice recorder_;
+
 public:
     /** Construct an InputDevice.
      *
@@ -48,11 +52,28 @@ public:
         log_      = log;
         keyboard_ = new Keyboard();
         mouse_    = new Mouse(getHeight);
+        recorder_ = new InputRecordingDevice(this);
+    }
+
+    /// Destroy the InputDevice. Must be called to ensure deletion of manually allocated memory.
+    ~this()
+    {
+        destroy(recorder_);
+    }
+
+    /// Get a reference to the recording device to record input with.
+    InputRecordingDevice recorder() @safe pure nothrow @nogc
+    {
+        return recorder_;
     }
 
     /// Collect user input.
     void update() @trusted nothrow // @nogc
     {
+        // Record input from the *previous frame* (avoids recording the current frame
+        // of a stopRecord() call, which could record the input that stopped it)
+        recorder_.update();
+
         mouse_.update();
         keyboard_.update();
         SDL_Event e;
