@@ -77,6 +77,11 @@ void help()
         "  demo                       Play a pre-recorded demo, executing tharsis-game",
         "                             with recorded keyboard/mouse input. Exactly one",
         "                             local argument (demo file name) must be specified.",
+        "    Local options:",
+        "      --direct               Allow direct mouse/keyboard input to pass through",
+        "                             along with the recorded demo input (allowing the ",
+        "                             user to affect the demo as it runs)",
+        "                             ",
         "    Local arguments:",
         "      <filename>             Name of the recorded input file to execute.",
         "-------------------------------------------------------------------------------"
@@ -104,9 +109,19 @@ private:
     // Action to execute (determined by command line arguments)
     int delegate() action_;
 
+    // Options/arguments for the 'demo' command.
+    struct Demo
+    {
+        // Name of the recorded input filename for the 'demo' command.
+        string inputName_;
 
-    // Name of the recorded input filename for the 'demo' command.
-    string demoInputName_;
+        // Should direct mouse/keyboard input be blocked when replaying the demo?
+        Flag!"block" blockInput_ = Yes.block;
+    }
+
+    // Options/arguments for the 'demo' command.
+    Demo demo_;
+
 
 public:
     /// Construct a CLI with specified command-line arguments and parse them.
@@ -155,9 +170,23 @@ private:
     // Parses local options for the "top" command.
     void localDemo(string arg)
     {
-        enforce(demoInputName_ is null,
-                new CLIException("`demo` can have only one argument: input file name"));
-        demoInputName_ = arg;
+        if(!arg.startsWith("--"))
+        {
+            enforce(demo_.inputName_ is null,
+                    new CLIException("`demo` can have only one argument: input file name"));
+            demo_.inputName_ = arg;
+            return;
+        }
+
+        processOption(arg, (opt, args) {
+
+        switch(opt)
+        {
+            case "direct": demo_.blockInput_ = No.block; break;
+            default: throw new CLIException("Unrecorgnized demo option: --" ~ opt);
+        }
+
+        });
     }
 
     // Parse a command. Sets up command state and switches to its option parser function.
@@ -172,7 +201,7 @@ private:
                 processArg_ = &localDemo; 
                 action_ = ()
                 {
-                    enforce(demoInputName_ !is null,
+                    enforce(demo_.inputName_ !is null,
                             new CLIException("Demo file name not specified"));
 
                     // For now. Should log to an in-memory buffer later.
@@ -193,8 +222,8 @@ private:
                     import io.yaml;
                     try
                     {
-                        auto replay = Loader(demoInputName_).load();
-                        input.replayFromYAML(replay);
+                        auto replay = Loader(demo_.inputName_).load();
+                        input.replayFromYAML(replay, demo_.blockInput_);
                     }
                     catch(Exception e)
                     {
