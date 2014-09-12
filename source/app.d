@@ -115,6 +115,21 @@ public:
         // The 'default command' - run the game.
         action_ = ()
         {
+            // For now. Should log to an in-memory buffer later.
+            auto log = defaultLogger;
+
+            if(!loadDerelict(log)) { return 1; }
+            scope(exit)            { unloadDerelict(); }
+            if(!initSDL(log)) { return 1; }
+            scope(exit)       { SDL_Quit(); }
+
+            auto video = scoped!VideoDevice(log);
+            if(!initVideo(video, log)) { return 1; }
+
+            auto input    = scoped!InputDevice(&video.height, log);
+            auto gameTime = scoped!GameTime(1 / fixedFPS);
+
+            runGame(video, input, gameTime, log);
 
             return 0;
         };
@@ -159,6 +174,34 @@ private:
                 {
                     enforce(demoInputName_ !is null,
                             new CLIException("Demo file name not specified"));
+
+                    // For now. Should log to an in-memory buffer later.
+                    auto log = defaultLogger;
+
+                    if(!loadDerelict(log)) { return 1; }
+                    scope(exit)            { unloadDerelict(); }
+                    if(!initSDL(log)) { return 1; }
+                    scope(exit)       { SDL_Quit(); }
+
+                    auto video = scoped!VideoDevice(log);
+                    if(!initVideo(video, log)) { return 1; }
+
+                    auto input    = scoped!InputDevice(&video.height, log);
+                    auto gameTime = scoped!GameTime(1 / fixedFPS);
+
+                    // Load recorded input.
+                    import io.yaml;
+                    try
+                    {
+                        auto replay = Loader(demoInputName_).load();
+                        input.replayFromYAML(replay);
+                    }
+                    catch(Exception e)
+                    {
+                        log.warning("Failed to load input recording").assumeWontThrow;
+                    }
+
+                    runGame(video, input, gameTime, log);
 
                     return 0;
                 };
