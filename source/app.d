@@ -1,3 +1,5 @@
+import std.algorithm;
+import std.array;
 import std.stdio;
 import std.typecons;
 
@@ -14,6 +16,59 @@ int main(string[] args)
     import std.logger;
     // For now. Should log to an in-memory buffer later.
     auto log = defaultLogger;
+
+
+
+
+/// Exception thrown at CLI errors.
+class CLIException : Exception 
+{
+    public this(string msg, string file = __FILE__, int line = __LINE__)
+    {
+        super(msg, file, line);
+    }
+}
+
+/** Process a command line option (argument starting with --).
+ *
+ * Params:  arg     = Argument to process.
+ *          process = Function to process the option. Takes
+ *                    the option and its arguments.
+ * Throws:  CLIException if arg is not an option, and anything process() throws.
+ *
+ */
+void processOption(string arg, void delegate(string, string[]) process)
+{
+    enforce(arg.startsWith("--"), new CLIException("Unknown argument: " ~ arg));
+    auto argParts = arg[2 .. $].split("=");
+    process(argParts[0], argParts[1 .. $]);
+}
+
+/// Print help information.
+void help()
+{
+    string[] help = [
+        "-------------------------------------------------------------------------------",
+        "Tharsis-game",
+        "Benchmark game for Tharsis",
+        "Copyright (C) 2014 Ferdinand Majerech",
+        "",
+        "Usage: memprof [--help] <command> [local-options ...]",
+        "",
+        "Global options:",
+        "  --help                     Print this help information.",
+        "",
+        "",
+        "Commands:",
+        "  demo                       Play a pre-recorded demo, executing tharsis-game",
+        "                             with recorded keyboard/mouse input. Exactly one",
+        "                             local argument (demo file name) must be specified.",
+        "    Local arguments:",
+        "      <filename>             Name of the recorded input file to execute.",
+        "-------------------------------------------------------------------------------"
+        ];
+    foreach(line; help) { writeln(line); }
+}
 
 
     // Load SDL2.
