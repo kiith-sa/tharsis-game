@@ -17,6 +17,7 @@ import derelict.sdl2.sdl;
 
 import gfmod.opengl.opengl;
 
+// TODO: Support window resizing. 2014-09-12
 
 /// Manages windowing and GL and provides access to convenience OpenGL wrappers.
 class VideoDevice
