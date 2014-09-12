@@ -1,5 +1,6 @@
 import std.algorithm;
 import std.array;
+import std.exception;
 import std.stdio;
 import std.typecons;
 
@@ -71,6 +72,111 @@ void help()
 }
 
 
+/** Command-line interface.
+ *
+ * Works with git-style commands (currently only 'demo', which runs the game with input
+ * from an input record file).
+ *
+ * If there is no command, the game is launched normally.
+ */
+struct CLI
+{
+private:
+    /* Current command line argument processing function.
+     *
+     * In the beginning, this is the function to process global arguments. When a command
+     * is encountered, it is set to that command's local arguments parser function.
+     */
+    void delegate(string) processArg_;
+    // Action to execute (determined by command line arguments)
+    int delegate() action_;
+
+
+    // Name of the recorded input filename for the 'demo' command.
+    string demoInputName_;
+
+public:
+    /// Construct a CLI with specified command-line arguments and parse them.
+    this(string[] cliArgs)
+    {
+        // The 'default command' - run the game.
+        action_ = ()
+        {
+
+            return 0;
+        };
+        // We start parsing global options/commands.
+        processArg_ = &globalOrCommand;
+        foreach(arg; cliArgs[1 .. $]) { processArg_(arg); }
+    }
+
+    /// Execute the action specified by command line arguments.
+    int execute()
+    {
+        // Execute the command.
+        try
+        {
+            return action_();
+        }
+        catch(CLIException e) { writeln("Command-line error: ", e.msg); help(); }
+        catch(Throwable e)    { writeln("Unhandled error: ", e.msg); }
+        return 1;
+    }
+
+private:
+    // Parses local options for the "top" command.
+    void localDemo(string arg)
+    {
+        enforce(demoInputName_ is null,
+                new CLIException("`demo` can have only one argument: input file name"));
+        demoInputName_ = arg;
+    }
+
+    // Parse a command. Sets up command state and switches to its option parser function.
+    void command(string arg)
+    {
+        switch(arg)
+        {
+            // The 'demo' command: run the game, replaying input from a file.
+            //
+            // Filename is specified by an argument (see localDemo()).
+            case "demo": 
+                processArg_ = &localDemo; 
+                action_ = ()
+                {
+                    enforce(demoInputName_ !is null,
+                            new CLIException("Demo file name not specified"));
+
+                    return 0;
+                };
+                break;
+            default: throw new CLIException("Unknown command: " ~ arg);
+        }
+    }
+
+    /// Parse a global option or command.
+    void globalOrCommand(string arg)
+    {
+        // Command
+        if(!arg.startsWith("-")) 
+        {
+            command(arg);
+            return;
+        }
+
+        // Global option
+        processOption(arg, (opt, args){
+        switch(opt)
+        {
+            case "help": 
+                help();
+                action_ = () { return 0; };
+                return;
+            default: throw new CLIException("Unrecognized global option: " ~ opt);
+        }
+        });
+    }
+}
     // Load SDL2.
     try
     {
