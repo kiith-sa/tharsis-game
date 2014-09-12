@@ -1,6 +1,7 @@
 import std.algorithm;
 import std.array;
 import std.exception;
+import std.logger;
 import std.stdio;
 import std.typecons;
 
@@ -9,15 +10,27 @@ import derelict.opengl3.gl3;
 
 import derelict.util.exception;
 
+import entity.entitysystem;
+import game.camera;
+import game.mainloop;
+import platform.inputdevice;
+import platform.videodevice;
+import time.gametime;
+
+
 // Testing note: to run a program with llvmpipe on Mesa drivers, use:
 //    LIBGL_ALWAYS_SOFTWARE=1 ./program_binary
 
-int main(string[] args)
-{
-    import std.logger;
-    // For now. Should log to an in-memory buffer later.
-    auto log = defaultLogger;
 
+// TODO: Move fixedFPS to YAML 2014-09-12
+/** We use fixed effective FPS and time step to make game updates more 'discrete'.
+ *
+ * If we can't maintain the FPS, the game slows down (hence we need to do everything to 
+ * keep overhead low enough to keep this FPS).
+ */
+enum fixedFPS = 60.0f;
+// Good for printf debugging:
+// enum fixedFPS = 3.0f;
 
 
 
@@ -177,61 +190,84 @@ private:
         });
     }
 }
+
+
+/// Load libraries using through Derelict (currently, this is SDL2).
+bool loadDerelict(Logger log)
+{
     // Load SDL2.
     try
     {
         DerelictSDL2.load();
+        return true;
     }
-    catch(SharedLibLoadException e)
-    {
-        log.critical("SDL2 not found: " ~ e.msg);
-        return 1;
-    }
+    catch(SharedLibLoadException e) { log.critical("SDL2 not found: ", e.msg); }
     catch(SymbolLoadException e)
     {
-        log.critical("Missing SDL2 symbol (old version installed?): " ~ e.msg);
-        return 1;
+        log.critical("Missing SDL2 symbol (old SDL2 version?): ", e.msg);
     }
-    scope(exit) { DerelictSDL2.unload(); }
 
+    return false;
+}
+
+/// Unload Derelict libraries.
+void unloadDerelict()
+{
+    DerelictSDL2.unload();
+}
+
+/// Initialize the SDL library.
+bool initSDL(Logger log)
+{
     // Initialize SDL Video subsystem.
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         // SDL_Init returns a negative number on error.
         log.critical("SDL Video subsystem failed to initialize");
-        return 1;
+        return false;
     }
-    // Deinitialize SDL at exit.
-    scope(exit) { SDL_Quit(); }
+    return true;
+}
 
+/// Deinitialize the SDL library.
+void deinitSDL()
+{
+    SDL_Quit();
+}
 
+/// Initialize the video device (setting video mode and initializing OpenGL).
+bool initVideo(VideoDevice video, Logger log)
+{
     // Initialize the video device.
     const width        = 800;
     const height       = 600;
     const fullscreen   = No.fullscreen;
 
-    import platform.videodevice;
-    auto video = scoped!VideoDevice(log);
-    if(!video.initWindow(width, height, fullscreen)) { return 1; }
-    if(!video.initGL()) { return 1; }
+    if(!video.initWindow(width, height, fullscreen)) { return false; }
+    if(!video.initGL()) { return false; }
+    return true;
+}
 
-    import platform.inputdevice;
-    auto input = scoped!InputDevice(&video.height, log);
+/** Run the game (called from the CLI action_)
+ *
+ * Params:
+ *
+ * video    = Video device to draw with.
+ * input    = Input device to use.
+ * gameTime = Game time subsystem (time steps, etc.).
+ * log      = Game log.
+ */
+int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
+{
+    // TODO: We should use D:GameVFS to access files, with a custom YAML source reading
+    //       files through D:GameVFS. 2014-08-27
 
-    import time.gametime;
-    // Good for printf debugging:
-    // auto gameTime = scoped!GameTime(1 / 3.0);
-    auto gameTime = scoped!GameTime(1 / 60.0);
-
-    import game.camera;
     auto camera        = new Camera(video.width, video.height);
     auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
 
-    import entity.entitysystem;
     auto entitySystem = EntitySystem(video, input, gameTime, camera, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
-    import game.mainloop;
     try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, log))
     {
         log.critical("Main loop exited with error");
@@ -240,7 +276,33 @@ private:
     catch(Throwable e)
     {
         log.critical(e);
+        return 1;
     }
-
     return 0;
+}
+
+
+
+/** Program entry point.
+ *
+ * Rus the CLI and catches any uncaught throwables.
+ */
+int main(string[] args)
+{
+    import std.conv;
+    try { return CLI(args).execute(); }
+    catch(ConvException e)
+    {
+        writeln("String conversion error. Maybe a command-line has incorrect format?\n",
+                "error: ", e.msg);
+    }
+    catch(CLIException e)
+    {
+        writeln("Command-line error: ", e.msg);
+    }
+    catch(Throwable e)
+    {
+        writeln("Unhandlet Throwable at top level: ", e);
+    }
+    return 1;
 }
