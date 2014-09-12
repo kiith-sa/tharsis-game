@@ -83,8 +83,8 @@ bool mainLoop(ref EntitySystem entitySystem,
                 if(recorder.state == RecordingState.Recording)
                 {
                     recorder.stopRecording();
-                    input.replay(recorder.mouseRecording);
-                    input.replay(recorder.keyboardRecording);
+                    input.replay(recorder.mouseRecording, No.blockMouse);
+                    input.replay(recorder.keyboardRecording, No.blockKeyboard);
 
                     // TODO: Replace this with something better, and use VFS 2014-09-08
                     // Just a quick-and-dirty hack to record input for demos.

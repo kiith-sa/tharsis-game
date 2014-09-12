@@ -40,24 +40,35 @@ private:
     // Recording device used for recording input for benchmark demos.
     InputRecordingDevice recorder_;
 
-    // Currently playing mouse input recording. Null if no recording is playing.
-    Recording!Mouse replayMouse_ = null;
-    // Currently playing keyboard input recording. Null if no recording is playing.
-    Recording!Keyboard replayKeyboard_ = null;
+    // State needed for replaying recorded input of one type (e.g. mouse or keyboard).
+    struct ReplayState(Input)
+    {
+        // Currently playing input recording for Input. Null if no recording is playing.
+        Recording!Input recording = null;
 
-    // A HACK to ensure game state during a replay 'lines up' to state during recording.
-    //
-    // Specifies number of frames after replay() is called to wait before really starting
-    // to replay.
-    //
-    // Without this, replaying recorded input is slightly 'off', e.g. the camera is moved
-    // slightly less far, resulting in entities that were selected when recording not
-    // being selected when replaying, etc.
-    //
-    // TODO: Try to figure out a way to fix this problem without this hack.
-    //       (Note: the one-frame recording delay does not seem to be responsible)
-    //       2014-09-11
-    size_t replayMouseDelay_, replayKeyboardDelay_;
+        // A HACK to ensure game state during a replay 'lines up' to state during recording.
+        //
+        // Specifies number of frames after replay() is called to wait before really starting
+        // to replay.
+        //
+        // Without this, replaying recorded input is slightly 'off', e.g. the camera is moved
+        // slightly less far, resulting in entities that were selected when recording not
+        // being selected when replaying, etc.
+        //
+        // TODO: Try to figure out a way to fix this problem without this hack.
+        //       (Note: the one-frame recording delay does not seem to be responsible)
+        //       2014-09-11
+        size_t delay;
+
+        enum blockName = "block" ~ Input.stringof;
+        // Should the real input be blocked while input is being replayed from recording?
+        Flag!blockName block;
+    }
+
+    // State needed to replay recorded mouse input.
+    ReplayState!Mouse replayM_;
+    // State needed to replay recorded keyboard input.
+    ReplayState!Keyboard replayK_;
 
 public:
     /** Construct an InputDevice.
@@ -94,25 +105,33 @@ public:
      *
      * If something is already replaying (from a previous replay() call), it will be
      * overridden.
+     *
+     * Params:
+     *
+     * recording = The recording to play. Will continue to play until spent. Will be 
+     *             consumed by the InputDevice.
+     * block     = Should input from the real mouse be blocked while replaying?
      */
-    void replay(Recording!Mouse recording) @safe pure nothrow @nogc
+    void replay(Recording!Mouse recording, Flag!"blockMouse" block) @safe pure nothrow @nogc
     {
-        replayMouse_ = recording;
-        replayMouseDelay_ = 1;
+        replayM_ = ReplayState!Mouse(recording, 1, block);
     }
 
     /** Start replaying keyboard input from a recording.
      *
-     * The recording will continue to play until it is spent.
-     * Will consume the recording.
-     *
      * If something is already replaying (from a previous replay() call), it will be
      * overridden.
+     *
+     * Params:
+     *
+     * recording = The recording to play. Will continue to play until spent. Will be 
+     *             consumed by the InputDevice.
+     * block     = Should input from the real keyboard be blocked while replaying?
      */
-    void replay(Recording!Keyboard recording) @safe pure nothrow @nogc
+    void replay(Recording!Keyboard recording, Flag!"blockKeyboard" block)
+        @safe pure nothrow @nogc
     {
-        replayKeyboard_ = recording;
-        replayKeyboardDelay_ = 1;
+        replayK_ = ReplayState!Keyboard(recording, 1, block);
     }
 
     /// Collect user input.
@@ -122,16 +141,20 @@ public:
         // of a stopRecord() call, which could record the input that stopped it)
         recorder_.update();
 
-        mouse_.update();
-        keyboard_.update();
+        SDL_PumpEvents();
+        mouse_.clear();
+        keyboard_.clear();
 
-        handleRecord(replayMouse_, mouse_, replayMouseDelay_);
-        handleRecord(replayKeyboard_, keyboard_, replayKeyboardDelay_);
+        if(!replayM_.block) { mouse_.getInput(); }
+        if(!replayK_.block) { keyboard_.getInput(); }
+
+        handleRecord(mouse_, replayM_);
+        handleRecord(keyboard_, replayK_);
 
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
-            mouse_.handleEvent(e);
+            if(!replayM_.block) { mouse_.handleEvent(e); }
             // Quit if the user closes the window or presses Escape.
             if(e.type == SDL_QUIT) { quit_ = true; }
         }
@@ -151,22 +174,25 @@ private:
      *
      * Params:
      *
-     * rec   = The recording to play. If null, handleRecord() will do nothing.
-     * input = Input affected by the recording. E.g. mouse for a mouse input recording.
-     * delay = Delay, in frames, to start replaying. See $(D replayMouseDelay_),
-     *         $(D replayKeyboardDelay_)
+     * input  = Input affected by the recording. E.g. mouse for a mouse input recording.
+     * replay = The recording to play with some extra state. If the recording is null,
+     *          handleRecord() will do anything. If it's empty, replay will be
+     *          reset to its init value.
      */
-    static void handleRecord(Input)(ref Recording!Input rec, Input input, ref size_t delay)
+    static void handleRecord(Input)(Input input, ref ReplayState!Input replay)
         @safe
     {
-        scope(exit) if(delay > 0) { --delay; }
-        if(rec is null || delay > 0) { return; }
+        scope(exit) if(replay.delay > 0) { --replay.delay; }
+        if(replay.recording is null || replay.delay > 0) { return; }
 
-        if(rec.empty) { rec = null; }
+        if(replay.recording.empty) 
+        {
+            replay = replay.init;
+        }
         else
         {
-            input.handleRecord(rec.front);
-            rec.popFront();
+            input.handleRecord(replay.recording.front);
+            replay.recording.popFront();
         }
     }
 }
@@ -243,16 +269,19 @@ public:
     }
 
 private:
-    // Get current keyboard state.
-    void update() @system nothrow @nogc
+    /// Clear any keyboard state that must be cleared every frame.
+    void clear() @safe pure nothrow @nogc
     {
-        SDL_PumpEvents();
-
-        int numKeys;
-        const Uint8* allKeys = SDL_GetKeyboardState(&numKeys);
         pressedKeysLastUpdate_[]   = pressedKeys_[];
         pressedKeyCountLastUpdate_ = pressedKeyCount_;
         pressedKeyCount_ = 0;
+    }
+
+    /// Get keyboard input that must be refreshed every frame.
+    void getInput() @system nothrow @nogc
+    {
+        int numKeys;
+        const Uint8* allKeys = SDL_GetKeyboardState(&numKeys);
         foreach(SDL_Scancode scancode, Uint8 state; allKeys[0 .. numKeys])
         {
             if(!state) { continue; }
@@ -482,12 +511,20 @@ private:
         }
     }
 
-    /// Update any mouse state that must be updated every frame.
-    void update() @safe nothrow
+    /// Clear any mouse state that must be cleared every frame.
+    void clear() @safe pure nothrow @nogc
     {
-        wheelXMovement_ = 0; wheelYMovement_ = 0;
+        xMovement_      = yMovement_      = 0;
+        wheelXMovement_ = wheelYMovement_ = 0;
         click_[]       = No.click;
         doubleClick_[] = No.doubleClick;
+        buttonsLastUpdate_[] = buttons_[];
+        buttons_[] = No.pressed;
+    }
+
+    /// Get mouse input that must be refreshed every frame.
+    void getInput() @safe nothrow 
+    {
         const oldX = x_; const oldY = y_;
         getMouseState();
         xMovement_ = x_ - oldX; yMovement_ = y_ - oldY;
@@ -529,7 +566,6 @@ private:
     void getMouseState() @trusted nothrow
     {
         const buttons = SDL_GetMouseState(&x_, &y_);
-        buttonsLastUpdate_[] = buttons_[];
         buttons_[Button.Left]   = buttons & SDL_BUTTON_LMASK  ? Yes.pressed : No.pressed;
         buttons_[Button.Middle] = buttons & SDL_BUTTON_MMASK  ? Yes.pressed : No.pressed;
         buttons_[Button.Right]  = buttons & SDL_BUTTON_RMASK  ? Yes.pressed : No.pressed;

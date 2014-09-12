@@ -11,6 +11,7 @@ module platform.inputrecording;
 import std.array;
 import std.conv;
 import std.exception;
+import std.typecons;
 
 import io.yaml;
 
@@ -186,8 +187,15 @@ YAMLNode recordingAsYAML(InputRecordingDevice recorder) @safe nothrow
  *
  * Will fail with a logged warning (in the InputDevice log) if YAML didn't store a valid
  * recording.
+ *
+ * Params:
+ *
+ * input = InputDevice to replay the input.
+ * yaml  = YAML to load input to replay from.
+ * block = Should the real input sources be blocked while replaying?
+ *         (E.g. blocking the actual mouse while replaying mouse input).
  */
-void replayFromYAML(InputDevice input, YAMLNode yaml) @safe nothrow
+void replayFromYAML(InputDevice input, YAMLNode yaml, Flag!"block" block) @safe nothrow
 {
     enum baseMsg = "Failed to load input replay from YAML: ";
     try
@@ -196,8 +204,8 @@ void replayFromYAML(InputDevice input, YAMLNode yaml) @safe nothrow
         auto keyboardYAML = yaml["keyboard"];
         auto mouseRecording    = new YAMLRecording!Mouse(mouseYAML);
         auto keyboardRecording = new YAMLRecording!Keyboard(keyboardYAML);
-        input.replay(mouseRecording);
-        input.replay(keyboardRecording);
+        input.replay(mouseRecording, block ? Yes.blockMouse : No.blockMouse);
+        input.replay(keyboardRecording, block ? Yes.blockKeyboard : No.blockKeyboard);
     }
     catch(YAMLException e) { input.log_.warning(baseMsg, e.msg).assumeWontThrow; }
     catch(ConvException e) { input.log_.warning(baseMsg, e.msg).assumeWontThrow; }
