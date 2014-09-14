@@ -350,7 +350,8 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
     auto entitySystem = EntitySystem(video, input, gameTime, camera, profiler, log);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
-    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, log))
+
+    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, profiler, log))
     {
         log.critical("Main loop exited with error");
         return 1;
