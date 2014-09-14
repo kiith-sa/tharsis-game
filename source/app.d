@@ -361,6 +361,17 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
         log.critical(e);
         return 1;
     }
+
+    try
+    {
+        log.info("Writing profiler output to profile.csv");
+        profiler.profileData.eventRange.writeCSVTo(File("profile.csv", "wb").lockingTextWriter);
+    }
+    catch(Exception e)
+    {
+        log.error("Failed to write profiler output: ", e);
+    }
+
     return 0;
 }
 
