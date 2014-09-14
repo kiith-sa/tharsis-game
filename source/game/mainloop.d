@@ -52,6 +52,7 @@ bool mainLoop(ref EntitySystem entitySystem,
         // and 0% is 0. 2014-08-16
         while(time.timeToUpdate()) 
         {
+            auto frameTotal = Zone(profiler, "frameTotal");
             loadProfiler.reset();
             {
                 auto frameLoad = Zone(loadProfiler, "frameLoad");

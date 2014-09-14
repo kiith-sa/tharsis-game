@@ -77,6 +77,8 @@ public:
          Profiler profiler, Logger log)
         @safe nothrow //!@nogc
     {
+        auto zone = Zone(profiler, "EntitySystem.this");
+
         log_      = log;
         input_    = input;
         profiler_ = profiler;
@@ -141,6 +143,7 @@ public:
     /// fileName = Name of the file to load the entity from.
     void spawnEntityASAP(string fileName) @trusted nothrow
     {
+        auto zone = Zone(profiler_, "EntitySystem.~spawnEntityASAP");
         auto descriptor = EntityPrototypeResource.Descriptor(fileName);
         const handle    = prototypeMgr_.handle(descriptor);
         prototypesToSpawn_.assumeSafeAppend();
@@ -153,6 +156,7 @@ public:
     /// Destroy the entity system along with all entities, components and resource managers.
     ~this()
     {
+        auto zone = Zone(profiler_, "EntitySystem.~this");
         renderer_.destroy().assumeWontThrow;
         entityMgr_.destroy();
         componentTypeMgr_.destroy();
@@ -161,6 +165,7 @@ public:
     /// Execute one frame (game update) of the entity system.
     void frame() @safe nothrow
     {
+        auto zone = Zone(profiler_, "EntitySystem.frame");
         size_t handleCount = 0;
         foreach(i, handle; prototypesToSpawn_)
         {
