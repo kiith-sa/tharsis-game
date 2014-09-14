@@ -31,6 +31,7 @@ private:
 
     import tharsis.entity.entityprototype;
     import tharsis.defaults.yamlsource;
+    import tharsis.prof;
 
     // Resource handles of prototypes of entities that should be spawned ASAP.
     PrototypeManager.Handle[] prototypesToSpawn_;
@@ -47,6 +48,8 @@ private:
     // Keyboard and mouse input.
     const InputDevice input_;
 
+    // Frame profiler used to profile the game.
+    Profiler profiler_;
 
 
     // Process used to render entities' graphics.
@@ -63,17 +66,20 @@ public:
      *
      * Params:
      *
-     * video  = VideoDevice for any processes that need to draw.
-     * input  = User input device.
-     * time   = Keeps track of game time.
-     * camera = Isometric amera.
-     * log    = Game log.
+     * video   = VideoDevice for any processes that need to draw.
+     * input   = User input device.
+     * time    = Keeps track of game time.
+     * camera  = Isometric amera.
+     * profler = The main game profiler, profiling both the game and Tharsis itself.
+     * log     = Game log.
      */
-    this(VideoDevice video, InputDevice input, GameTime time, Camera camera, Logger log)
+    this(VideoDevice video, InputDevice input, GameTime time, Camera camera,
+         Profiler profiler, Logger log)
         @safe nothrow //!@nogc
     {
-        log_   = log;
-        input_ = input;
+        log_      = log;
+        input_    = input;
+        profiler_ = profiler;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
                                                   VisualComponent,
