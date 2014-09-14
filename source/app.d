@@ -338,6 +338,15 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
     auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
 
     auto entitySystem = EntitySystem(video, input, gameTime, camera, log);
+
+    // Initialize the main profiler (used to profile both the game and Tharsis).
+    import tharsis.prof;
+    import std.allocator;
+    enum profSpace = 1024 * 1024 * 64;
+    auto profBuffer = AlignedMallocator.it.alignedAllocate(profSpace, 64);
+    scope(exit) { AlignedMallocator.it.deallocate(profBuffer); }
+
+    auto profiler = new Profiler(cast(ubyte[])profBuffer);
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
     try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, log))
