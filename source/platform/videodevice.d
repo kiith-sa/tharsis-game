@@ -7,6 +7,7 @@
 module platform.videodevice;
 
 
+import std.algorithm;
 import std.exception;
 import std.logger;
 import std.typecons;
@@ -27,10 +28,14 @@ private:
     Logger log_;
 
     // OpenGL wrapper managing GL versions and information.
+
     OpenGL gl_;
 
     // The main game window.
     SDL_Window* window_;
+
+    // Zero-terminated title of the main game window.
+    char[1024] windowTitle_;
 
     // Window width.
     size_t width_;
@@ -54,6 +59,7 @@ public:
      */
     this(Logger log) @safe pure nothrow @nogc
     {
+        windowTitle_[] = 0;
         log_    = log;
     }
 
@@ -144,6 +150,16 @@ public:
     {
         assert(gl_ !is null, "Trying to access GL before it is initialized");
         return gl_;
+    }
+
+    /// Set the main window title. Any characters past 1023 will be truncated.
+    void windowTitle(string rhs) @trusted nothrow @nogc
+    {
+        // Zero-terminating in a fixed-size buffer.
+        const titleLength = min(rhs.length, windowTitle_.length - 1);
+        windowTitle_[0 .. titleLength] = rhs[0 .. titleLength];
+        windowTitle_[titleLength] = 0;
+        SDL_SetWindowTitle(window_, windowTitle_.ptr);
     }
 
     /// Swap the front and back buffer at the end of a frame.
