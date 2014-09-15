@@ -80,6 +80,11 @@ bool mainLoop(ref EntitySystem entitySystem,
             const stepMsecs = time.timeStep * 1000;
             // using ulong as a cheap way of rounding.
             const load      = 100 * frameLoadResult.duration / (time.timeStep * 1000_000_0);
+            import std.string;
+            video.windowTitle = 
+                "entities: %.5d | load: %05.1f%% | time used: %05.1fms | time step: %.1fms"
+                 .format(entitySystem.entityCount, load, msecs, stepMsecs).assumeWontThrow;
+
             // F2 prints basic load info.
             if(input.keyboard.pressed(Key.F2))
             {
