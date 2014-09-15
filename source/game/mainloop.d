@@ -47,9 +47,6 @@ bool mainLoop(ref EntitySystem entitySystem,
 
     for(;;)
     {
-        // TODO: measure time taken by an update (iteration of this while loop)
-        // Instead of an FPS display, have a 'Load' display, where 100% is timeStep
-        // and 0% is 0. 2014-08-16
         while(time.timeToUpdate()) 
         {
             auto frameTotal = Zone(profiler, "frameTotal");
@@ -76,14 +73,19 @@ bool mainLoop(ref EntitySystem entitySystem,
 
             time.finishedUpdate();
 
+            // loadProfiler only has one zone: frameLoad.
+            const frameLoadResult = loadProfiler.profileData.zoneRange.front;
+
+            const msecs     = frameLoadResult.duration / 10000.0;
+            const stepMsecs = time.timeStep * 1000;
+            // using ulong as a cheap way of rounding.
+            const load      = 100 * frameLoadResult.duration / (time.timeStep * 1000_000_0);
             // F2 prints basic load info.
-            if(input.keyboard.pressed(Key.F2)) foreach(zone; loadProfiler.profileData.zoneRange)
+            if(input.keyboard.pressed(Key.F2))
             {
-                log.infof("%s took %s hnsecs (%s %% of time step) from %s to %s",
-                          zone.info, zone.duration,
-                          zone.duration / (time.timeStep * 1000_000_0) * 100,
-                          zone.startTime, zone.endTime)
-                    .assumeWontThrow;
+                log.infof("%s took %s hnsecs (%5.1fms of a time step of %5.1fms, or %5.1f%%) ",
+                          frameLoadResult.info, frameLoadResult.duration, msecs,
+                          stepMsecs, load).assumeWontThrow;
             }
 
             // F3 toggles recording.
