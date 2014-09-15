@@ -165,6 +165,12 @@ public:
         componentTypeMgr_.destroy();
     }
 
+    /// Get the number of entities that exist at the moment.
+    size_t entityCount() @safe pure nothrow const @nogc
+    {
+        return diagnostics_.pastEntityCount;
+    }
+
     /// Execute one frame (game update) of the entity system.
     void frame() @safe nothrow
     {
