@@ -42,6 +42,9 @@ private:
     // Stores entities and their components.
     DefaultEntityManager entityMgr_;
 
+    // EntityManager diagnostics like entity counts, process execution times, etc.
+    entityMgr_.Diagnostics diagnostics_;
+
     // Resource manager handling entity prototypes.
     PrototypeManager prototypeMgr_;
 
@@ -184,13 +187,13 @@ public:
 
         entityMgr_.executeFrame();
 
+        diagnostics_ = entityMgr_.diagnostics;
         if(input_.keyboard.pressed(Key.F1))
         {
             import tharsis.defaults.diagnostics;
             import io.yaml;
 
-            const diagnostics = entityMgr_.diagnostics;
-            log_.info(diagnostics.toYAML.dumpToString).assumeWontThrow;
+            log_.info(diagnostics_.toYAML.dumpToString).assumeWontThrow;
         }
     }
 }
