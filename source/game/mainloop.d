@@ -23,20 +23,20 @@ import time.gametime;
  *
  * Params:
  *
- * entitySystem  = EntitySystem holding all the Processes in the game.
- * videoDevice   = The video device used for graphics and windowing operations.
- * inputDevice   = Device used for user input.
- * time          = Game time subsystem.
- * cameraControl = Handles camera control by the user.
- * profiler      = The main profiler used to profile the game and Tharsis itself.
- * log           = Log to write... log messages to.
+ * entitySystem       = EntitySystem holding all the Processes in the game.
+ * videoDevice        = The video device used for graphics and windowing operations.
+ * inputDevice        = Device used for user input.
+ * time               = Game time subsystem.
+ * cameraControl      = Handles camera control by the user.
+ * mainThreadProfiler = Profiler used to profile game and Tharsis execution in the main thread.
+ * log                = Log to write... log messages to.
  */
 bool mainLoop(ref EntitySystem entitySystem,
               VideoDevice video,
               InputDevice input,
               GameTime time,
               CameraControl cameraControl,
-              Profiler profiler,
+              Profiler mainThreadProfiler,
               Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
@@ -47,9 +47,9 @@ bool mainLoop(ref EntitySystem entitySystem,
 
     for(;;)
     {
-        while(time.timeToUpdate()) 
+        while(time.timeToUpdate())
         {
-            auto frameTotal = Zone(profiler, "frameTotal");
+            auto frameTotal = Zone(mainThreadProfiler, "frameTotal");
             loadProfiler.reset();
             {
                 auto frameLoad = Zone(loadProfiler, "frameLoad");
@@ -76,22 +76,40 @@ bool mainLoop(ref EntitySystem entitySystem,
             // loadProfiler only has one zone: frameLoad.
             const frameLoadResult = loadProfiler.profileData.zoneRange.front;
 
-            const msecs     = frameLoadResult.duration / 10000.0;
-            const stepMsecs = time.timeStep * 1000;
-            // using ulong as a cheap way of rounding.
-            const load      = 100 * frameLoadResult.duration / (time.timeStep * 1000_000_0);
+            // 'load' is how much of the time step is used, in percent..
+            double load(ulong hnsecs) @safe nothrow @nogc 
+            {
+                return 100 * hnsecs / (time.timeStep * 1000_000_0);
+            }
+
             import std.string;
-            video.windowTitle = 
-                "entities: %.5d | load: %05.1f%% | time used: %05.1fms | time step: %.1fms"
-                 .format(entitySystem.entityCount, load, msecs, stepMsecs).assumeWontThrow;
+            import std.algorithm;
+
+            import tharsis.entity.entitymanager;
+
+            const(DefaultEntityManager.Diagnostics)* diag = &entitySystem.diagnostics();
+
+            // Load for the frame overall.
+            const loadTotal = load(frameLoadResult.duration);
+            // Load for each individual core (without the % sign or decimal point).
+            const string loadPerCore = 
+                diag.threads[0 .. diag.threadCount]
+                    .map!(t => "%03.0f".format(load(t.processesDuration)))
+                    .join(",")
+                    .assumeWontThrow;
+
+            const usedMs = frameLoadResult.duration / 10000.0;
+            const stepMs = time.timeStep * 1000;
+
+            const summary = 
+                "enties: %.5d | load: %05.1f%% (%s) | t-used: %05.1fms | t-step: %.1fms"
+                .format(diag.pastEntityCount, loadTotal, loadPerCore, usedMs, stepMs)
+                .assumeWontThrow;
+
+            video.windowTitle = summary;
 
             // F2 prints basic load info.
-            if(input.keyboard.pressed(Key.F2))
-            {
-                log.infof("%s took %s hnsecs (%5.1fms of a time step of %5.1fms, or %5.1f%%) ",
-                          frameLoadResult.info, frameLoadResult.duration, msecs,
-                          stepMsecs, load).assumeWontThrow;
-            }
+            if(input.keyboard.pressed(Key.F2)) { log.info(summary).assumeWontThrow; }
 
             // F3 toggles recording.
             if(input.keyboard.pressed(Key.F3))
