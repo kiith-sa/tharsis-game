@@ -425,6 +425,7 @@ public:
         }
     }
 
+    /// Preserve weapons in entities with no commands.
     void process(immutable WeaponMultiComponent[] weaponsPast,
                  ref WeaponMultiComponent[] weaponsFuture) nothrow
     {
