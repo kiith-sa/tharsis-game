@@ -41,7 +41,6 @@ bool mainLoop(ref EntitySystem entitySystem,
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
     import tharsis.prof;
-    import std.typecons;
     // Profiler used to calculate how much of the allocated time step we're spending.
     auto loadProfiler = new Profiler(new ubyte[4096]);
 
@@ -73,73 +72,98 @@ bool mainLoop(ref EntitySystem entitySystem,
 
             time.finishedUpdate();
 
-            // loadProfiler only has one zone: frameLoad.
-            const frameLoadResult = loadProfiler.profileData.zoneRange.front;
 
-            // 'load' is how much of the time step is used, in percent..
-            double load(ulong hnsecs) @safe nothrow @nogc 
-            {
-                return 100 * hnsecs / (time.timeStep * 1000_000_0);
-            }
-
-            import std.string;
-            import std.algorithm;
-
-            import tharsis.entity.entitymanager;
-
-            const(DefaultEntityManager.Diagnostics)* diag = &entitySystem.diagnostics();
-
-            // Load for the frame overall.
-            const loadTotal = load(frameLoadResult.duration);
-            // Load for each individual core (without the % sign or decimal point).
-            const string loadPerCore = 
-                diag.threads[0 .. diag.threadCount]
-                    .map!(t => "%03.0f".format(load(t.processesDuration)))
-                    .join(",")
-                    .assumeWontThrow;
-
-            const usedMs = frameLoadResult.duration / 10000.0;
-            const stepMs = time.timeStep * 1000;
-
-            const summary = 
-                "enties: %.5d | load: %05.1f%% (%s) | t-used: %05.1fms | t-step: %.1fms"
-                .format(diag.pastEntityCount, loadTotal, loadPerCore, usedMs, stepMs)
-                .assumeWontThrow;
-
+            const summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics);
             video.windowTitle = summary;
 
-            // F2 prints basic load info.
+            // F2 prints basic load info (useful in fullscreen or recorded demos).
             if(input.keyboard.pressed(Key.F2)) { log.info(summary).assumeWontThrow; }
-
             // F3 toggles recording.
-            if(input.keyboard.pressed(Key.F3))
-            {
-                auto recorder = input.recorder;
-                if(recorder.state == RecordingState.Recording)
-                {
-                    recorder.stopRecording();
-                    input.replay(recorder.mouseRecording, No.blockMouse);
-                    input.replay(recorder.keyboardRecording, No.blockKeyboard);
-
-                    // TODO: Replace this with something better, and use VFS 2014-09-08
-                    // Just a quick-and-dirty hack to record input for demos.
-                    import io.yaml;
-                    try
-                    {
-                        Dumper("mouse_keyboard.yaml").dump(recorder.recordingAsYAML);
-                    }
-                    catch(Exception e)
-                    {
-                        log.warning("Failed to dump input recording").assumeWontThrow;
-                    }
-                }
-                else
-                {
-                    recorder.startRecording();
-                }
-            }
+            if(input.keyboard.pressed(Key.F3)) { toggleRecording(input, log); }
         }
     }
 
     assert(false, "This should never be reached");
+}
+
+
+import tharsis.entity.entitymanager;
+
+/** Summarize performance load (time spent by each thread in the frame, etc) into a string.
+ *
+ * Params:
+ *
+ * loadProfiler = Profiler used in mainLoop() to measure the total time spent in a frame
+ *                must have only one zone ("frameLoad").
+ * diagnostics  = Entity manager diagnostics (to get time spent in individual threads).
+ * time         = Game time subsystem.
+ */
+string summarizeLoad(const Profiler loadProfiler,
+                     const GameTime time,
+                     ref const DefaultEntityManager.Diagnostics diagnostics) @trusted nothrow
+{
+    // loadProfiler only has one zone: frameLoad.
+    const frameLoadResult = loadProfiler.profileData.zoneRange.front;
+    // 'load' is how much of the time step is used, in percent..
+
+    double load(ulong hnsecs) @safe nothrow @nogc
+    {
+        return 100 * hnsecs / (time.timeStep * 1000_000_0);
+    }
+
+    import std.string;
+    import std.algorithm;
+
+    // Load for the frame overall.
+    const loadTotal = load(frameLoadResult.duration);
+    // Load for each individual core (without the % sign or decimal point).
+    string loadPerCore = diagnostics.threads[0 .. diagnostics.threadCount]
+                                    .map!(t => "%03.0f".format(load(t.processesDuration)))
+                                    .join(",")
+                                    .assumeWontThrow;
+
+    const usedMs = frameLoadResult.duration / 10000.0;
+    const stepMs = time.timeStep * 1000;
+
+    return "enties: %.5d | load: %05.1f%% (%s) | t-used: %05.1fms | t-step: %.1fms"
+           .format(diagnostics.pastEntityCount, loadTotal, loadPerCore, usedMs, stepMs)
+           .assumeWontThrow;
+}
+
+/** Toggle recording on or off.
+ *
+ * Toggling recording off also starts replaying the finished recording.
+ *
+ * Params:
+ *
+ * input = The input device to record.
+ * log   = Game log.
+ */
+void toggleRecording(InputDevice input, Logger log) @safe nothrow
+{
+    auto recorder = input.recorder;
+    if(recorder.state == RecordingState.NotRecording)
+    {
+        recorder.startRecording();
+        return;
+    }
+
+    recorder.stopRecording();
+    import std.typecons;
+    // Replay the recording that was just recorded.
+    input.replay(recorder.mouseRecording, No.blockMouse);
+    input.replay(recorder.keyboardRecording, No.blockKeyboard);
+
+    // TODO: Replace this with something better, and use VFS 2014-09-08
+
+    // Just a quick-and-dirty hack to record input for demos.
+    import io.yaml;
+    try
+    {
+        Dumper("mouse_keyboard.yaml").dump(recorder.recordingAsYAML);
+    }
+    catch(Exception e)
+    {
+        log.warning("Failed to dump input recording").assumeWontThrow;
+    }
 }
