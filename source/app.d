@@ -368,16 +368,28 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     import tharsis.prof;
     import std.allocator;
     enum profSpace = 1024 * 1024 * 64;
-    auto profBuffer = AlignedMallocator.it.alignedAllocate(profSpace, 64);
-    scope(exit) { AlignedMallocator.it.deallocate(profBuffer); }
 
-    auto profiler = new Profiler(cast(ubyte[])profBuffer);
+    import tharsis.entity.entitymanager;
+    import tharsis.entity.scheduler;
 
-    auto entitySystem = EntitySystem(video, input, gameTime, camera, profiler, log);
+    // One profiler per thread.
+    const threadCount = args.threadCount == 0 ? autodetectThreadCount()
+                                              : args.threadCount;
+    void[][] profBuffers;
+    Profiler[] profilers;
+    foreach(thread; 0 .. threadCount)
+    {
+        profBuffers ~= AlignedMallocator.it.alignedAllocate(profSpace / threadCount, 64);
+        profilers   ~= new Profiler(cast(ubyte[])profBuffers.back);
+    }
+    scope(exit) foreach(buffer; profBuffers)
+    {
+        AlignedMallocator.it.deallocate(buffer);
+    }
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
-
-    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, profiler, log))
+    // Run the game itself.
+    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, profilers[0], log))
     {
         log.critical("Main loop exited with error");
         return 1;
@@ -388,10 +400,18 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
         return 1;
     }
 
-    try
+
+    // Dump profiling results for each thread.
+    try foreach(p, profiler; profilers)
     {
-        log.info("Writing profiler output to profile.csv");
-        profiler.profileData.eventRange.writeCSVTo(File("profile.csv", "wb").lockingTextWriter);
+        if(profiler.outOfSpace)
+        {
+            log.infof("WARNING: profiler for thread %s ran out of memory while "
+                      "profiling; profiling data is incomplete", p);
+        }
+        log.infof("Writing profiler output for thread %s to profile%s.csv", p, p);
+        const fileName = "profile%s.csv".format(p);
+        profiler.profileData.eventRange.writeCSVTo(File(fileName, "wb").lockingTextWriter);
     }
     catch(Exception e)
     {

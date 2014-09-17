@@ -51,8 +51,8 @@ private:
     // Keyboard and mouse input.
     const InputDevice input_;
 
-    // Frame profiler used to profile the game.
-    Profiler profiler_;
+    // Frame profilers used to profile the game and Tharsis. One profiler per thread.
+    Profiler[] threadProfilers_;
 
 
     // Process used to render entities' graphics.
@@ -69,22 +69,25 @@ public:
      *
      * Params:
      *
-     * video   = VideoDevice for any processes that need to draw.
-     * input   = User input device.
-     * time    = Keeps track of game time.
-     * camera  = Isometric amera.
-     * profler = The main game profiler, profiling both the game and Tharsis itself.
-     * log     = Game log.
+     * video           = VideoDevice for any processes that need to draw.
+     * input           = User input device.
+     * time            = Keeps track of game time.
+     * camera          = Isometric amera.
+     * threadCount     = Number of threads for Tharsis to use. 0 is autodetect.
+     * threadProfilers = Profilers profiling both the game and Tharsis execution in the
+     *                   main thread as well as any extra threads used by Tharsis. One 
+     *                   profiler per thread.
+     * log             = Game log.
      */
     this(VideoDevice video, InputDevice input, GameTime time, Camera camera,
-         Profiler profiler, Logger log)
+         uint threadCount, Profiler[] threadProfilers, Logger log)
         @safe nothrow //!@nogc
     {
-        auto zone = Zone(profiler, "EntitySystem.this");
+        auto zone = Zone(threadProfilers[0], "EntitySystem.this");
 
-        log_      = log;
-        input_    = input;
-        profiler_ = profiler;
+        log_             = log;
+        input_           = input;
+        threadProfilers_ = threadProfilers;
         componentTypeMgr_ = new ComponentTypeManager!YAMLSource(YAMLSource.Loader());
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
                                                   VisualComponent,
@@ -99,7 +102,8 @@ public:
 
         componentTypeMgr_.lock();
 
-        entityMgr_      = new DefaultEntityManager(componentTypeMgr_);
+        entityMgr_      = new DefaultEntityManager(componentTypeMgr_, threadCount);
+        entityMgr_.attachPerThreadProfilers(threadProfilers_);
 
         import entity.resources;
         prototypeMgr_   = new PrototypeManager(componentTypeMgr_, entityMgr_);
@@ -146,7 +150,7 @@ public:
     /// fileName = Name of the file to load the entity from.
     void spawnEntityASAP(string fileName) @trusted nothrow
     {
-        auto zone = Zone(profiler_, "EntitySystem.~spawnEntityASAP");
+        auto zone = Zone(threadProfilers_[0], "EntitySystem.~spawnEntityASAP");
         auto descriptor = EntityPrototypeResource.Descriptor(fileName);
         const handle    = prototypeMgr_.handle(descriptor);
         prototypesToSpawn_.assumeSafeAppend();
@@ -159,7 +163,7 @@ public:
     /// Destroy the entity system along with all entities, components and resource managers.
     ~this()
     {
-        auto zone = Zone(profiler_, "EntitySystem.~this");
+        auto zone = Zone(threadProfilers_[0], "EntitySystem.~this");
         renderer_.destroy().assumeWontThrow;
         entityMgr_.destroy();
         componentTypeMgr_.destroy();
@@ -174,7 +178,7 @@ public:
     /// Execute one frame (game update) of the entity system.
     void frame() @safe nothrow
     {
-        auto zone = Zone(profiler_, "EntitySystem.frame");
+        auto zone = Zone(threadProfilers_[0], "EntitySystem.frame");
         size_t handleCount = 0;
         foreach(i, handle; prototypesToSpawn_)
         {
