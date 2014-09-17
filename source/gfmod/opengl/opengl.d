@@ -570,6 +570,13 @@ extern(System) private
                     logger.warning("Invalid (non-ASCII) character in GL debug output");
                 }
 
+                // The spammy NVidia driver message that pretty much tells us that the
+                // buffer objects works as it should.
+                if(id == 131185)
+                {
+                    return;
+                }
+
                 if (level == LogLevel.info)
                     logger.infof("opengl: %s (id: %s, source: %s, type: %s, severity: %s)", text, id, ssource, stype, sseverity);
                 if (level == LogLevel.warning)
