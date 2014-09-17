@@ -1,8 +1,10 @@
 import std.algorithm;
 import std.array;
+import std.conv;
 import std.exception;
 import std.logger;
 import std.stdio;
+import std.string;
 import std.typecons;
 
 import derelict.sdl2.sdl;
@@ -71,6 +73,10 @@ void help()
         "",
         "Global options:",
         "  --help                     Print this help information.",
+        "  --threads=<count>          Number of threads to run Tharsis processes in.",
+        "                             If 0, Tharsis automatically determines the number",
+        "                             of threads to use.",
+        "                             Default: 0",
         "",
         "",
         "Commands:",
@@ -119,9 +125,18 @@ private:
         Flag!"block" blockInput_ = Yes.block;
     }
 
+    // Options/arguments common for all commands.
+    struct Args
+    {
+        // The number of threads for Tharsis to use. If 0, the number will be autodetected.
+        uint threadCount = 0;
+    }
+
     // Options/arguments for the 'demo' command.
     Demo demo_;
 
+    // Options/arguments common for all commands.
+    Args args_;
 
 public:
     /// Construct a CLI with specified command-line arguments and parse them.
@@ -144,7 +159,7 @@ public:
             auto input    = scoped!InputDevice(&video.height, log);
             auto gameTime = scoped!GameTime(1 / fixedFPS);
 
-            runGame(video, input, gameTime, log);
+            runGame(video, input, gameTime, args_, log);
 
             return 0;
         };
@@ -230,7 +245,7 @@ private:
                         log.warning("Failed to load input recording").assumeWontThrow;
                     }
 
-                    runGame(video, input, gameTime, log);
+                    runGame(video, input, gameTime, args_, log);
 
                     return 0;
                 };
@@ -257,6 +272,16 @@ private:
                 help();
                 action_ = () { return 0; };
                 return;
+            case "threads":
+                try { args_.threadCount = to!uint(args[0]); }
+                catch(ConvException e)
+                {
+                    writeln("Invalid argument for the '--threads' option: expected an "
+                            "unsigned integer");
+                    help();
+                    action_ = () { return 0; };
+                }
+                break;
             default: throw new CLIException("Unrecognized global option: " ~ opt);
         }
         });
@@ -327,16 +352,17 @@ bool initVideo(VideoDevice video, Logger log)
  * video    = Video device to draw with.
  * input    = Input device to use.
  * gameTime = Game time subsystem (time steps, etc.).
+ * args     = Settings parsed from command-line arguments.
  * log      = Game log.
  */
-int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
+int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
+            ref const CLI.Args args, Logger log)
 {
     // TODO: We should use D:GameVFS to access files, with a custom YAML source reading
     //       files through D:GameVFS. 2014-08-27
 
     auto camera        = new Camera(video.width, video.height);
     auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
-
 
     // Initialize the main profiler (used to profile both the game and Tharsis).
     import tharsis.prof;
@@ -383,7 +409,6 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime, Logger log)
  */
 int main(string[] args)
 {
-    import std.conv;
     try { return CLI(args).execute(); }
     catch(ConvException e)
     {
