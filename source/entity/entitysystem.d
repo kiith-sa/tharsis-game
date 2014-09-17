@@ -124,7 +124,6 @@ public:
 
         entityMgr_.registerProcess(dummyVisual);
         entityMgr_.registerProcess(dummyLife);
-        entityMgr_.registerProcess(renderer_);
         entityMgr_.registerProcess(picking);
         entityMgr_.registerProcess(selection);
         entityMgr_.registerProcess(command);
@@ -135,6 +134,7 @@ public:
         entityMgr_.registerProcess(spawnerAttach);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
+        entityMgr_.registerProcess(renderer_);
 
         entityMgr_.registerResourceManager(prototypeMgr_);
         entityMgr_.registerResourceManager(weaponMgr_);
