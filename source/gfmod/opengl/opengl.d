@@ -570,12 +570,15 @@ extern(System) private
                     logger.warning("Invalid (non-ASCII) character in GL debug output");
                 }
 
-                // The spammy NVidia driver message that pretty much tells us that the
+                // Spammy NVidia binary driver message that pretty much tells us that the
                 // buffer objects works as it should.
-                if(id == 131185)
-                {
-                    return;
-                }
+                if(id == 131185) { return; }
+                // Spammy NVidia binary driver message that tells as that mipmap level
+                // of texture '0' is inconsistent with its min filter
+                // (no idea what causes this, possibly dimgui).
+                // - thought we may be binding '0' somewhere, but that's not the case,
+                // and dimgui textures have no mimpaps afaics.
+                if(id == 131204) { return; }
 
                 if (level == LogLevel.info)
                     logger.infof("opengl: %s (id: %s, source: %s, type: %s, severity: %s)", text, id, ssource, stype, sseverity);
