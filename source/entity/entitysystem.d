@@ -104,6 +104,7 @@ public:
 
         entityMgr_      = new DefaultEntityManager(componentTypeMgr_, threadCount);
         entityMgr_.attachPerThreadProfilers(threadProfilers_);
+        entityMgr_.startThreads().assumeWontThrow();
 
         import entity.resources;
         prototypeMgr_   = new PrototypeManager(componentTypeMgr_, entityMgr_);
