@@ -15,7 +15,6 @@ import gfmod.opengl.opengl,
 // TODO: (WISHLIST) eventually refactor/simplify GLUniform to be templated with uniform type,
 // so e.g. set() will be generated just for that type without runtime checks.  2014-08-13
 
-import tharsis.util.traits;
 import std.traits;
 import std.typetuple;
 
@@ -43,6 +42,29 @@ bool isUniformSpec(Spec)()
                      " GL uniform type".format(Spec.stringof, Field.stringof));
     }
     return true;
+}
+
+// Manually copied from tharsis-core to avoid a dependency.
+/// Get a compile-time tuple containing names of all fields in a struct.
+private template FieldNamesTuple(S)
+    if(is(S == struct))
+{
+    /// Determine if a member with specified name is a field of S.
+    template isField(string memberName)
+    {
+        // For some reason, checking if 'S.this.offsetof' compiles is a compiler
+        // error.
+        static if(memberName == "this")
+        {
+            enum bool isField = false;
+        }
+        else
+        {
+            mixin(q{enum bool isField = __traits(compiles, S.%s.offsetof);}.format(memberName));
+        }
+    }
+
+    alias FieldNamesTuple = Filter!(isField, __traits(allMembers, S));
 }
 
 /** A type-safe API for manipulating GLSL uniform variables.
