@@ -29,6 +29,8 @@ import platform.videodevice;
 /// Handles rendering of VisualComponents.
 final class RenderProcess
 {
+    // Must run in thread 0 (main thread) for OpenGL to work.
+    enum boundToThread = 0;
 private:
     // A simple 3D vertex.
     struct Vertex
