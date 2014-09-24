@@ -20,9 +20,42 @@ public import platform.key;
 
 import io.yaml;
 
-/// Handles user input (keyboard, mouse, windowing input such as closing the window, etc.).
+
+/// Handles user input (keyboard, mouse, windowing input such as resizing the window, etc.).
 final class InputDevice
 {
+public:
+    /** Status of window resizing.
+     *
+     * Implicitly converts info bool, so checks like if(input.resized) can be made.
+     */
+    struct ResizedStatus
+    {
+        // Has the window been resized?
+        bool resized = false;
+
+        alias resized this;
+
+    private:
+        // New width and height of the window after resizing.
+        int width_, height_;
+
+    public:
+        /// Get the new window width. Can only be called if resized.
+        int width() @safe pure nothrow const @nogc
+        {
+            assert(resized, "Trying to get new width when the window was not resized");
+            return width_;
+        }
+
+        /// Get the new window height. Can only be called if resized.
+        int height() @safe pure nothrow const @nogc
+        {
+            assert(resized, "Trying to get new height when the window was not resized");
+            return height_;
+        }
+    }
+
 package:
     // Game log.
     Logger log_;
@@ -69,6 +102,9 @@ private:
     ReplayState!Mouse replayM_;
     // State needed to replay recorded keyboard input.
     ReplayState!Keyboard replayK_;
+
+    // Status of resizing the window (converts to true if window was resized this frame).
+    ResizedStatus resized_;
 
 public:
     /** Construct an InputDevice.
@@ -151,12 +187,20 @@ public:
         handleRecord(mouse_, replayM_);
         handleRecord(keyboard_, replayK_);
 
+        resized_ = ResizedStatus.init;
         SDL_Event e;
         while(SDL_PollEvent(&e) != 0)
         {
             if(!replayM_.block) { mouse_.handleEvent(e); }
             // Quit if the user closes the window or presses Escape.
             if(e.type == SDL_QUIT) { quit_ = true; }
+            if(e.type == SDL_WINDOWEVENT)
+            {
+                if(e.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    resized_ = ResizedStatus(true, e.window.data1, e.window.data2);
+                }
+            }
         }
     }
 
@@ -165,6 +209,9 @@ public:
 
     /// Get access to mouse input.
     const(Mouse) mouse() @safe pure nothrow const @nogc { return mouse_; }
+
+    /// Status of resizing the window (converts to true if window was resized this frame).
+    ResizedStatus resized() @safe pure nothrow const @nogc { return resized_; }
 
     /// Does the user want to quit the program (e.g. by pressing the close window button).
     bool quit() @safe pure nothrow const @nogc { return quit_; }

@@ -46,7 +46,8 @@ SDL_Window* createGLWindow(size_t w, size_t h, Flag!"fullscreen" fullscreen)
     // Depth buffer. Needed for 3D.
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
 
-    auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+    auto flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+
     if(fullscreen) { flags |= SDL_WINDOW_FULLSCREEN; }
     // Create a centered 640x480 OpenGL window named "Tharsis-Game"
     return SDL_CreateWindow("tharsis-game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,

@@ -96,6 +96,19 @@ public:
         return true;
     }
 
+    /** Resize the viewport.
+     *
+     * Should be called after the window is resized.
+     *
+     * See_Also: InputDevice.resized
+     */
+    void resizeViewport(int width, int height)
+    {
+        width_  = width;
+        height_ = height;
+        glViewport(0, 0, width, height);
+    }
+
     /**
      * Initialize the OpenGL context.
      *
