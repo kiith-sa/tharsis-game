@@ -106,6 +106,12 @@ private:
     // Status of resizing the window (converts to true if window was resized this frame).
     ResizedStatus resized_;
 
+    /* Acts as a queue of UTF-32 code points encoded in UTF-8.
+     *
+     * If not empty, one element is popped each frame.
+     */
+    char[] unicodeQueue_;
+
 public:
     /** Construct an InputDevice.
      *
@@ -114,17 +120,19 @@ public:
      * getHeight = Delegate that returns window height.
      * log       = Game log.
      */
-    this(long delegate() @safe pure nothrow @nogc getHeight, Logger log) @safe nothrow
+    this(long delegate() @safe pure nothrow @nogc getHeight, Logger log) @trusted nothrow
     {
         log_      = log;
         keyboard_ = new Keyboard();
         mouse_    = new Mouse(getHeight);
         recorder_ = new InputRecordingDevice(this);
+        SDL_StartTextInput();
     }
 
     /// Destroy the InputDevice. Must be called to ensure deletion of manually allocated memory.
-    ~this()
+    ~this() @trusted
     {
+        SDL_StopTextInput();
         destroy(recorder_);
     }
 
@@ -173,6 +181,19 @@ public:
     /// Collect user input.
     void update() @trusted nothrow // @nogc
     {
+        import std.utf;
+        if(!unicodeQueue_.empty) try
+        {
+            unicodeQueue_.popFront();
+        }
+        catch(UTFException e)
+        {
+            log_.warning("Error in unicode input decoding, clearing unicode input")
+                .assumeWontThrow;
+            unicodeQueue_.length = 0;
+        }
+        catch(Exception e) { assert(false, "Unexpected exception"); }
+        
         // Record input from the *previous frame* (avoids recording the current frame
         // of a stopRecord() call, which could record the input that stopped it)
         recorder_.update();
@@ -201,7 +222,17 @@ public:
                     resized_ = ResizedStatus(true, e.window.data1, e.window.data2);
                 }
             }
+            if(e.type == SDL_TEXTINPUT)
+            {
+                unicodeQueue_.assumeSafeAppend();
+                import core.stdc.string: strlen;
+                unicodeQueue_ ~= e.text.text[0 .. strlen(e.text.text.ptr)];
+            }
         }
+
+        // Our GUI reads backspace/enter through unicode().
+        if(keyboard_.pressed(Key.Return))    { unicodeQueue_ ~= 0x0D; }
+        if(keyboard_.pressed(Key.Backspace)) { unicodeQueue_ ~= 0x08; }
     }
 
     /// Get access to keyboard input.
@@ -215,6 +246,28 @@ public:
 
     /// Does the user want to quit the program (e.g. by pressing the close window button).
     bool quit() @safe pure nothrow const @nogc { return quit_; }
+
+    /** Get the "current" unicode character for text input purposes.
+     *
+     * Text input is pretty complicated and the InputDevice may (at least in theory)
+     * receive more than one unicode character in some frames. These are stored in an
+     * internal queue that is popped once per frame. This accesses the popped value.
+     *
+     * If there are no characters in the queue, 0 is returned. Enter/backspace key presses
+     * are also registered as unicode characters (0x0D/0x0D respectively).
+     *
+     */
+    dchar unicode() @safe pure nothrow const
+    {
+        if(unicodeQueue_.empty) { return 0; }
+
+        import std.utf;
+        // An error, if any, will be detected/logged on the next frame (no logging here - const)
+        try { return unicodeQueue_.front; }
+        catch(UTFException e) { return 0; }
+        catch(Exception e) { assert(false, "Unexpected exception"); }
+    }
+
 
 private:
     /** If specified input recording is not null, attempts to play one frame from the recording.
