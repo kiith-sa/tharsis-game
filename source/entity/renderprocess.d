@@ -7,7 +7,7 @@ module entity.renderprocess;
 
 
 import std.exception;
-import std.logger;
+import std.experimental.logger;
 import std.typecons;
 
 import derelict.opengl3.gl3;

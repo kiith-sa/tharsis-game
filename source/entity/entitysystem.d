@@ -8,7 +8,7 @@ module entity.entitysystem;
 
 
 import std.exception;
-import std.logger;
+import std.experimental.logger;
 
 import tharsis.entity.componenttypemanager;
 import tharsis.entity.entitymanager;

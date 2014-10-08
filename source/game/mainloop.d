@@ -7,7 +7,7 @@
 module game.mainloop;
 
 import std.exception;
-import std.logger;
+import std.experimental.logger;
 
 import tharsis.prof;
 

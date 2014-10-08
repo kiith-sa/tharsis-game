@@ -31,7 +31,7 @@ private:
     // Access to user input.
     const(InputDevice) input_;
 
-    import std.logger;
+    import std.experimental.logger;
     // Game log.
     Logger log_;
 

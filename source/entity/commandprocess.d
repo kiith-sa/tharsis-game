@@ -8,7 +8,7 @@ module entity.commandprocess;
 
 
 import std.exception;
-import std.logger;
+import std.experimental.logger;
 
 import gl3n_extra.linalg;
 

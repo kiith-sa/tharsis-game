@@ -2,7 +2,7 @@ import std.algorithm;
 import std.array;
 import std.conv;
 import std.exception;
-import std.logger;
+import std.experimental.logger;
 import std.stdio;
 import std.string;
 import std.typecons;
@@ -146,7 +146,7 @@ public:
         action_ = ()
         {
             // For now. Should log to an in-memory buffer later.
-            auto log = defaultLogger;
+            auto log = stdlog;
 
             if(!loadDerelict(log)) { return 1; }
             scope(exit)            { unloadDerelict(); }
@@ -220,7 +220,7 @@ private:
                             new CLIException("Demo file name not specified"));
 
                     // For now. Should log to an in-memory buffer later.
-                    auto log = defaultLogger;
+                    auto log = stdlog;
 
                     if(!loadDerelict(log)) { return 1; }
                     scope(exit)            { unloadDerelict(); }
