@@ -336,8 +336,8 @@ void deinitSDL()
 bool initVideo(VideoDevice video, Logger log)
 {
     // Initialize the video device.
-    const width        = 800;
-    const height       = 600;
+    const width        = 1280;
+    const height       = 720;
     const fullscreen   = No.fullscreen;
 
     if(!video.initWindow(width, height, fullscreen)) { return false; }
