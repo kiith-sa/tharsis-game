@@ -23,32 +23,33 @@ import time.gametime;
  *
  * Params:
  *
- * entitySystem       = EntitySystem holding all the Processes in the game.
- * videoDevice        = The video device used for graphics and windowing operations.
- * inputDevice        = Device used for user input.
- * time               = Game time subsystem.
- * cameraControl      = Handles camera control by the user.
- * mainThreadProfiler = Profiler used to profile game and Tharsis execution in the main thread.
- * log                = Log to write... log messages to.
+ * entitySystem    = EntitySystem holding all the Processes in the game.
+ * videoDevice     = The video device used for graphics and windowing operations.
+ * inputDevice     = Device used for user input.
+ * time            = Game time subsystem.
+ * cameraControl   = Handles camera control by the user.
+ * threadProfilers = Profilers used to profile game and Tharsis execution in individual threads.
+ * log             = Log to write... log messages to.
  */
 bool mainLoop(ref EntitySystem entitySystem,
               VideoDevice video,
               InputDevice input,
               GameTime time,
               CameraControl cameraControl,
-              Profiler mainThreadProfiler,
-              Logger log) @trusted nothrow
+              Profiler[] threadProfilers,
+              Logger log) @trusted
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
     import tharsis.prof;
     // Profiler used to calculate how much of the allocated time step we're spending.
     auto loadProfiler = new Profiler(new ubyte[4096]);
+    auto mainThreadProfiler = threadProfilers[0];
 
     for(;;)
     {
         while(time.timeToUpdate())
         {
-            auto frameTotal = Zone(mainThreadProfiler, "frameTotal");
+            auto frame = Zone(mainThreadProfiler, "frame");
             loadProfiler.reset();
             {
                 auto frameLoad = Zone(loadProfiler, "frameLoad");
