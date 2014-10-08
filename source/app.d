@@ -177,7 +177,7 @@ public:
             return action_();
         }
         catch(CLIException e) { writeln("Command-line error: ", e.msg); help(); }
-        catch(Throwable e)    { writeln("Unhandled error: ", e.msg); }
+        catch(Throwable e)    { writeln("Unhandled error: ", e); }
         return 1;
     }
 
@@ -437,11 +437,11 @@ int main(string[] args)
     }
     catch(CLIException e)
     {
-        writeln("Command-line error: ", e.msg);
+        writeln("Command-line error: ", e);
     }
     catch(Throwable e)
     {
-        writeln("Unhandlet Throwable at top level: ", e);
+        writeln("Unhandled Throwable at top level: ", e);
     }
     return 1;
 }
