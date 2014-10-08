@@ -57,15 +57,15 @@ engine:
     maxSpeed:     900.0
 dynamic:
 timedTriggerMulti:
-    - time:      0.5
+    - time:      0.3
       triggerID: 1
       periodic: true
-    - time:      0.5
+    - time:      0.3
       triggerID: 2
       periodic: true
-    - time:      0.5
+    - time:      0.3
       triggerID: 3
       periodic: true
-    - time:      0.5
+    - time:      0.3
       triggerID: 4
       periodic: true
