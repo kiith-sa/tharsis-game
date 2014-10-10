@@ -45,6 +45,7 @@ bool mainLoop(ref EntitySystem entitySystem,
     auto loadProfiler = new Profiler(new ubyte[4096]);
     auto mainThreadProfiler = threadProfilers[0];
 
+    auto sender = new DespikerSender(threadProfilers);
     for(;;)
     {
         while(time.timeToUpdate())
@@ -81,6 +82,21 @@ bool mainLoop(ref EntitySystem entitySystem,
             if(input.keyboard.pressed(Key.F2)) { log.info(summary).assumeWontThrow; }
             // F3 toggles recording.
             if(input.keyboard.pressed(Key.F3)) { toggleRecording(input, log); }
+
+            try if(input.keyboard.pressed(Key.F4) && !sender.sending)
+            {
+                // TODO: configurable despiker path 2014-10-06
+                // TODO: When publishing, include despiker binary+font in tharsis-game dir.
+                sender.startDespiker("../tharsis-despiker/despiker");
+            }
+            catch(DespikerSenderException e)
+            {
+                log.error("Failed to start despiker: " ~ e.msg);
+            }
+
+            // Must finish all zones before updating the sender.
+            destroy(frame);
+            sender.update();
         }
     }
 
