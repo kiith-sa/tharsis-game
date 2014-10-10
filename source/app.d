@@ -69,7 +69,7 @@ void help()
         "Benchmark game for Tharsis",
         "Copyright (C) 2014 Ferdinand Majerech",
         "",
-        "Usage: memprof [--help] <command> [local-options ...]",
+        "Usage: tharsis-game [--help] <command> [local-options ...]",
         "",
         "Global options:",
         "  --help                     Print this help information.",
