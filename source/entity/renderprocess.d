@@ -156,6 +156,11 @@ private:
     // Map grid width and height in cells.
     size_t gridW_, gridH_;
 
+    import tharsis.prof;
+    // Profiler for the thread the RenderProcess runs in. Passed on every preProcess() and 
+    // must not be use outside process(), preProcess() and postProcess().
+    Profiler threadProfiler_;
+
 public:
     /** Construct a RenderProcess.
      *
@@ -272,8 +277,9 @@ public:
     }
 
     /// Draw anything that should be drawn before any entities.
-    void preProcess() nothrow
+    void preProcess(Profiler threadProfiler) nothrow
     {
+        threadProfiler_ = threadProfiler;
         // This will still be called even if the program construction fails.
         if(program_ is null) { return; }
 
@@ -397,7 +403,14 @@ public:
     /// Draw all batched entities that have not yet been drawn.
     void postProcess() nothrow
     {
-        scope(exit) { glDisable(GL_DEPTH_TEST); }
+        scope(exit)
+        {
+            glDisable(GL_DEPTH_TEST);
+            auto swap = Zone(threadProfiler_, "video.swapBuffers()");
+            // Swap the back buffer to the front, showing it in the window.
+            // Outside of the frameLoad zone because VSync could break our profiling.
+            video_.swapBuffers();
+        }
 
         if(renderMode_ == RenderMode.None) { return; }
 
@@ -408,6 +421,9 @@ public:
         if(!selectionBatch_.empty) { drawBatch(selectionBatch_, PrimitiveType.Lines); }
         uniforms_.projection = camera_.ortho;
         if(!uiBatch_.empty)        { drawBatch(uiBatch_, PrimitiveType.Triangles); }
+
+        // Log GL errors, if any.
+        video_.gl.runtimeCheck();
     }
 
 private:
@@ -415,6 +431,7 @@ private:
     /// Draw all entities batched so far.
     void drawBatch(VertexArray!Vertex batch, PrimitiveType type) @safe nothrow
     {
+        auto swap = Zone(threadProfiler_, "RenderProcess.drawBatch()");
         scope(exit) { gl_.runtimeCheck(); }
 
         program_.use();

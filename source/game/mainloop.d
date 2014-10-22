@@ -46,37 +46,44 @@ bool mainLoop(ref EntitySystem entitySystem,
     auto mainThreadProfiler = threadProfilers[0];
 
     auto sender = new DespikerSender(threadProfilers);
-    for(;;)
+    ulong frameIdx = 0;
+    for(;;) if(time.timeToUpdate())
     {
-        while(time.timeToUpdate())
+        scope(exit) { ++frameIdx; }
+
+        auto frame = Zone(mainThreadProfiler, "frame");
+        loadProfiler.reset();
         {
-            auto frame = Zone(mainThreadProfiler, "frame");
-            loadProfiler.reset();
+            auto frameLoad = Zone(loadProfiler, "frameLoad");
+            input.update();
+            cameraControl.update();
+            if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
+
+            import derelict.opengl3.gl3;
+            // Clear the back buffer.
+            glClearColor(0.01, 0.01, 0.04, 1.0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            entitySystem.frame();
+        }
+
+        time.finishedUpdate();
+
+        {
+            auto diagTools = Zone(mainThreadProfiler, "diagTools");
+
+            string summary;
             {
-                auto frameLoad = Zone(loadProfiler, "frameLoad");
-                input.update();
-                cameraControl.update();
-                if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
-
-                import derelict.opengl3.gl3;
-                // Clear the back buffer.
-                glClearColor(0.01, 0.01, 0.04, 1.0);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                entitySystem.frame();
-                // Log GL errors, if any.
-                video.gl.runtimeCheck();
+                auto summarize = Zone(mainThreadProfiler, "summarizeLoad");
+                summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics);
             }
 
-            // Swap the back buffer to the front, showing it in the window.
-            // Outside of the frameLoad zone because VSync could break our profiling.
-            video.swapBuffers();
-
-            time.finishedUpdate();
-
-
-            const summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics);
-            video.windowTitle = summary;
+            // Update the window title every 30th frame
+            if(frameIdx % 30 == 0)
+            {
+                auto setTitle = Zone(mainThreadProfiler, "video.windowTitle()");
+                video.windowTitle = summary;
+            }
 
             // F2 prints basic load info (useful in fullscreen or recorded demos).
             if(input.keyboard.pressed(Key.F2)) { log.info(summary).assumeWontThrow; }
@@ -93,15 +100,16 @@ bool mainLoop(ref EntitySystem entitySystem,
             {
                 log.error("Failed to start despiker: " ~ e.msg);
             }
-
-            // Must finish all zones before updating the sender.
-            destroy(frame);
-            sender.update();
         }
+
+        // Must finish all zones before updating the sender.
+        destroy(frame);
+        sender.update();
     }
 
     assert(false, "This should never be reached");
 }
+
 
 
 import tharsis.entity.entitymanager;
