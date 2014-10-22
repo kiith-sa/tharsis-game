@@ -1490,9 +1490,9 @@ private struct BitVector
         assert(x <= y && y <= _rep.length * 64);
         if (x == y) return;
         --y;
-        immutable size_t i1 = x / 64;
+        immutable size_t i1 = cast(size_t)x / 64;
         immutable uint b1 = 63 - x % 64;
-        immutable size_t i2 = y / 64;
+        immutable size_t i2 = cast(size_t)y / 64;
         immutable uint b2 = 63 - y % 64;
         assert(i1 <= i2 && i2 < _rep.length);
         if (i1 == i2)
@@ -1517,12 +1517,13 @@ private struct BitVector
     bool opIndex(ulong x)
     {
         assert(x < length);
-        return (_rep[x / 64] & (0x8000_0000_0000_0000UL >> (x % 64))) != 0;
+        return (_rep[cast(size_t)x / 64] & (0x8000_0000_0000_0000UL >> (x % 64))) != 0;
     }
 
     void opIndexAssign(bool b, ulong x)
     {
-        auto i = x / 64, j = 0x8000_0000_0000_0000UL >> (x % 64);
+        auto i = cast(size_t)x / 64;
+        auto j = 0x8000_0000_0000_0000UL >> (x % 64);
         if (b) _rep[i] |= j;
         else _rep[i] &= ~j;
     }
@@ -1538,7 +1539,7 @@ private struct BitVector
     ulong find1(ulong i)
     {
         assert(i < length);
-        auto w = i / 64;
+        auto w = cast(size_t)i / 64;
         auto b = i % 64; // 0 through 63, 0 when i == 0
         auto mask = ulong.max >> b;
         if (auto current = _rep[w] & mask)
@@ -1564,7 +1565,7 @@ private struct BitVector
     ulong find1Backward(ulong i)
     {
         assert(i < length);
-        auto w = i / 64;
+        auto w = cast(size_t)i / 64;
         auto b = 63 - (i % 64); // 0 through 63, 63 when i == 0
         auto mask = ~((1UL << b) - 1);
         assert(mask != 0);
@@ -1603,7 +1604,7 @@ private struct BitVector
     {
         assert(start < length);
         assert(howMany > 64);
-        auto i = start / 64;
+        auto i = cast(size_t)start / 64;
         while (_rep[i] & 1)
         {
             // No trailing zeros in this word, try the next one
