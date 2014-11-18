@@ -95,6 +95,10 @@ void help()
         "      --direct               Allow direct mouse/keyboard input to pass through",
         "                             along with the recorded demo input (allowing the ",
         "                             user to affect the demo as it runs)",
+        "      --quitWhenDone         Quit once the all recorded input is replayed (once",
+        "                             the demo ends).",
+        "                             By default, the game will continue to run after",
+        "                             demo is replayed.",
         "                             ",
         "    Local arguments:",
         "      <filename>             Name of the recorded input file to execute.",
@@ -131,6 +135,9 @@ private:
 
         // Should direct mouse/keyboard input be blocked when replaying the demo?
         Flag!"block" blockInput_ = Yes.block;
+
+        // Should the game quit when the the replay is finished?
+        Flag!"quitWhenDone" quitWhenDone_ = No.quitWhenDone;
     }
 
     // Options/arguments common for all commands.
@@ -217,7 +224,8 @@ private:
 
         switch(opt)
         {
-            case "direct": demo_.blockInput_ = No.block; break;
+            case "direct":       demo_.blockInput_ = No.block;           break;
+            case "quitWhenDone": demo_.quitWhenDone_ = Yes.quitWhenDone; break;
             default: throw new CLIException("Unrecorgnized demo option: --" ~ opt);
         }
 
@@ -261,7 +269,7 @@ private:
                     try
                     {
                         auto replay = Loader(demo_.inputName_).load();
-                        input.replayFromYAML(replay, demo_.blockInput_);
+                        input.replayFromYAML(replay, demo_.blockInput_, demo_.quitWhenDone_);
                     }
                     catch(Exception e)
                     {

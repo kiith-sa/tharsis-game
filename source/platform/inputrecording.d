@@ -190,12 +190,15 @@ YAMLNode recordingAsYAML(InputRecordingDevice recorder) @safe nothrow
  *
  * Params:
  *
- * input = InputDevice to replay the input.
- * yaml  = YAML to load input to replay from.
- * block = Should the real input sources be blocked while replaying?
- *         (E.g. blocking the actual mouse while replaying mouse input).
+ * input        = InputDevice to replay the input.
+ * yaml         = YAML to load input to replay from.
+ * block        = Should the real input sources be blocked while replaying?
+ *                (E.g. blocking the actual mouse while replaying mouse input).
+ * quitWhenDone = Should the InputDevice get a 'quit' event after the replay is done?
+ *                Quits the program after the replay is done.
  */
-void replayFromYAML(InputDevice input, YAMLNode yaml, Flag!"block" block) @safe nothrow
+void replayFromYAML(InputDevice input, YAMLNode yaml, 
+                    Flag!"block" block, Flag!"quitWhenDone" quitWhenDone) @safe nothrow
 {
     enum baseMsg = "Failed to load input replay from YAML: ";
     try
@@ -204,8 +207,10 @@ void replayFromYAML(InputDevice input, YAMLNode yaml, Flag!"block" block) @safe 
         auto keyboardYAML = yaml["keyboard"];
         auto mouseRecording    = new YAMLRecording!Mouse(mouseYAML);
         auto keyboardRecording = new YAMLRecording!Keyboard(keyboardYAML);
-        input.replay(mouseRecording, block ? Yes.blockMouse : No.blockMouse);
-        input.replay(keyboardRecording, block ? Yes.blockKeyboard : No.blockKeyboard);
+        mouseRecording.quitWhenDone    = quitWhenDone;
+        keyboardRecording.quitWhenDone = quitWhenDone;
+        input.replay(mouseRecording, cast(Flag!"blockMouse")block);
+        input.replay(keyboardRecording, cast(Flag!"blockKeyboard")block);
     }
     catch(YAMLException e) { input.log_.warning(baseMsg, e.msg).assumeWontThrow; }
     catch(ConvException e) { input.log_.warning(baseMsg, e.msg).assumeWontThrow; }
