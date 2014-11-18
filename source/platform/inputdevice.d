@@ -161,19 +161,8 @@ public:
         replayM_ = ReplayState!Mouse(recording, 1, block);
     }
 
-    /** Start replaying keyboard input from a recording.
-     *
-     * If something is already replaying (from a previous replay() call), it will be
-     * overridden.
-     *
-     * Params:
-     *
-     * recording = The recording to play. Will continue to play until spent. Will be 
-     *             consumed by the InputDevice.
-     * block     = Should input from the real keyboard be blocked while replaying?
-     */
-    void replay(Recording!Keyboard recording, Flag!"blockKeyboard" block)
-        @safe pure nothrow @nogc
+    /// Ditto
+    void replay(Recording!Keyboard recording, Flag!"blockKeyboard" block) @safe pure nothrow @nogc
     {
         replayK_ = ReplayState!Keyboard(recording, 1, block);
     }
