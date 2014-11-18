@@ -30,7 +30,9 @@ import time.gametime;
  * If we can't maintain the FPS, the game slows down (hence we need to do everything to 
  * keep overhead low enough to keep this FPS).
  */
-enum fixedFPS = 60.0f;
+// Kernel distorts results too much at 60FPS, go with 50 for now.
+// enum fixedFPS = 60.0f;
+enum fixedFPS = 50.0f;
 // Good for printf debugging:
 // enum fixedFPS = 3.0f;
 
