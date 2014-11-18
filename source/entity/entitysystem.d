@@ -114,7 +114,6 @@ public:
         import tharsis.defaults.copyprocess;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
-        renderer_          = new RenderProcess(video, input.keyboard, input.mouse, camera, log);
         auto picking       = new MousePickingProcess(camera, input.mouse, log);
         auto selection     = new SelectionProcess(input.mouse, log);
         auto command       = new CommandProcess(input.mouse, input.keyboard, camera, log);
@@ -139,7 +138,11 @@ public:
         entityMgr_.registerProcess(spawnerAttach);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
-        entityMgr_.registerProcess(renderer_);
+        if(video !is null)
+        {
+            renderer_ = new RenderProcess(video, input.keyboard, input.mouse, camera, log);
+            entityMgr_.registerProcess(renderer_);
+        }
 
         entityMgr_.registerResourceManager(prototypeMgr_);
         entityMgr_.registerResourceManager(weaponMgr_);
@@ -165,7 +168,10 @@ public:
     ~this()
     {
         auto zone = Zone(threadProfilers_[0], "EntitySystem.~this");
-        renderer_.destroy().assumeWontThrow;
+        if(!headless)
+        {
+            renderer_.destroy().assumeWontThrow;
+        }
         entityMgr_.destroy();
         componentTypeMgr_.destroy();
     }
@@ -174,6 +180,12 @@ public:
     ref auto diagnostics() @safe pure nothrow const @nogc
     {
         return diagnostics_;
+    }
+
+    /// Are we headless (no renderer process - no graphics)?
+    bool headless() @safe pure nothrow const @nogc
+    {
+        return renderer_ is null;
     }
 
     /// Execute one frame (game update) of the entity system.
