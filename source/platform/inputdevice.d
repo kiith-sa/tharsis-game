@@ -279,14 +279,14 @@ private:
      *          handleRecord() will do anything. If it's empty, replay will be
      *          reset to its init value.
      */
-    static void handleRecord(Input)(Input input, ref ReplayState!Input replay)
-        @safe
+    void handleRecord(Input)(Input input, ref ReplayState!Input replay) @safe
     {
         scope(exit) if(replay.delay > 0) { --replay.delay; }
         if(replay.recording is null || replay.delay > 0) { return; }
 
-        if(replay.recording.empty) 
+        if(replay.recording.empty)
         {
+            if(replay.recording.quitWhenDone) { quit_ = true; }
             replay = replay.init;
         }
         else

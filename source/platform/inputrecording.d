@@ -256,6 +256,9 @@ protected:
     Input.BaseState inputState_;
 
 public:
+    /// Should we quit game when done with the recording?
+    Flag!"quitWhenDone" quitWhenDone;
+
     /// Move to the next frame in the recording.
     void popFront() @safe nothrow;
 
