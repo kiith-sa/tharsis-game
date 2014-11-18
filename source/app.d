@@ -390,7 +390,7 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     // Initialize the main profiler (used to profile both the game and Tharsis).
     import tharsis.prof;
     import std.allocator;
-    enum profSpace = 1024 * 1024 * 64;
+    enum profSpace = 1024 * 1024 * 256;
 
     import tharsis.entity.entitymanager;
     import tharsis.entity.scheduler;
