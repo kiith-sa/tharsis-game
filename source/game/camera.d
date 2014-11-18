@@ -11,7 +11,6 @@ import gl3n_extra.linalg;
 import gfmod.opengl.matrixstack;
 
 import platform.inputdevice;
-import platform.videodevice;
 
 
 /** Controls the camera according to user input.
@@ -25,8 +24,6 @@ private:
     import time.gametime;
     // Game time (for time step).
     const(GameTime) time_;
-    // Video device for screen size access.
-    const(VideoDevice) video_;
 
     // Access to user input.
     const(InputDevice) input_;
@@ -69,16 +66,13 @@ public:
      *
      * time   = Game time (for time step).
      * input  = Access to user input.
-     * video  = Video device for screen size access.
      * camera = Isometric camera.
      * log    = Game log.
      */
-    this(const(GameTime) time, const(VideoDevice) video, const(InputDevice) input,
-         Camera camera, Logger log)
+    this(const(GameTime) time, const(InputDevice) input, Camera camera, Logger log)
         @safe pure nothrow @nogc
     {
         time_   = time;
-        video_  = video;
         input_  = input;
         camera_ = camera;
         log_    = log;
@@ -91,13 +85,17 @@ public:
         vec2 center    = camera_.center;
         const zoom     = camera_.zoom;
         auto mouse     = input_.mouse;
+        auto keyboard  = input_.keyboard;
         const timeStep = time_.timeStep;
         const scrollSpeed = (scrollSpeed_ / zoom) * timeStep;
+        const rightBorder = camera_.width_ - borderSize_;
+        const topBorder   = camera_.height_ - borderSize_;
+
         // Conventional scrolling by moving mouse to window border.
-        if(mouse.x < borderSize_)                 { center.x -= scrollSpeed; }
-        if(mouse.x > video_.width - borderSize_)  { center.x += scrollSpeed; }
-        if(mouse.y < borderSize_)                 { center.y -= scrollSpeed; }
-        if(mouse.y > video_.height - borderSize_) { center.y += scrollSpeed; }
+        if(mouse.x < borderSize_ || keyboard.key(Key.A)) { center.x -= scrollSpeed; }
+        if(mouse.x > rightBorder || keyboard.key(Key.D)) { center.x += scrollSpeed; }
+        if(mouse.y < borderSize_ || keyboard.key(Key.S)) { center.y -= scrollSpeed; }
+        if(mouse.y > topBorder   || keyboard.key(Key.W)) { center.y += scrollSpeed; }
 
         // Fast scrolling by dragging RMB.
         fastScrollPressedDuration_ = mouse.button(Mouse.Button.Right)

@@ -378,9 +378,8 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
 {
     // TODO: We should use D:GameVFS to access files, with a custom YAML source reading
     //       files through D:GameVFS. 2014-08-27
-
-    auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
     auto camera        = new Camera(cast(size_t)args.width, cast(size_t)args.height);
+    auto cameraControl = new CameraControl(gameTime, input, camera, log);
 
     // Initialize the main profiler (used to profile both the game and Tharsis).
     import tharsis.prof;
