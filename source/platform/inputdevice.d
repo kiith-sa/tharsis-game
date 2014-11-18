@@ -120,7 +120,7 @@ public:
      * getHeight = Delegate that returns window height.
      * log       = Game log.
      */
-    this(long delegate() @safe pure nothrow @nogc getHeight, Logger log) @trusted nothrow
+    this(long delegate() @safe nothrow @nogc getHeight, Logger log) @trusted nothrow
     {
         log_      = log;
         keyboard_ = new Keyboard();
@@ -193,7 +193,7 @@ public:
             unicodeQueue_.length = 0;
         }
         catch(Exception e) { assert(false, "Unexpected exception"); }
-        
+
         // Record input from the *previous frame* (avoids recording the current frame
         // of a stopRecord() call, which could record the input that stopped it)
         recorder_.update();
@@ -506,7 +506,7 @@ private:
     vec2i[Button.max + 1] pressedCoords_;
 
     // Gets the current window height.
-    long delegate() @safe pure nothrow @nogc getHeight_;
+    long delegate() @safe nothrow @nogc getHeight_;
 
     import gl3n_extra.linalg;
 
@@ -530,7 +530,7 @@ nothrow @nogc:
      *
      * getHeight = Delegate that returns current window height.
      */
-    this(long delegate() @safe pure nothrow @nogc getHeight) @safe nothrow
+    this(long delegate() @safe nothrow @nogc getHeight) @safe nothrow
     {
         getHeight_ = getHeight;
         xMovement_ = yMovement_ = 0;
@@ -623,7 +623,7 @@ private:
     }
 
     /// Get mouse input that must be refreshed every frame.
-    void getInput() @safe nothrow 
+    void getInput() @safe nothrow
     {
         const oldX = x_; const oldY = y_;
         getMouseState();
