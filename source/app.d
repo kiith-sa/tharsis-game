@@ -132,6 +132,15 @@ private:
     {
         // The number of threads for Tharsis to use. If 0, the number will be autodetected.
         uint threadCount = 0;
+
+        // Are we running headless (without video output) ?
+        Flag!"headless" headless;
+
+        // Window/camera width to start with (affects even headless runs).
+        uint width = 1024;
+
+        // Window/camera height to start with (affects even headless runs).
+        uint height = 768;
     }
 
     // Options/arguments for the 'demo' command.
@@ -155,10 +164,13 @@ public:
             if(!initSDL(log)) { return 1; }
             scope(exit)       { SDL_Quit(); }
 
-            auto video = scoped!VideoDevice(log);
-            if(!initVideo(video, log)) { return 1; }
 
-            auto input    = scoped!InputDevice(&video.height, log);
+            auto video = args_.headless ? null : new VideoDevice(log);
+            scope(exit) if(!args_.headless) { video.destroy(); }
+            if(!args_.headless && !initVideo(video, log)) { return 1; }
+
+            auto input = scoped!InputDevice(() => args_.headless ? args_.height : video.height,
+                                            log);
             auto gameTime = scoped!GameTime(1 / fixedFPS);
 
             runGame(video, input, gameTime, args_, log);
@@ -229,10 +241,13 @@ private:
                     if(!initSDL(log)) { return 1; }
                     scope(exit)       { SDL_Quit(); }
 
-                    auto video = scoped!VideoDevice(log);
-                    if(!initVideo(video, log)) { return 1; }
+                    auto video = args_.headless ? null : new VideoDevice(log);
+                    scope(exit) if(!args_.headless) { video.destroy(); }
+                    if(!args_.headless && !initVideo(video, log)) { return 1; }
 
-                    auto input    = scoped!InputDevice(&video.height, log);
+                    auto input = scoped!InputDevice(() => args_.headless ? args_.height 
+                                                                         : video.height,
+                                                    log);
                     auto gameTime = scoped!GameTime(1 / fixedFPS);
 
                     // Load recorded input.
@@ -268,25 +283,39 @@ private:
 
         // Global option
         processOption(arg, (opt, args){
-        switch(opt)
+        try switch(opt)
         {
             case "help": 
                 help();
                 action_ = () { return 0; };
                 return;
-            case "threads":
-                try { args_.threadCount = to!uint(args[0]); }
-                catch(ConvException e)
-                {
-                    writeln("Invalid argument for the '--threads' option: expected an "
-                            "unsigned integer");
-                    help();
-                    action_ = () { return 0; };
-                }
-                break;
+            case "headless": args_.headless = Yes.headless;                break;
+            case "threads":  args_.threadCount = to!uint(args[0]);         break;
+            case "width":    args_.width       = max(1, to!uint(args[0])); break;
+            case "height":   args_.height      = max(1, to!uint(args[0])); break;
             default: throw new CLIException("Unrecognized global option: " ~ opt);
         }
+        catch(ConvException e)
+        {
+            writefln("Invalid argument/s for option '--%s': '%s'", opt, args);
+            help();
+            action_ = () { return 0; };
+        }
         });
+    }
+
+
+    /// Initialize the video device (setting video mode and initializing OpenGL).
+    bool initVideo(VideoDevice video, Logger log)
+    {
+        // Initialize the video device.
+        const width        = args_.width;
+        const height       = args_.height;
+        const fullscreen   = No.fullscreen;
+
+        if(!video.initWindow(width, height, fullscreen)) { return false; }
+        if(!video.initGL()) { return false; }
+        return true;
     }
 }
 
@@ -334,24 +363,11 @@ void deinitSDL()
     SDL_Quit();
 }
 
-/// Initialize the video device (setting video mode and initializing OpenGL).
-bool initVideo(VideoDevice video, Logger log)
-{
-    // Initialize the video device.
-    const width        = 1280;
-    const height       = 720;
-    const fullscreen   = No.fullscreen;
-
-    if(!video.initWindow(width, height, fullscreen)) { return false; }
-    if(!video.initGL()) { return false; }
-    return true;
-}
-
 /** Run the game (called from the CLI action_)
  *
  * Params:
  *
- * video    = Video device to draw with.
+ * video    = Video device to draw with. May be NULL if running headless.
  * input    = Input device to use.
  * gameTime = Game time subsystem (time steps, etc.).
  * args     = Settings parsed from command-line arguments.
@@ -363,8 +379,8 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     // TODO: We should use D:GameVFS to access files, with a custom YAML source reading
     //       files through D:GameVFS. 2014-08-27
 
-    auto camera        = new Camera(cast(size_t)video.width, cast(size_t)video.height);
     auto cameraControl = new CameraControl(gameTime, video, input, camera, log);
+    auto camera        = new Camera(cast(size_t)args.width, cast(size_t)args.height);
 
     // Initialize the main profiler (used to profile both the game and Tharsis).
     import tharsis.prof;

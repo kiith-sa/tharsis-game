@@ -25,6 +25,7 @@ import time.gametime;
  *
  * entitySystem    = EntitySystem holding all the Processes in the game.
  * videoDevice     = The video device used for graphics and windowing operations.
+ *                   May be null if we're running headless.
  * inputDevice     = Device used for user input.
  * time            = Game time subsystem.
  * cameraControl   = Handles camera control by the user.
@@ -59,10 +60,13 @@ bool mainLoop(ref EntitySystem entitySystem,
             cameraControl.update();
             if(input.quit || input.keyboard.key(Key.Escape)) { return true; }
 
-            import derelict.opengl3.gl3;
             // Clear the back buffer.
-            glClearColor(0.01, 0.01, 0.04, 1.0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            if(video !is null)
+            {
+                import derelict.opengl3.gl3;
+                glClearColor(0.01, 0.01, 0.04, 1.0);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
 
             entitySystem.frame();
         }
@@ -79,7 +83,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             }
 
             // Update the window title every 30th frame
-            if(frameIdx % 30 == 0)
+            if(frameIdx % 30 == 0 && video !is null)
             {
                 auto setTitle = Zone(mainThreadProfiler, "video.windowTitle()");
                 video.windowTitle = summary;
