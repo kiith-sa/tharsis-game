@@ -75,7 +75,7 @@ public:
      * camera          = Isometric amera.
      * threadCount     = Number of threads for Tharsis to use. 0 is autodetect.
      * threadProfilers = Profilers profiling both the game and Tharsis execution in the
-     *                   main thread as well as any extra threads used by Tharsis. One 
+     *                   main thread as well as any extra threads used by Tharsis. One
      *                   profiler per thread.
      * log             = Game log.
      */
@@ -170,7 +170,7 @@ public:
 
         componentTypeMgr_.lock();
 
-        entityMgr_      = new DefaultEntityManager(componentTypeMgr_, threadCount);
+        entityMgr_ = new DefaultEntityManager(componentTypeMgr_, threadCount);
         entityMgr_.attachPerThreadProfilers(threadProfilers_);
         entityMgr_.startThreads().assumeWontThrow();
 
