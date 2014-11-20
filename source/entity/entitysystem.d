@@ -100,6 +100,74 @@ public:
                                                   SpawnerMultiComponent,
                                                   TimedTriggerMultiComponent);
 
+        // Data of a dummy (performance testing) component.
+        static struct DummyData(ushort DummyID)
+        {
+            float[4] someFloats;
+            uint aUint;
+            bool[2 + DummyID % 8] someBools;
+
+            int opCmp(ref DummyData rhs) @trusted pure nothrow const
+            {
+                import core.stdc.string;
+                return memcmp(&this, &rhs, DummyData.sizeof);
+            }
+        }
+
+        import std.typetuple;
+        // Generates dummy component types recursively.
+        template GenDummyComponents(ushort dummyID)
+        {
+            static if(dummyID > 0)
+            {
+                import tharsis.entity.componenttypeinfo;
+                alias Dummy = dummyComponent!(userComponentTypeID!(dummyID + 32),
+                                              DummyData!dummyID);
+                alias GenDummyComponents = TypeTuple!(Dummy, GenDummyComponents!(dummyID - 1));
+            }
+            else
+            {
+                alias GenDummyComponents = TypeTuple!();
+            }
+        }
+
+        // Number of dummy component types.
+        enum dummyComponentCount = 64;
+        alias DummyComponents = GenDummyComponents!dummyComponentCount;
+        // pragma(msg, DummyComponents);
+        componentTypeMgr_.registerComponentTypes!DummyComponents;
+
+        // Number of past component types read by each dummy process
+        const pastComponentCount = 3;
+
+        void registerDummyProcesses(ushort dummyID)()
+        {
+            static if(dummyID > 0)
+            {
+                import std.string: format;
+                import std.algorithm: join;
+                import tharsis.defaults.processes;
+                string generateSig()
+                {
+                    string[] parts;
+                    foreach(p; 0 .. pastComponentCount)
+                    {
+                        parts ~= "ref const DummyComponents[%s] past%s"
+                                 .format((dummyID + p) % dummyComponentCount, p);
+                    }
+                    parts ~= "out DummyComponents[%s] future".format(dummyID - 1);
+                    return "(%s) => 0".format(parts.join(", "));
+                }
+                mixin(q{
+                alias Dummy = DummyProcess!(%s);
+                }.format(generateSig()));
+
+                // Just a regular overhead pattern for now.
+                entityMgr_.registerProcess(new Dummy([1], [1]));
+                registerDummyProcesses!(dummyID - 1);
+            }
+        }
+
         componentTypeMgr_.lock();
 
         entityMgr_      = new DefaultEntityManager(componentTypeMgr_, threadCount);
@@ -138,6 +206,8 @@ public:
         entityMgr_.registerProcess(spawnerAttach);
         entityMgr_.registerProcess(conditionProc);
         entityMgr_.registerProcess(spawner);
+
+        registerDummyProcesses!dummyComponentCount;
         if(video !is null)
         {
             renderer_ = new RenderProcess(video, input.keyboard, input.mouse, camera, log);
