@@ -82,6 +82,8 @@ bool mainLoop(ref EntitySystem entitySystem,
                 summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics);
             }
 
+            recordDiagnostics(entitySystem.diagnostics, mainThreadProfiler);
+
             // Update the window title every 30th frame
             if(frameIdx % 30 == 0 && video !is null)
             {
@@ -115,7 +117,7 @@ bool mainLoop(ref EntitySystem entitySystem,
 }
 
 
-
+private:
 import tharsis.entity.entitymanager;
 
 /** Summarize performance load (time spent by each thread in the frame, etc) into a string.
@@ -196,3 +198,49 @@ void toggleRecording(InputDevice input, Logger log) @safe nothrow
         log.warning("Failed to dump input recording").assumeWontThrow;
     }
 }
+
+
+
+/** Records various diagnostics variables with a profiler.
+ *
+ * Params:
+ *
+ * diagnostics = Tharsis entity manager diagnostics.
+ * profiler    = Profiler to record the diagnostics.
+ */
+void recordDiagnostics(Diagnostics)(ref const(Diagnostics) diagnostics, Profiler profiler)
+    @safe nothrow
+{
+    void var(string name, T)(T value) { profiler.variableEvent!name(value); }
+
+    with(diagnostics)
+    {
+        var!"entityCount"(cast(uint)pastEntityCount);
+        var!"procDurTotal_ms"(processDurationTotal.hns2ms);
+        var!"compMemAll_kiB"(pastMemoryAllocatedTotal.B2kiB);
+        var!"compMemUsed_kiB"(pastMemoryUsedTotal.B2kiB);
+    }
+    with(diagnostics.scheduler)
+    {
+        var!"sched_isApproximate"(cast(uint)approximate);
+        var!"sched_estFrameTime_ms"(estimatedFrameTime.hns2msF);
+    }
+    with(diagnostics.scheduler.timeEstimator)
+    {
+        var!"sched_timest_totalError_ms"(totalProcessError.hns2msF);
+        var!"sched_timest_totalUnderest_ms"(totalProcessUnderestimate.hns2msF);
+        var!"sched_timest_maxUnderest_ms"(maxProcessUnderestimate.hns2msF);
+        var!"sched_timest_avgErrorRatio_%"(averageProcessErrorRatio.ratio2pc);
+        var!"sched_timest_avgUnderestRatio_%"(averageProcessUnderestimateRatio.ratio2pc);
+        var!"sched_timest_maxUnderestRatio_%"(maxProcessUnderestimateRatio.ratio2pc);
+    }
+}
+
+@trusted nothrow:
+
+// Functions for conversions in recordDiagnostics().
+import std.algorithm: min;
+uint hns2ms(T)(T hns)        { assert(hns >= 0); return cast(uint)min(hns / 10_000, uint.max); }
+float hns2msF(T)(T hns)      { return hns / 10_000.0f; }
+float ratio2pc(double ratio) { return ratio * 100.0f; }
+uint B2kiB(size_t b)         { return cast(uint)(b / 1024); }
