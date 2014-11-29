@@ -398,7 +398,9 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     // Initialize the main profiler (used to profile both the game and Tharsis).
     import tharsis.prof;
     import std.allocator;
-    enum profSpace = 1024 * 1024 * 256;
+
+    enum profSpaceMainThread = 1024 * 1024 * 512;
+    enum profSpaceOtherThreads = 1024 * 1024 * 512;
 
     import tharsis.entity.entitymanager;
     import tharsis.entity.scheduler;
@@ -408,9 +410,12 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
                                               : args.threadCount;
     void[][] profBuffers;
     Profiler[] profilers;
-    foreach(thread; 0 .. threadCount)
+    profBuffers ~= AlignedMallocator.it.alignedAllocate(profSpaceMainThread, 64);
+    profilers   ~= new Profiler(cast(ubyte[])profBuffers.back);
+    foreach(thread; 1 .. threadCount)
     {
-        profBuffers ~= AlignedMallocator.it.alignedAllocate(profSpace / threadCount, 64);
+        profBuffers ~= AlignedMallocator.it.alignedAllocate
+                      (profSpaceOtherThreads / (threadCount - 1), 64);
         profilers   ~= new Profiler(cast(ubyte[])profBuffers.back);
     }
     scope(exit) foreach(buffer; profBuffers)
