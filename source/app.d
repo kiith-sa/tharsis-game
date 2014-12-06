@@ -436,6 +436,15 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
         return 1;
     }
 
+    //TODO make this configurable (config file?)
+    enum ProfilerDumpFormat
+    {
+        None,
+        CSV,
+        Raw
+    }
+
+    const dumpFormat = ProfilerDumpFormat.Raw;
 
     // Dump profiling results for each thread.
     try foreach(p, profiler; profilers)
@@ -445,9 +454,21 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
             log.infof("WARNING: profiler for thread %s ran out of memory while "
                       "profiling; profiling data is incomplete", p);
         }
-        log.infof("Writing profiler output for thread %s to profile%s.csv", p, p);
-        const fileName = "profile%s.csv".format(p);
-        profiler.profileData.eventRange.writeCSVTo(File(fileName, "wb").lockingTextWriter);
+
+        final switch(dumpFormat)
+        {
+            case ProfilerDumpFormat.None: break;
+            case ProfilerDumpFormat.CSV:
+                log.infof("Writing profiler output for thread %s to profile%s.csv", p, p);
+                const fileName = "profile%s.csv".format(p);
+                profiler.profileData.eventRange.writeCSVTo(File(fileName, "wb").lockingTextWriter);
+                break;
+            case ProfilerDumpFormat.Raw:
+                log.infof("Writing profiler output for thread %s to profile%s.raw.prof", p, p);
+                auto file = File("profile%s.raw.prof".format(p), "wb");
+                file.rawWrite(profiler.profileData);
+                break;
+        }
     }
     catch(Exception e)
     {
