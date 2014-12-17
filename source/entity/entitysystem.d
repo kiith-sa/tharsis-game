@@ -19,6 +19,7 @@ import tharsis.entity.scheduler;
 
 import entity.components;
 import entity.processes;
+import entity.schedulingalgorithmtype;
 import platform.inputdevice;
 import platform.videodevice;
 
@@ -260,6 +261,23 @@ public:
     bool headless() @safe pure nothrow const @nogc
     {
         return renderer_ is null;
+    }
+
+    /// Set the scheduling algorithm to use. Must not be called during a frame.
+    void schedulingAlgorithm(SchedulingAlgorithmType algorithm) @safe nothrow
+    {
+        const t = scheduler_.threadCount;
+        void setSched(SchedulingAlgorithm a) nothrow { scheduler_.schedulingAlgorithm = a; }
+
+        final switch(algorithm) with(SchedulingAlgorithmType)
+        {
+            case LPT:       setSched(new LPTScheduling(t));                      break;
+            case Dumb:      setSched(new DumbScheduling(t));                     break;
+            case BRUTE:     setSched(new PlainBacktrackScheduling(t));           break;
+            case RBt400r3:  setSched(new RandomBacktrackScheduling(t, 400, 3));  break;
+            case RBt800r6:  setSched(new RandomBacktrackScheduling(t, 800, 6));  break;
+            case RBt1600r9: setSched(new RandomBacktrackScheduling(t, 1600, 9)); break;
+        }
     }
 
     /// Execute one frame (game update) of the entity system.
