@@ -435,6 +435,9 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     {
         AlignedMallocator.it.deallocate(buffer);
     }
+    auto entitySystem = EntitySystem(video, input, gameTime, camera, args.threadCount, 
+                                     profilers, log);
+    entitySystem.schedulingAlgorithm = args.schedAlgo;
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
     // Run the game itself.
