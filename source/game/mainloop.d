@@ -13,6 +13,7 @@ import tharsis.prof;
 
 import game.camera;
 import entity.entitysystem;
+import entity.schedulingalgorithmtype;
 import platform.inputdevice;
 import platform.videodevice;
 import time.gametime;
@@ -46,6 +47,8 @@ bool mainLoop(ref EntitySystem entitySystem,
     auto loadProfiler = new Profiler(new ubyte[4096]);
     auto mainThreadProfiler = threadProfilers[0];
 
+    SchedulingAlgorithmType schedulingAlgo = SchedulingAlgorithmType.init;
+
     auto sender = new DespikerSender(threadProfilers);
     ulong frameIdx = 0;
     for(;;) if(time.timeToUpdate())
@@ -73,13 +76,15 @@ bool mainLoop(ref EntitySystem entitySystem,
 
         time.finishedUpdate();
 
+
         {
             auto diagTools = Zone(mainThreadProfiler, "diagTools");
 
             string summary;
             {
                 auto summarize = Zone(mainThreadProfiler, "summarizeLoad");
-                summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics);
+                summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics, 
+                                        schedulingAlgo);
             }
 
             recordDiagnostics(entitySystem.diagnostics, mainThreadProfiler);
@@ -124,14 +129,16 @@ import tharsis.entity.entitymanager;
  *
  * Params:
  *
- * loadProfiler = Profiler used in mainLoop() to measure the total time spent in a frame
- *                must have only one zone ("frameLoad").
- * diagnostics  = Entity manager diagnostics (to get time spent in individual threads).
- * time         = Game time subsystem.
+ * loadProfiler   = Profiler used in mainLoop() to measure the total time spent in a frame
+ *                  must have only one zone ("frameLoad").
+ * diagnostics    = Entity manager diagnostics (to get time spent in individual threads).
+ * time           = Game time subsystem.
+ * schedulingAlgo = Scheduling algorithm being used at the moment.
  */
 string summarizeLoad(const Profiler loadProfiler,
                      const GameTime time,
-                     ref const DefaultEntityManager.Diagnostics diagnostics) @trusted nothrow
+                     ref const DefaultEntityManager.Diagnostics diagnostics,
+                     const SchedulingAlgorithmType schedulingAlgo) @trusted nothrow
 {
     // loadProfiler only has one zone: frameLoad.
     const frameLoadResult = loadProfiler.profileData.zoneRange.front;
@@ -156,8 +163,9 @@ string summarizeLoad(const Profiler loadProfiler,
     const usedMs = frameLoadResult.duration / 10000.0;
     const stepMs = time.timeStep * 1000;
 
-    return "enties: %.5d | load: %05.1f%% (%s) | t-used: %05.1fms | t-step: %.1fms"
-           .format(diagnostics.pastEntityCount, loadTotal, loadPerCore, usedMs, stepMs)
+    const entities = diagnostics.pastEntityCount;
+    return "schedalgo: %s entities: %.5d | load: %05.1f%% (%s) | t-used: %05.1fms | t-step: %.1fms"
+           .format(schedulingAlgo, entities, loadTotal, loadPerCore, usedMs, stepMs)
            .assumeWontThrow;
 }
 
