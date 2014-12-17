@@ -44,6 +44,9 @@ private:
     // Tharsis scheduler used by entityMgr_.
     Scheduler scheduler_;
 
+    /// Currently used scheduling algorithm.
+    SchedulingAlgorithmType schedulingAlgorithm_;
+
     // Stores entities and their components.
     DefaultEntityManager entityMgr_;
 
@@ -176,6 +179,7 @@ public:
 
         scheduler_ = new Scheduler(threadCount);
         entityMgr_ = new DefaultEntityManager(componentTypeMgr_, scheduler_);
+        schedulingAlgorithm = SchedulingAlgorithmType.init;
         entityMgr_.attachPerThreadProfilers(threadProfilers_);
         entityMgr_.startThreads().assumeWontThrow();
 
@@ -266,6 +270,7 @@ public:
     /// Set the scheduling algorithm to use. Must not be called during a frame.
     void schedulingAlgorithm(SchedulingAlgorithmType algorithm) @safe nothrow
     {
+        schedulingAlgorithm_ = algorithm;
         const t = scheduler_.threadCount;
         void setSched(SchedulingAlgorithm a) nothrow { scheduler_.schedulingAlgorithm = a; }
 
@@ -278,6 +283,12 @@ public:
             case RBt800r6:  setSched(new RandomBacktrackScheduling(t, 800, 6));  break;
             case RBt1600r9: setSched(new RandomBacktrackScheduling(t, 1600, 9)); break;
         }
+    }
+
+    /// Get the currently used scheduling algorithm.
+    SchedulingAlgorithmType schedulingAlgorithm() @safe pure nothrow const @nogc
+    {
+        return schedulingAlgorithm_;
     }
 
     /// Execute one frame (game update) of the entity system.

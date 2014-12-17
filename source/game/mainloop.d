@@ -47,8 +47,6 @@ bool mainLoop(ref EntitySystem entitySystem,
     auto loadProfiler = new Profiler(new ubyte[4096]);
     auto mainThreadProfiler = threadProfilers[0];
 
-    SchedulingAlgorithmType schedulingAlgo = SchedulingAlgorithmType.init;
-
     auto sender = new DespikerSender(threadProfilers);
     ulong frameIdx = 0;
     for(;;) if(time.timeToUpdate())
@@ -84,7 +82,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             {
                 auto summarize = Zone(mainThreadProfiler, "summarizeLoad");
                 summary = summarizeLoad(loadProfiler, time, entitySystem.diagnostics, 
-                                        schedulingAlgo);
+                                        entitySystem.schedulingAlgorithm);
             }
 
             recordDiagnostics(entitySystem.diagnostics, mainThreadProfiler);
@@ -106,7 +104,6 @@ bool mainLoop(ref EntitySystem entitySystem,
             {
                 void setSchedulingAlgorithm(SchedulingAlgorithmType a) 
                 {
-                    schedulingAlgo = a;
                     entitySystem.schedulingAlgorithm = a;
                 }
                 if(input.keyboard.pressed(Key.Q)) { setSchedulingAlgorithm(LPT);       }
