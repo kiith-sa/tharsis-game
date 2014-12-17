@@ -15,6 +15,7 @@ import tharsis.entity.entitymanager;
 import tharsis.entity.entitypolicy;
 import tharsis.entity.lifecomponent;
 import tharsis.entity.prototypemanager;
+import tharsis.entity.scheduler;
 
 import entity.components;
 import entity.processes;
@@ -39,6 +40,9 @@ private:
     // Component types are registered here.
     ComponentTypeManager!YAMLSource componentTypeMgr_;
 
+    // Tharsis scheduler used by entityMgr_.
+    Scheduler scheduler_;
+
     // Stores entities and their components.
     DefaultEntityManager entityMgr_;
 
@@ -53,7 +57,6 @@ private:
 
     // Frame profilers used to profile the game and Tharsis. One profiler per thread.
     Profiler[] threadProfilers_;
-
 
     // Process used to render entities' graphics.
     RenderProcess renderer_;
@@ -170,7 +173,8 @@ public:
 
         componentTypeMgr_.lock();
 
-        entityMgr_ = new DefaultEntityManager(componentTypeMgr_, threadCount);
+        scheduler_ = new Scheduler(threadCount);
+        entityMgr_ = new DefaultEntityManager(componentTypeMgr_, scheduler_);
         entityMgr_.attachPerThreadProfilers(threadProfilers_);
         entityMgr_.startThreads().assumeWontThrow();
 
