@@ -13,6 +13,7 @@ import derelict.opengl3.gl3;
 import derelict.util.exception;
 
 import entity.entitysystem;
+import entity.schedulingalgorithmtype;
 import game.camera;
 import game.mainloop;
 import platform.inputdevice;
@@ -75,6 +76,14 @@ void help()
         "",
         "Global options:",
         "  --help                     Print this help information.",
+        "  --sched-algo               Scheduling algorithm to use. Possible values:",
+        "                             Dumb      Equal number of Processes per thread",
+        "                             LPT       Longest Processing Time (fast, decent)",
+        "                             BRUTE     Bruteforce backtracking (extremely slow)",
+        "                             RBt400r3  Random backtrack, time=400, attempts=3",
+        "                             RBt800r6  Random backtrack, time=800, attempts=6",
+        "                             RBt1200r9 Random backtrack, time=1200, attempts=9",
+        "                             Default: LPT",
         "  --threads=<count>          Number of threads to run Tharsis processes in.",
         "                             If 0, Tharsis automatically determines the number",
         "                             of threads to use.",
@@ -148,6 +157,9 @@ private:
 
         // Are we running headless (without video output) ?
         Flag!"headless" headless;
+
+        // Scheduling algorithm to use (in Tharsis) from start (.init is intentionally LPT).
+        SchedulingAlgorithmType schedAlgo = SchedulingAlgorithmType.init;
 
         // Window/camera width to start with (affects even headless runs).
         uint width = 1024;
@@ -303,10 +315,11 @@ private:
                 help();
                 action_ = () { return 0; };
                 return;
-            case "headless": args_.headless = Yes.headless;                break;
-            case "threads":  args_.threadCount = to!uint(args[0]);         break;
-            case "width":    args_.width       = max(1, to!uint(args[0])); break;
-            case "height":   args_.height      = max(1, to!uint(args[0])); break;
+            case "sched-algo": args_.schedAlgo   = to!SchedulingAlgorithmType(args[0]); break;
+            case "headless":   args_.headless    = Yes.headless;                        break;
+            case "threads":    args_.threadCount = to!uint(args[0]);                    break;
+            case "width":      args_.width       = max(1, to!uint(args[0]));            break;
+            case "height":     args_.height      = max(1, to!uint(args[0]));            break;
             default: throw new CLIException("Unrecognized global option: " ~ opt);
         }
         catch(ConvException e)
