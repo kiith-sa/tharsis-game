@@ -2,3 +2,16 @@
 /tharsis-game
 .dub
 profile*.csv
+profile*.prof
+perf.data
+perf.data.old
+*-bkp
+*.BKP
+*.bkp
+*.bkp2
+tharsis_game
+despiker
+cachegrind.out.*
+callgrind.out.*
+.dub
+dub.selections.json
