@@ -101,6 +101,22 @@ bool mainLoop(ref EntitySystem entitySystem,
             // F3 toggles recording.
             if(input.keyboard.pressed(Key.F3)) { toggleRecording(input, log); }
 
+            // Shift + QWERTY: set scheduling algorithm
+            if(input.keyboard.key(Key.LShift)) with(SchedulingAlgorithmType)
+            {
+                void setSchedulingAlgorithm(SchedulingAlgorithmType a) 
+                {
+                    schedulingAlgo = a;
+                    entitySystem.schedulingAlgorithm = a;
+                }
+                if(input.keyboard.pressed(Key.Q)) { setSchedulingAlgorithm(LPT);       }
+                if(input.keyboard.pressed(Key.W)) { setSchedulingAlgorithm(Dumb);      }
+                if(input.keyboard.pressed(Key.E)) { setSchedulingAlgorithm(RBt400r3);  }
+                if(input.keyboard.pressed(Key.R)) { setSchedulingAlgorithm(RBt800r6);  }
+                if(input.keyboard.pressed(Key.T)) { setSchedulingAlgorithm(RBt1600r9); }
+            }
+
+
             try if(input.keyboard.pressed(Key.F4) && !sender.sending)
             {
                 // TODO: configurable despiker path 2014-10-06
