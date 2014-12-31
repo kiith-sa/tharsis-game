@@ -380,8 +380,11 @@ public:
         log_       = log;
     }
 
+    import tharsis.entity.entity;
+
     /// Update weapons of one entity.
-    void process(ref const PositionComponent pos,
+    void process(ref const EntityContext context,
+                 ref const PositionComponent pos,
                  ref const CommandComponent command,
                  immutable WeaponMultiComponent[] weaponsPast,
                  ref WeaponMultiComponent[] weaponsFuture) nothrow
@@ -391,7 +394,7 @@ public:
         weaponsFuture     = weaponsFuture[0 .. weaponCount];
 
         weaponsFuture[] = weaponsPast[];
-        outer: foreach(ref weapon; weaponsFuture)
+        outer: foreach(w, ref weapon; weaponsFuture)
         {
             import tharsis.entity.resourcemanager;
 
@@ -399,6 +402,13 @@ public:
             const state  = weaponMgr_.state(handle);
             // If the weapon is not loaded yet, load it and don't update weapon logic.
             if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
+            if(state == ResourceState.LoadFailed && !weapon.loggedLoadFailed)
+            {
+                import std.stdio;
+                writefln("Ignoring weapon %s of entity %s as it failed to load", 
+                         w, context.entity.id).assumeWontThrow;
+                weapon.loggedLoadFailed = true;
+            }
             if(state != ResourceState.Loaded) { continue; }
 
             // Only check command type after ensuring the weapons are loaded.
@@ -423,7 +433,6 @@ public:
                 weapon.secsTillBurst += burstPeriod;
             }
             weapon.secsTillBurst -= timeStep;
-
         }
     }
 
