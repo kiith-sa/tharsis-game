@@ -14,6 +14,7 @@ import tharsis.defaults.processes;
 import tharsis.entity.entitypolicy;
 
 import entity.components;
+import entity.entitysystem;
 
 
 /** A SpawnerProcess with support for weapons.
@@ -105,15 +106,12 @@ public:
         }
     }
 
-    /// Shortcut alias.
-    alias Context = DefaultEntityManager.Context;
-
     /** A simple forward for SpawnerProcess process().
      *
      * Needed because user code doesn't see SpawnerProcess.process() for some reason,
      * probably a DMD bug (as of DMD 2.066).
      */
-    override void process(ref const(Context) context,
+    override void process(ref const(EntityContext) context,
                           immutable SpawnerMultiComponent[] spawners,
                           immutable TimedTriggerMultiComponent[] triggers) nothrow
     {
@@ -125,7 +123,7 @@ public:
      * If a weapon fires ($(D weapon.secsTillBurst < 0)), spawns projectiles of that
      * weapon.
      */
-    void process(ref const(Context) context,
+    void process(ref const(EntityContext) context,
                  immutable SpawnerMultiComponent[] spawners,
                  immutable WeaponMultiComponent[] weapons) nothrow
     {

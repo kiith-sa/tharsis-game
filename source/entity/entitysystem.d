@@ -23,6 +23,11 @@ import entity.schedulingalgorithmtype;
 import platform.inputdevice;
 import platform.videodevice;
 
+/// The entity manager we're using.
+alias EntityMgr = DefaultEntityManager;
+
+/// Entity context we're using (passed to some Processes).
+alias EntityContext = EntityMgr.Context;
 
 /// Manages Tharsis and all Processes used by the game.
 struct EntitySystem
@@ -48,7 +53,7 @@ private:
     SchedulingAlgorithmType schedulingAlgorithm_;
 
     // Stores entities and their components.
-    DefaultEntityManager entityMgr_;
+    EntityMgr entityMgr_;
 
     // EntityManager diagnostics like entity counts, process execution times, etc.
     entityMgr_.Diagnostics diagnostics_;
@@ -178,7 +183,7 @@ public:
         componentTypeMgr_.lock();
 
         scheduler_ = new Scheduler(threadCount);
-        entityMgr_ = new DefaultEntityManager(componentTypeMgr_, scheduler_);
+        entityMgr_ = new EntityMgr(componentTypeMgr_, scheduler_);
         schedulingAlgorithm = SchedulingAlgorithmType.init;
         entityMgr_.attachPerThreadProfilers(threadProfilers_);
         entityMgr_.startThreads().assumeWontThrow();

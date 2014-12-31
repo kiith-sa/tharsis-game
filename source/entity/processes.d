@@ -15,6 +15,8 @@ import gl3n_extra.linalg;
 import entity.components;
 import game.camera;
 
+import entity.entitysystem;
+
 public import entity.commandprocess;
 public import entity.renderprocess;
 public import entity.weaponizedspawnerprocess;
