@@ -151,7 +151,7 @@ public:
     }
 
     /// Process an entity with both weapons and timed triggers.
-    void process(ref const(Context) context,
+    void process(ref const(EntityContext) context,
                  immutable SpawnerMultiComponent[] spawners,
                  immutable WeaponMultiComponent[] weapons,
                  immutable TimedTriggerMultiComponent[] triggers) nothrow
