@@ -21,11 +21,8 @@ struct PositionComponent
     @("relative") float y = 0.0f;
     @("relative") float z = 0.0f;
 
-    /// Small for testing. Will increase.
-    enum minPrealloc = 64;
 
-    /// Pretty much everything has a position.
-    enum minPreallocPerEntity = 1.0;
+    // No user-specified prealloc here, to ensure it's tested
 
     enum ushort ComponentTypeID = userComponentTypeID!1;
 }
@@ -194,6 +191,13 @@ struct WeaponMultiComponent
     /// Handle to the resource storing the weapon itself.
     ResourceHandle!WeaponResource weapon;
 
+    /** True if the weapon has failed to load and we've already logged *this* individual
+     * weapon component.
+     *
+     * See WeaponProcess.
+     */
+    bool loggedLoadFailed = false;
+
     /// Time until next weapon burst. If lower than 0, it's time to fire/spawn the projectiles.
     float secsTillBurst = 0.0f;
 
@@ -208,8 +212,8 @@ struct WeaponMultiComponent
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
 
-    /// Most entities have 1 weapon. Some have 0, some have 2, very few have more.
-    enum minPreallocPerEntity = 1.0;
+    /// Many entities have no or 1 weapon. A few have 2, very few have more.
+    enum minPreallocPerEntity = 0.5;
 
     /// No more than 32 WeaponMultiComponents per entity.
     enum maxComponentsPerEntity = 32;
