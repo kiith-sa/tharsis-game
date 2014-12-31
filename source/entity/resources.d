@@ -93,7 +93,8 @@ public:
          *         errorLog = A string to write any loading errors to. If there are no
          *                    errors, this is not touched.
          */
-        void loadResource(ref WeaponResource resource, ref string errorLog) @trusted nothrow
+        void loadResource(ref WeaponResource resource, void delegate(string) nothrow logError)
+            @trusted nothrow
         {
             YAMLSource source = resource.descriptor.source(yamlLoader_);
             if(source.isNull)
@@ -120,24 +121,26 @@ public:
             // Loading fails unless it succeeds.
             resource.state = ResourceState.LoadFailed;
             YAMLSource burstPeriodSrc;
+            // Get the burstPeriodSrc subnode.
             if(!source.getMappingValue("burstPeriod", burstPeriodSrc))
             {
-                errorLog_ ~= "While loading a weapon, couldn't find 'burstPeriod'\n"
-                            ~ source.errorLog;
+                logError("While loading a weapon, couldn't find 'burstPeriod'\n"
+                         ~ source.errorLog);
                 return;
             }
+            // Read the value stored in burstPeriodSrc to burstPeriod.
             if(!burstPeriodSrc.readTo(resource.burstPeriod))
             {
-                errorLog_ ~= "While loading a weapon, 'burstPeriod' had unexpected type\n"
-                            ~ burstPeriodSrc.errorLog;
+                logError("While loading a weapon, 'burstPeriod' had unexpected type\n"
+                         ~ burstPeriodSrc.errorLog);
                 return;
             }
 
             YAMLSource allProjectilesSrc;
             if(!source.getMappingValue("projectiles", allProjectilesSrc))
             {
-                errorLog_ ~= "While loading a weapon, couldn't find 'projectiles'\n"
-                            ~ source.errorLog;
+                logError("While loading a weapon, couldn't find 'projectiles'\n"
+                         ~ source.errorLog);
                 return;
             }
 
@@ -148,7 +151,7 @@ public:
             {
                 if(count >= WeaponResource.maxProjectiles)
                 {
-                    errorLog_ ~= "While loading a weapon: too many projectiles";
+                    logError("While loading a weapon: too many projectiles");
                     return;
                 }
 
@@ -159,7 +162,7 @@ public:
                 const ComponentTypeInfo[] typeInfo   = compTypeMgr_.componentTypeInfo;
                 const ComponentTypeInfo* spawnerInfo = &(typeInfo[spawnerID]);
                 auto projectileBytes = cast(ubyte[])resource.projectiles[count .. count + 1];
-                spawnerInfo.loadComponent(projectileBytes, projSrc, entityMgr_, errorLog_);
+                spawnerInfo.loadComponent(projectileBytes, projSrc, entityMgr_, logError);
             }
             resource.projectiles = resource.projectiles[0 .. count];
 
