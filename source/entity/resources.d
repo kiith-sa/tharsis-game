@@ -104,29 +104,28 @@ public:
                 projectileData_.lockBytes(storage[0 .. loaded ? usedBytes : 0]);
             }
 
+            void log(string s) nothrow { logError("While loading a weapon: " ~ s); }
+
             // Loading fails unless it succeeds.
             resource.state = ResourceState.LoadFailed;
             YAMLSource burstPeriodSrc;
             // Get the burstPeriodSrc subnode.
             if(!source.getMappingValue("burstPeriod", burstPeriodSrc))
             {
-                logError("While loading a weapon, couldn't find 'burstPeriod'\n"
-                         ~ source.errorLog);
+                log("couldn't find 'burstPeriod'\n" ~ source.errorLog);
                 return;
             }
             // Read the value stored in burstPeriodSrc to burstPeriod.
             if(!burstPeriodSrc.readTo(resource.burstPeriod))
             {
-                logError("While loading a weapon, 'burstPeriod' had unexpected type\n"
-                         ~ burstPeriodSrc.errorLog);
+                log("'burstPeriod' had unexpected type\n" ~ burstPeriodSrc.errorLog);
                 return;
             }
 
             YAMLSource allProjectilesSrc;
             if(!source.getMappingValue("projectiles", allProjectilesSrc))
             {
-                logError("While loading a weapon, couldn't find 'projectiles'\n"
-                         ~ source.errorLog);
+                log("couldn't find 'projectiles'\n" ~ source.errorLog);
                 return;
             }
 
@@ -137,7 +136,7 @@ public:
             {
                 if(count >= WeaponResource.maxProjectiles)
                 {
-                    logError("While loading a weapon: too many projectiles");
+                    log("too many projectiles");
                     return;
                 }
 
