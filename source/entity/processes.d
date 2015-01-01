@@ -263,12 +263,7 @@ public:
     }
 
     /// Keep dynamic components of entities that are not being accelerated by anything.
-    void process(ref const DynamicComponent dynamicPast,
-                 out DynamicComponent dynamicFuture)
-        nothrow
-    {
-        dynamicFuture = dynamicPast;
-    }
+    mixin(preserveComponentsMixin);
 
     /// Decelerate entities with that have an engine but no command to move anywhere.
     void process(ref const DynamicComponent dynamicPast,
@@ -333,11 +328,7 @@ public:
     }
 
     /// Keep position of an entity that has no DynamicComponent.
-    void process(ref const PositionComponent posPast, out PositionComponent posFuture)
-        nothrow
-    {
-        posFuture = posPast;
-    }
+    mixin(preserveComponentsMixin);
 }
 
 
@@ -436,21 +427,17 @@ public:
         }
     }
 
-    /// Preserve weapons in entities with no commands.
-    void process(immutable WeaponMultiComponent[] weaponsPast,
-                 ref WeaponMultiComponent[] weaponsFuture) nothrow
-    {
-        weaponsFuture = weaponsFuture[0 .. weaponsPast.length];
-        weaponsFuture[] = weaponsPast[];
+    /// Don't just preserve the weapons, use the opportunity to load them too.
+    mixin(preserveComponentsMixin!"processWeapon");
 
-        // Request to load any weapons that are not loaded yet.
-        foreach(ref weapon; weaponsFuture)
-        {
-            import tharsis.entity.resourcemanager;
-            const handle = weapon.weapon;
-            const state  = weaponMgr_.state(handle);
-            if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
-        }
+private:
+    /// Reads a WeaponMultiComponent and requests to load its weapon if not loaded/loading yet.
+    void processWeapon(ref WeaponMultiComponent weapon) nothrow
+    {
+        import tharsis.entity.resourcemanager;
+        const handle = weapon.weapon;
+        const state  = weaponMgr_.state(handle);
+        if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
     }
 }
 
