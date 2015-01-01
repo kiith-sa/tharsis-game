@@ -230,6 +230,8 @@ public:
 
         entityMgr_.registerResourceManager(prototypeMgr_);
         entityMgr_.registerResourceManager(weaponMgr_);
+    }
+
 
     /// Spawn entity from specified file as soon as possible.
     ///
