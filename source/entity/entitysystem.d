@@ -305,7 +305,8 @@ public:
         size_t handleCount = 0;
         foreach(i, handle; prototypesToSpawn_)
         {
-            import tharsis.entity.resourcemanager;
+            import tharsis.entity.resource;
+
             if(prototypeMgr_.state(handle) == ResourceState.Loaded)
             {
                 log_.infof("Spawned entity from prototype %s", handle.rawHandle)

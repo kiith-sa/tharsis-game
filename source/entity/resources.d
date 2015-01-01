@@ -16,24 +16,11 @@ import tharsis.util.qualifierhacks;
 import tharsis.util.typecons;
 
 
-/// Resource representing a weapon
-struct WeaponResource
+/// Data describing a weapon.
+struct Weapon 
 {
-    alias Descriptor = DefaultDescriptor!WeaponResource;
-
     /// Maximum number of projectiles a weapon can spawn in a single burst.
     enum maxProjectiles = 128;
-
-    /// No default construction.
-    @disable this();
-
-    /// Construct a new (not loaded) WeaponResource with specified descriptor.
-    this(ref Descriptor descriptor) @safe pure nothrow @nogc
-    {
-        this.descriptor = descriptor;
-    }
-
-    // Data can be public as we use this through immutable.
 
     /// Time between successive bursts of projectiles.
     float burstPeriod;
@@ -41,13 +28,12 @@ struct WeaponResource
     import tharsis.defaults.components;
     /// Spawner components to spawn projectiles in a burst.
     SpawnerMultiComponent[] projectiles;
-
-    /// Descriptor of the weapon (file name or YAMLSource).
-    Descriptor descriptor;
-
-    /// Current state of the resource,
-    ResourceState state = ResourceState.New;
 }
+
+import tharsis.entity.resource;
+
+/// Weapon resource managed by WeaponManager. Embeds a Weapon.
+alias WeaponResource = DefaultResource!Weapon;
 
 
 /// Resource manager managing weapons.

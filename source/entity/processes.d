@@ -332,6 +332,7 @@ public:
 }
 
 
+import tharsis.entity.resource;
 /** Implements weapon logic and updates weapon components.
  *
  * Projectile spawning is actually handled by SpawnerAttachProcess, which attaches
@@ -387,8 +388,6 @@ public:
         weaponsFuture[] = weaponsPast[];
         outer: foreach(w, ref weapon; weaponsFuture)
         {
-            import tharsis.entity.resourcemanager;
-
             const handle = weapon.weapon;
             const state  = weaponMgr_.state(handle);
             // If the weapon is not loaded yet, load it and don't update weapon logic.
@@ -434,7 +433,6 @@ private:
     /// Reads a WeaponMultiComponent and requests to load its weapon if not loaded/loading yet.
     void processWeapon(ref WeaponMultiComponent weapon) nothrow
     {
-        import tharsis.entity.resourcemanager;
         const handle = weapon.weapon;
         const state  = weaponMgr_.state(handle);
         if(state == ResourceState.New) { weaponMgr_.requestLoad(handle); }
