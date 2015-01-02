@@ -5,8 +5,7 @@ spawnerMulti:
         position:
           coords: [100, 100, 0]
         dynamic:
-          velocityX: 200
-          velocityY: 200
+          velocity: [200, 200, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -80,8 +79,7 @@ spawnerMulti:
         position:
           coords: [100, -100, 0]
         dynamic:
-          velocityX: 200
-          velocityY: -200
+          velocity: [200, -200, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -91,8 +89,7 @@ spawnerMulti:
         position:
           coords: [-100, -100, 0]
         dynamic:
-          velocityX: -200
-          velocityY: -200
+          velocity: [-200, -200, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -102,8 +99,7 @@ spawnerMulti:
         position:
           coords: [-100, 100, 0]
         dynamic:
-          velocityX: -200
-          velocityY: 200
+          velocity: [-200, 200, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -113,8 +109,7 @@ spawnerMulti:
         position:
           coords: [100, 0, 0]
         dynamic:
-          velocityX: 300
-          velocityY: 0
+          velocity: [300, 0, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -124,8 +119,7 @@ spawnerMulti:
         position:
           coords: [-100, 0, 0]
         dynamic:
-          velocityX: -300
-          velocityY: 0
+          velocity: [-300, 0, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -135,8 +129,7 @@ spawnerMulti:
         position:
           coords: [0, -100, 0]
         dynamic:
-          velocityX: 0
-          velocityY: -300
+          velocity: [0, -300, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -146,8 +139,7 @@ spawnerMulti:
         position:
           coords: [0, 100, 0]
         dynamic:
-          velocityX: 0
-          velocityY: 300
+          velocity: [0, 300, 0]
         engine:
             acceleration: 11
             maxSpeed:     450.0
@@ -160,6 +152,7 @@ engine:
     acceleration: 45.0
     maxSpeed:     900.0
 dynamic:
+    velocity: [0, 0, 0]
 timedTriggerMulti:
     - time:      0.3
       triggerID: 1

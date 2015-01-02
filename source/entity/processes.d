@@ -232,11 +232,8 @@ public:
             case MoveTo:
                 const vec3 target = command.moveTo;
                 // Vector from current position to target.
-                const vec3 velocity = vec3(dynamicPast.velocityX,
-                                           dynamicPast.velocityY,
-                                           dynamicPast.velocityZ);
-                const vec3 currentDir = velocity.normalized;
                 const vec3 toTarget = target - pos;
+                const vec3 currentDir = dynamicPast.velocity.normalized;
                 // Direction we want to go in.
                 const vec3 wantedDir  = toTarget.normalized;
 
@@ -245,15 +242,13 @@ public:
                 const vec3 accelDir = (wantedDir - currentDir * 0.5).normalized;
                 const vec3 accel = engine.acceleration * accelDir * timeStep;
 
-                vec3 futureVelocity = velocity + accel;
+                vec3 futureVelocity = dynamicPast.velocity + accel;
                 if(futureVelocity.length >= engine.maxSpeed)
                 {
                     futureVelocity.setLength(engine.maxSpeed);
                 }
 
-                dynamicFuture = DynamicComponent(futureVelocity.x,
-                                                 futureVelocity.y,
-                                                 futureVelocity.z);
+                dynamicFuture = DynamicComponent(futureVelocity);
                 return;
             case StaticFireAt:
                 break;
@@ -270,9 +265,7 @@ public:
                  out DynamicComponent dynamicFuture)
         nothrow
     {
-        vec3 velocity = vec3(dynamicPast.velocityX,
-                             dynamicPast.velocityY,
-                             dynamicPast.velocityZ);
+        vec3 velocity = dynamicPast.velocity;
         if(velocity.length == 0.0f)
         {
             dynamicFuture = dynamicPast;
@@ -282,7 +275,7 @@ public:
         import std.algorithm;
         const timeStep = time_.timeStep;
         velocity.setLength(max(0.0f, velocity.length - engine.acceleration * timeStep));
-        dynamicFuture = DynamicComponent(velocity.x, velocity.y, velocity.z);
+        dynamicFuture = DynamicComponent(velocity);
     }
 }
 
@@ -320,9 +313,7 @@ public:
                  out PositionComponent posFuture) nothrow
     {
         const timeStep = gameTime_.timeStep;
-        posFuture.x = posPast.x + timeStep * dynamic.velocityX;
-        posFuture.y = posPast.y + timeStep * dynamic.velocityY;
-        posFuture.z = posPast.z + timeStep * dynamic.velocityZ;
+        posFuture = posPast + timeStep * dynamic.velocity;
     }
 
     /// Keep position of an entity that has no DynamicComponent.

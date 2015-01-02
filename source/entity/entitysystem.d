@@ -49,7 +49,7 @@ private:
     // Tharsis scheduler used by entityMgr_.
     Scheduler scheduler_;
 
-    /// Currently used scheduling algorithm.
+    // Currently used scheduling algorithm.
     SchedulingAlgorithmType schedulingAlgorithm_;
 
     // Stores entities and their components.

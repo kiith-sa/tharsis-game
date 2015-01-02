@@ -96,13 +96,8 @@ public:
 
             DynamicComponent* dynamic = &(comp.as!DynamicComponent());
             // Keep the same velocity, but redirect it in firing direction.
-            const baseVelocity = vec3(dynamic.velocityX, dynamic.velocityY, dynamic.velocityZ);
-            const speed        = baseVelocity.length;
-            const velocity     = speed * currentWeapon_.firingDirection;
-
-            dynamic.velocityX = velocity.x;
-            dynamic.velocityY = velocity.y;
-            dynamic.velocityZ = velocity.z;
+            const speed      = dynamic.velocity.length;
+            dynamic.velocity = speed * currentWeapon_.firingDirection;
         }
     }
 

@@ -1,6 +1,7 @@
 position:
     coords: [100, 200, 50]
 dynamic:
+    velocity: [0, 0, 0]
 visual:
     r: 255
     g: 0
@@ -20,5 +21,4 @@ weaponMulti:
                 position:
                     coords: [0.5, 0, 0.2]
                 dynamic:
-                    velocityX: 1200.0
-                    velocityZ: 600.0
+                    velocity: [1200, 0, 600]

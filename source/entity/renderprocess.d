@@ -377,8 +377,7 @@ public:
 
         foreach(i, v; positions)
         {
-            entitiesBatch_.put(Vertex(v.x + pos.x, v.y + pos.y, v.z + pos.z,
-                                      Color(vis.r, vis.g, vis.b, vis.a)));
+            entitiesBatch_.put(Vertex(v + pos, vis.color));
         }
     }
 

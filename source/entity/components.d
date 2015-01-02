@@ -145,13 +145,8 @@ struct EngineComponent
 /// Represents physical movement of an entity (for now just its velocity).
 struct DynamicComponent
 {
-    // XXX really need vec3 support in Source...
     /// Velocity of the entity.
-    @("relative") float velocityX = 0.0f;
-    /// Ditto.
-    @("relative") float velocityY = 0.0f;
-    /// Ditto.
-    @("relative") float velocityZ = 0.0f;
+    @("relative") vec3 velocity = vec3(0, 0, 0);
 
 
     /// Small for testing. Will increase.
