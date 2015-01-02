@@ -138,7 +138,7 @@ public:
         with(CommandComponent.Type) final switch(commandPast.type)
         {
             case MoveTo:
-                if(distance(commandPast.moveTo, vec3(pos.x, pos.y, pos.z)) < closeEnough)
+                if(distance(commandPast.moveTo, pos) < closeEnough)
                 {
                     commandFuture = null;
                     break;

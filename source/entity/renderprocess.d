@@ -41,13 +41,21 @@ private:
         // Color of the vertex.
         Color color;
 
+    @safe pure nothrow @nogc:
         // Shortcut constructor.
-        this(float x, float y, float z) @safe pure nothrow @nogc { position = vec3(x, y, z); }
+        this(float x, float y, float z) { position = vec3(x, y, z); }
 
         // Constructor from coords and a color.
-        this(float x, float y, float z, Color c) @safe pure nothrow @nogc
+        this(float x, float y, float z, Color c)
         {
             position = vec3(x, y, z);
+            color    = c;
+        }
+
+        // Constructor from position vector and a color.
+        this(vec3 pos, Color c)
+        {
+            position = pos;
             color    = c;
         }
     }
@@ -392,7 +400,7 @@ public:
         }
 
         // Transform to 2D space, but not screen space.
-        vec2 coords = vec2(camera_.view * vec4(pos.x, pos.y, pos.z, 0));
+        vec2 coords = vec2(camera_.view * vec4(pos, 0));
         // Z is really far in front so it's in front of all depth-buffered draws.
         selectionBatch_.put(Vertex(coords.x - 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
         selectionBatch_.put(Vertex(coords.x + 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));

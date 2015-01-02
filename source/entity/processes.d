@@ -86,7 +86,7 @@ public:
     void process(ref const PositionComponent pos, ref PickingComponent* picking)
         nothrow
     {
-        const screenCoords = camera_.worldToScreen(vec3(pos.x, pos.y, pos.z));
+        const screenCoords = camera_.worldToScreen(pos);
 
         // If there is a PickingComponent from the previous frame, remove it.
         if(selectionBox_.distance(screenCoords) < pickingRadius_)
@@ -230,15 +230,13 @@ public:
         with(CommandComponent.Type) final switch(command.type)
         {
             case MoveTo:
-                // Current position.
-                const vec3 p      = vec3(pos.x, pos.y, pos.z);
                 const vec3 target = command.moveTo;
                 // Vector from current position to target.
-                const vec3 toTarget = target - p;
                 const vec3 velocity = vec3(dynamicPast.velocityX,
                                            dynamicPast.velocityY,
                                            dynamicPast.velocityZ);
                 const vec3 currentDir = velocity.normalized;
+                const vec3 toTarget = target - pos;
                 // Direction we want to go in.
                 const vec3 wantedDir  = toTarget.normalized;
 
@@ -409,8 +407,7 @@ public:
                 case MoveTo:
                     continue outer;
                 case StaticFireAt:
-                    const position = vec3(pos.x, pos.y, pos.z);
-                    weapon.firingDirection = (command.staticFireAt - position).normalized;
+                    weapon.firingDirection = (command.staticFireAt - pos).normalized;
                     break;
             }
 
