@@ -303,6 +303,7 @@ public:
     {
         auto zone = Zone(threadProfilers_[0], "EntitySystem.frame");
         size_t handleCount = 0;
+        
         foreach(i, handle; prototypesToSpawn_)
         {
             import tharsis.entity.resource;
@@ -328,6 +329,10 @@ public:
             import io.yaml;
 
             log_.info(diagnostics_.toYAML.dumpToString).assumeWontThrow;
+        }
+        if(input_.keyboard.pressed(Key.F5))
+        {
+            log_.infof(prototypeMgr_.errorLog).assumeWontThrow;
         }
     }
 }

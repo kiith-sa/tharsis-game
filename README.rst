@@ -27,6 +27,7 @@ Controls
 ``F2``                     Print current load 
 ``F3``                     Start/stop recording demo input (``mouse_keyboard.yaml``)
 ``F4``                     Launch Despiker
+``F5``                     Print PrototypeManager error log
 ``1``                      Draw everything fully
 ``2``                      Draw everything as points
 ``3``                      Don't draw anything
