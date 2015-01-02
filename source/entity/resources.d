@@ -128,11 +128,17 @@ public:
                 log("couldn't find 'projectiles'\n" ~ source.errorLog);
                 return;
             }
+            if(!allProjectilesSrc.isSequence)
+            {
+                log("'projectiles' must be a sequence\n");
+                return;
+            }
 
             YAMLSource projSrc;
             resource.projectiles = cast(Projectile[])storage;
             size_t count;
-            for(; allProjectilesSrc.getSequenceValue(count, projSrc); ++count)
+
+            foreach(ref YAMLSource projSrc; allProjectilesSrc)
             {
                 if(count >= WeaponResource.maxProjectiles)
                 {
@@ -148,6 +154,8 @@ public:
                 const ComponentTypeInfo* spawnerInfo = &(typeInfo[spawnerID]);
                 auto projectileBytes = cast(ubyte[])resource.projectiles[count .. count + 1];
                 spawnerInfo.loadComponent(projectileBytes, projSrc, entityMgr_, logError);
+
+                ++count;
             }
             resource.projectiles = resource.projectiles[0 .. count];
 
