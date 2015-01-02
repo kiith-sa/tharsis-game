@@ -8,6 +8,9 @@ module entity.components;
 
 import tharsis.entity.componenttypeinfo;
 
+import gl3n_extra.linalg;
+
+
 
 /// Component storing the position (and only the position) of an entity.
 struct PositionComponent
@@ -25,8 +28,9 @@ struct PositionComponent
 /// Temporary visual component, specifying the color of an entity.
 struct VisualComponent
 {
-    /// R/G/B/A color channels.
-    ubyte r, g, b, a = 255;
+    import gl3n_extra.color;
+    /// RGBA color.
+    vec4ub color = rgba!"FFFFFFFF";
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;

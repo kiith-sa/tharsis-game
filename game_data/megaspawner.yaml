@@ -144,10 +144,7 @@ spawnerMulti:
             acceleration: 11
             maxSpeed:     450.0
 visual:
-    r: 255
-    g: 255
-    b: 0
-    a: 255
+    color: [255, 255, 0, 255]
 engine:
     acceleration: 45.0
     maxSpeed:     900.0
