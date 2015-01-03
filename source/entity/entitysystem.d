@@ -10,12 +10,7 @@ module entity.entitysystem;
 import std.exception;
 import std.experimental.logger;
 
-import tharsis.entity.componenttypemanager;
-import tharsis.entity.entitymanager;
-import tharsis.entity.entitypolicy;
-import tharsis.entity.lifecomponent;
-import tharsis.entity.prototypemanager;
-import tharsis.entity.scheduler;
+import tharsis.entity;
 
 import entity.components;
 import entity.processes;
@@ -36,8 +31,6 @@ private:
     // Game log.
     Logger log_;
 
-    import tharsis.entity.entityprototype;
-    import tharsis.defaults.yamlsource;
     import tharsis.prof;
 
     // Resource handles of prototypes of entities that should be spawned ASAP.
@@ -70,8 +63,7 @@ private:
     // Process used to render entities' graphics.
     RenderProcess renderer_;
 
-    import tharsis.defaults.components;
-    import tharsis.defaults.processes;
+    import tharsis.defaults;
 
     import game.camera;
     import time.gametime;
@@ -132,7 +124,6 @@ public:
         {
             static if(dummyID > 0)
             {
-                import tharsis.entity.componenttypeinfo;
                 alias Dummy = dummyComponent!(userComponentTypeID!(dummyID + 32),
                                               DummyData!dummyID);
                 alias GenDummyComponents = TypeTuple!(Dummy, GenDummyComponents!(dummyID - 1));
@@ -158,7 +149,6 @@ public:
             {
                 import std.string: format;
                 import std.algorithm: join;
-                import tharsis.defaults.processes;
                 string generateSig()
                 {
                     string[] parts;
@@ -193,7 +183,7 @@ public:
         auto weaponMgr_ = new WeaponManager(entityMgr_, componentTypeMgr_.sourceLoader,
                                             componentTypeMgr_);
 
-        import tharsis.defaults.copyprocess;
+        import gl3n_extra.linalg;
         auto dummyVisual   = new CopyProcess!VisualComponent();
         auto dummyLife     = new CopyProcess!LifeComponent();
         auto picking       = new MousePickingProcess(camera, input.mouse, log);
@@ -306,8 +296,6 @@ public:
         
         foreach(i, handle; prototypesToSpawn_)
         {
-            import tharsis.entity.resource;
-
             if(prototypeMgr_.state(handle) == ResourceState.Loaded)
             {
                 log_.infof("Spawned entity from prototype %s", handle.rawHandle)
@@ -325,7 +313,6 @@ public:
         diagnostics_ = entityMgr_.diagnostics;
         if(input_.keyboard.pressed(Key.F1))
         {
-            import tharsis.defaults.diagnostics;
             import io.yaml;
 
             log_.info(diagnostics_.toYAML.dumpToString).assumeWontThrow;

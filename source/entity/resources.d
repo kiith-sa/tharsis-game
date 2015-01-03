@@ -7,8 +7,8 @@
 /// Resources used by the game and their resource managers.
 module entity.resources;
 
-import tharsis.entity.descriptors;
-import tharsis.entity.resourcemanager;
+import tharsis.defaults;
+import tharsis.entity;
 import tharsis.util.interfaces;
 import tharsis.util.mallocarray;
 import tharsis.util.pagedarray;
@@ -25,12 +25,9 @@ struct Weapon
     /// Time between successive bursts of projectiles.
     float burstPeriod;
 
-    import tharsis.defaults.components;
     /// Spawner components to spawn projectiles in a burst.
     SpawnerMultiComponent[] projectiles;
 }
-
-import tharsis.entity.resource;
 
 /// Weapon resource managed by WeaponManager. Embeds a Weapon.
 alias WeaponResource = DefaultResource!Weapon;
@@ -44,15 +41,12 @@ private:
     // spawner components.
     PartiallyMutablePagedBuffer projectileData_;
 
-    import tharsis.defaults.yamlsource;
     // Loader to load weapons from YAML.
     YAMLSource.Loader yamlLoader_;
 
-    import tharsis.entity.componenttypemanager;
     // Component type manager to load spawner components - weapon projectiles - with.
     AbstractComponentTypeManager compTypeMgr_;
 
-    import tharsis.entity.entitymanager;
     // Entity manager for access to resource management.
     DefaultEntityManager entityMgr_;
 
@@ -146,10 +140,8 @@ public:
                     return;
                 }
 
-                import tharsis.defaults.components;
                 enum spawnerID = SpawnerMultiComponent.ComponentTypeID;
 
-                import tharsis.entity.componenttypeinfo;
                 const ComponentTypeInfo[] typeInfo   = compTypeMgr_.componentTypeInfo;
                 const ComponentTypeInfo* spawnerInfo = &(typeInfo[spawnerID]);
                 auto projectileBytes = cast(ubyte[])resource.projectiles[count .. count + 1];

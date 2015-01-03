@@ -176,7 +176,7 @@ public:
 
 
 
-import tharsis.defaults.copyprocess;
+import tharsis.defaults;
 /// Until a need to modify engines at runtime comes up, this can be a simple CopyProcess.
 alias EngineProcess = CopyProcess!EngineComponent;
 
@@ -321,7 +321,7 @@ public:
 }
 
 
-import tharsis.entity.resource;
+import tharsis.entity;
 /** Implements weapon logic and updates weapon components.
  *
  * Projectile spawning is actually handled by SpawnerAttachProcess, which attaches
@@ -360,8 +360,6 @@ public:
         weaponMgr_ = weaponManager;
         log_       = log;
     }
-
-    import tharsis.entity.entity;
 
     /// Update weapons of one entity.
     void process(ref const EntityContext context,
@@ -447,7 +445,6 @@ private:
     WeaponManager weaponMgr_;
 
 public:
-    import tharsis.defaults.components;
     alias FutureComponent = SpawnerMultiComponent;
 
     /** Construct a SpawnerAttachProcess.
@@ -479,7 +476,6 @@ public:
         {
             const handle = weapon.weapon;
             const state  = weaponMgr_.state(handle);
-            import tharsis.entity.resourcemanager;
             if(state == ResourceState.New)    { weaponMgr_.requestLoad(handle); }
             if(state != ResourceState.Loaded) { continue; }
 

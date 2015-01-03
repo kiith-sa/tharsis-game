@@ -6,7 +6,7 @@
 /// Components used by entities in the game.
 module entity.components;
 
-import tharsis.entity.componenttypeinfo;
+import tharsis.entity;
 
 import gl3n_extra.linalg;
 
@@ -163,7 +163,7 @@ struct DynamicComponent
 }
 
 
-import tharsis.defaults.components;
+import tharsis.defaults;
 /** Minimum spawner triggerID for weapons.
  *
  * Any spawner components with a triggerID greater or equal to this are considered to
@@ -179,7 +179,6 @@ enum minWeaponTriggerID = SpawnerMultiComponent.triggerID.max - 1024;
 /// Represents a single weapon of an entity.
 struct WeaponMultiComponent
 {
-    import tharsis.entity.resourcemanager;
     import entity.resources;
 
     /// Handle to the resource storing the weapon itself.

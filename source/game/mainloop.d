@@ -42,7 +42,6 @@ bool mainLoop(ref EntitySystem entitySystem,
               Logger log) @trusted
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
-    import tharsis.prof;
     // Profiler used to calculate how much of the allocated time step we're spending.
     auto loadProfiler = new Profiler(new ubyte[4096]);
     auto mainThreadProfiler = threadProfilers[0];

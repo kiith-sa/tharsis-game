@@ -10,8 +10,8 @@ import std.exception;
 import std.experimental.logger;
 
 import gl3n_extra.linalg;
-import tharsis.defaults.processes;
-import tharsis.entity.entitypolicy;
+import tharsis.defaults;
+import tharsis.entity;
 
 import entity.components;
 import entity.entitysystem;
@@ -42,12 +42,6 @@ private:
     // parent SpawnerProcess code after the prototype of the spawned entity has been
     // constructed but still before spawning the entity.
     immutable(WeaponMultiComponent)* currentWeapon_ = null;
-
-    import tharsis.defaults.components;
-    import tharsis.entity.componenttypemanager;
-    import tharsis.entity.entitymanager;
-    import tharsis.entity.entityprototype;
-    import tharsis.entity.resourcemanager;
 
 public:
     /** Construct a WeaponizedSpawnerProcess.
@@ -81,7 +75,6 @@ public:
     }
 
     import std.typecons;
-    import tharsis.entity.componenttypeinfo;
 
     override void spawnHook(ref EntityPrototype.GenericComponentRange!(No.isConst) components)
         @system nothrow
