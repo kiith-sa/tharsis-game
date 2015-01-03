@@ -185,7 +185,7 @@ public:
 
         import gl3n_extra.linalg;
         auto dummyVisual   = new CopyProcess!VisualComponent();
-        auto dummyLife     = new CopyProcess!LifeComponent();
+        auto life          = new LifeProcess();
         auto picking       = new MousePickingProcess(camera, input.mouse, log);
         auto selection     = new SelectionProcess(input.mouse, log);
         auto command       = new CommandProcess(input.mouse, input.keyboard, camera, log);
@@ -199,7 +199,7 @@ public:
                                                           componentTypeMgr_, log);
 
         entityMgr_.registerProcess(dummyVisual);
-        entityMgr_.registerProcess(dummyLife);
+        entityMgr_.registerProcess(life);
         entityMgr_.registerProcess(picking);
         entityMgr_.registerProcess(selection);
         entityMgr_.registerProcess(command);

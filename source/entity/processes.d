@@ -538,3 +538,17 @@ public:
         spawnersFuture = spawnersFuture[0 .. spawnersNoWeap.length + spawnersWeap.length];
     }
 }
+
+
+/** Determines whether an entity should live or die in the next frame.
+ */
+class LifeProcess
+{
+public:
+    alias LifeComponent FutureComponent;
+    /// Everything survives for now.
+    void process(ref const LifeComponent lifePast, out LifeComponent lifeFuture) nothrow
+    {
+        lifeFuture = lifePast;
+    }
+}
