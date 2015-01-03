@@ -1,2 +1,6 @@
 visual:
     color: [0, 0, 255, 255]
+timedTriggerMulti:
+  - time: 10.0
+    # this triggerID kills the entity when triggered
+    triggerID: 65535

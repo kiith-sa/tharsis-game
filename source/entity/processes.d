@@ -21,7 +21,6 @@ public import entity.commandprocess;
 public import entity.renderprocess;
 public import entity.weaponizedspawnerprocess;
 
-
 // TODO: Low-frequency components such as picking, selection and command should possibly
 // be replaced by some other mechanism. Look at the EntityX entity system and its
 // events.
@@ -539,6 +538,8 @@ public:
     }
 }
 
+/// If a timed trigger with this ID triggers, we kill the entity.
+enum killTriggerID = ushort.max;
 
 /** Determines whether an entity should live or die in the next frame.
  */
@@ -546,7 +547,27 @@ class LifeProcess
 {
 public:
     alias LifeComponent FutureComponent;
-    /// Everything survives for now.
+
+    /// Looks for the "kill" triggerID and kills the entity if triggered.
+    void process(ref const LifeComponent lifePast,
+                 immutable TimedTriggerMultiComponent[] triggers,
+                 out LifeComponent lifeFuture) nothrow
+    {
+        lifeFuture = lifePast;
+        import std.stdio;
+        // Look for the kill trigger and kill the entity if triggered.
+        foreach(ref trigger; triggers)
+        {
+            if(trigger.triggerID == killTriggerID && trigger.timeLeft <= 0.0f) 
+            {
+                lifeFuture.alive = false;
+                return;
+            }
+        }
+
+    }
+
+    /// If no timed triggers, just let the entity live (for now).
     void process(ref const LifeComponent lifePast, out LifeComponent lifeFuture) nothrow
     {
         lifeFuture = lifePast;
