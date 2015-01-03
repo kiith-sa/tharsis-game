@@ -69,6 +69,13 @@ struct PickingComponent
     enum minPreallocPerEntity = 0.1;
 
     enum ushort ComponentTypeID = userComponentTypeID!3;
+
+    /// Enforces purity (for some reason default opAssign of PickingComponent was impure).
+    void opAssign(PickingComponent rhs) @safe pure nothrow @nogc 
+    {
+         state = rhs.state;
+         box   = rhs.box;
+    }
 }
 
 
