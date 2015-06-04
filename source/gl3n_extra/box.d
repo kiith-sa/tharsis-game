@@ -132,18 +132,43 @@ public:
 
     /// Euclidean squared distance from a point.
     /// See_also: Numerical Recipes Third Edition (2007)
-    double squaredDistance(U)(Vector!(U, N) point) pure const nothrow
+    U squaredDistance(U)(Vector!(U, N) point) pure const nothrow @nogc
     {
-        double distanceSquared = 0;
-        foreach(i; 0 .. N)
+        U distanceSquared = 0;
+        static if(N == 2)
+        {
+            if(point.vector[0] < min.vector[0])
+            {
+                const diff = point.vector[0] - min.vector[0];
+                distanceSquared += diff * diff;
+            }
+            else if(point.vector[0] > max.vector[0])
+            {
+                const diff = point.vector[0] - max.vector[0];
+                distanceSquared += diff * diff;
+            }
+            if(point.vector[1] < min.vector[1])
+            {
+                const diff = point.vector[1] - min.vector[1];
+                distanceSquared += diff * diff;
+            }
+            else if(point.vector[1] > max.vector[1])
+            {
+                const diff = point.vector[1] - max.vector[1];
+                distanceSquared += diff * diff;
+            }
+        }
+        else foreach(i; TupleRange!(0, N))
         {
             if(point.vector[i] < min.vector[i])
             {
-                distanceSquared += (point.vector[i] - min.vector[i]) ^^ 2;
+                const diff = point.vector[i] - min.vector[i];
+                distanceSquared += diff * diff;
             }
-            if(point.vector[i] > max.vector[i])
+            else if(point.vector[i] > max.vector[i])
             {
-                distanceSquared += (point.vector[i] - max.vector[i]) ^^ 2;
+                const diff = point.vector[i] - max.vector[i];
+                distanceSquared += diff * diff;
             }
         }
         return distanceSquared;
