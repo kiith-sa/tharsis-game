@@ -41,3 +41,32 @@ void setLength(T, size_t dim)(ref Vector!(T, dim) vector, T length) @safe pure n
     const ratio = length / oldLength;
     vector *= ratio;
 }
+
+/** Optimized multiplication of a 3D vector by a 4x4 matrix *from the left* that returns a 2D vector.
+ *
+ * Reduces the number of additions from 16 to 8 and the number of multiplications from
+ * 16 to 6.
+ */
+Vector!(T, 2) matMulTo2D(T)(auto ref const Matrix!(T, 4, 4) m, const Vector!(T, 3) v)
+    @safe pure nothrow @nogc
+{
+    // Vector!(T, 2) ret;
+    // ret.clear(0);
+
+    Vector!(T, 2) ret = void;
+    ret.vector[0] = 0.0f;
+    ret.vector[1] = 0.0f;
+    foreach(c; TupleRange!(0, 3)) 
+    {
+        foreach(r; TupleRange!(0, 2)) 
+        {
+            ret.vector[r] += m[r][c] * v.vector[c];
+        }
+    }
+
+    foreach(r; TupleRange!(0, 2)) 
+    {
+        ret.vector[r] += m[r][3]; // * 1.0
+    }
+    return ret;
+}
