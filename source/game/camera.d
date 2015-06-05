@@ -220,9 +220,16 @@ public:
     /// Get screen coordinates (in pixels) corresponding to 3D point in world space.
     vec2 worldToScreen(vec3 world) const
     {
-        const halfSize = vec2(width_ / 2, height_ / 2);
+        // LDC2 does not optimize this all the way for some reason, so do it manually.
+        vec2 halfSize = void;
+        halfSize.vector[0] = width_ * 0.5f;
+        halfSize.vector[1] = height_ * 0.5f;
+        vec2 center2D = void;
+        center2D.vector[0] = center.vector[0];
+        center2D.vector[1] = center.vector[1];
         // transform to 2D space, then subtract the center
-        return zoom_ * (vec2(view * vec4(world, 1.0f)) - vec2(center)) + halfSize;
+        // zoom_ * (vec2(view * vec4(world, 1.0f)) - vec2(center)) + halfSize;
+        return zoom_ * (matMulTo2D(view, world) - center2D) + halfSize;
     }
 
     /** Get world coordinates corresponding to a 3D point in screen space.
