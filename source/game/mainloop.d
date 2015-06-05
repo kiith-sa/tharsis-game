@@ -18,7 +18,9 @@ import platform.inputdevice;
 import platform.videodevice;
 import time.gametime;
 
-
+// TODO: Refactor into a 'Game' class with all parameters as data members. Game subsystems
+//       will be constructed before Game and passed as ctor params (maybe a 'Subsystems'
+//       struct? instead of being constructed in the Game ctor. 2014-08-21
 
 /** Main event loop of the game.
  *
