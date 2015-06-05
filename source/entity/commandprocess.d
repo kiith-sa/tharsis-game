@@ -65,6 +65,17 @@ public:
     /// Determine which commands to give this frame.
     void preProcess() nothrow
     {
+        // IDEA: eventually we may want left-click commands, but for that we must be sure
+        // nothing is being selected right this frame... otherwise we'll end up e.g.
+        // attacking and selecting at once. This is doable by making selection a 2-frame
+        // process (candidate for selection, then select it the next frame), and
+        // CommandProcess asking SelectionProcess if it's in process of selecting
+        // something.
+        // BETTER: just have a spatial management structure built during the past
+        // frame - so it's the same past as the components we're reading right now
+        //
+        // That spatial structure would also be useful for attack commands and similar stuff.
+
         noCommandForSelected_ = true;
         immutable mousePos = vec2(mouse_.x, mouse_.y);
 
