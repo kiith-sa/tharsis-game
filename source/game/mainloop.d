@@ -39,7 +39,7 @@ bool mainLoop(ref EntitySystem entitySystem,
               GameTime time,
               CameraControl cameraControl,
               Profiler[] threadProfilers,
-              Logger log) @trusted
+              Logger log) @trusted nothrow
 {
     entitySystem.spawnEntityASAP("game_data/level1.yaml");
     // Profiler used to calculate how much of the allocated time step we're spending.
@@ -101,7 +101,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             // Shift + QWERTY: set scheduling algorithm
             if(input.keyboard.key(Key.LShift)) with(SchedulingAlgorithmType)
             {
-                void setSchedulingAlgorithm(SchedulingAlgorithmType a) 
+                void setSchedulingAlgorithm(SchedulingAlgorithmType a) nothrow
                 {
                     entitySystem.schedulingAlgorithm = a;
                 }
@@ -119,14 +119,15 @@ bool mainLoop(ref EntitySystem entitySystem,
                 // TODO: When publishing, include despiker binary+font in tharsis-game dir.
                 sender.startDespiker("../tharsis-despiker/despiker");
             }
-            catch(DespikerSenderException e)
+            //catch(DespikerSenderException e)
+            catch(Exception e) // to allow nothrow to work
             {
-                log.error("Failed to start despiker: " ~ e.msg);
+                log.error("Failed to start despiker: " ~ e.msg).assumeWontThrow;
             }
         }
 
         // Must finish all zones before updating the sender.
-        destroy(frame);
+        frame.__dtor();
         sender.update();
     }
 
