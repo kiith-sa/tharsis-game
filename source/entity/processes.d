@@ -85,10 +85,16 @@ public:
     void process(ref const PositionComponent pos, ref PickingComponent* picking)
         nothrow
     {
+        // This brings some speedup, but we'll need mouseover picking in game.
+        // if(state_ == State.MouseOver)
+        // {
+        //     picking = null;
+        //     return;
+        // }
         const screenCoords = camera_.worldToScreen(pos);
 
         // If there is a PickingComponent from the previous frame, remove it.
-        if(selectionBox_.distance(screenCoords) < pickingRadius_)
+        if(selectionBox_.squaredDistance(screenCoords) < pickingRadius_ * pickingRadius_)
         {
             *picking = PickingComponent(state_, selectionBox_);
             return;
