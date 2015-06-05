@@ -187,7 +187,7 @@ public:
 
             if(!loadDerelict(log)) { return 1; }
             scope(exit)            { unloadDerelict(); }
-            if(!initSDL(log)) { return 1; }
+            if(!initSDL(log, args_.headless)) { return 1; }
             scope(exit)       { SDL_Quit(); }
 
 
@@ -263,10 +263,10 @@ private:
                     // For now. Should log to an in-memory buffer later.
                     auto log = stdlog;
 
-                    if(!loadDerelict(log)) { return 1; }
-                    scope(exit)            { unloadDerelict(); }
-                    if(!initSDL(log)) { return 1; }
-                    scope(exit)       { SDL_Quit(); }
+                    if(!loadDerelict(log))            { return 1; }
+                    scope(exit)                       { unloadDerelict(); }
+                    if(!initSDL(log, args_.headless)) { return 1; }
+                    scope(exit)                       { SDL_Quit(); }
 
                     auto video = args_.headless ? null : new VideoDevice(log);
                     scope(exit) if(!args_.headless) { video.destroy(); }
@@ -372,11 +372,17 @@ void unloadDerelict()
     DerelictSDL2.unload();
 }
 
-/// Initialize the SDL library.
-bool initSDL(Logger log)
+/** Initialize the SDL library.
+ *
+ * Params:
+ *
+ * log      = Game log.
+ * headless = Are we running without video output? (If so, don't init the video subsystem).
+ */
+bool initSDL(Logger log, Flag!"headless" headless)
 {
     // Initialize SDL Video subsystem.
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
+    if(SDL_Init(headless ? 0 : SDL_INIT_VIDEO) < 0)
     {
         // SDL_Init returns a negative number on error.
         log.critical("SDL Video subsystem failed to initialize");
