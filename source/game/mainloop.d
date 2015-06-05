@@ -253,8 +253,10 @@ void recordDiagnostics(Diagnostics)(ref const(Diagnostics) diagnostics, Profiler
         var!"sched_timest_totalError_ms"(totalProcessError.hns2msF);
         var!"sched_timest_totalUnderest_ms"(totalProcessUnderestimate.hns2msF);
         var!"sched_timest_maxUnderest_ms"(maxProcessUnderestimate.hns2msF);
+        // Average estimate error of all processes in a frame
         var!"sched_timest_avgErrorRatio_%"(averageProcessErrorRatio.ratio2pc);
         var!"sched_timest_avgUnderestRatio_%"(averageProcessUnderestimateRatio.ratio2pc);
+        // Worst estimate error of all processes in a frame
         var!"sched_timest_maxUnderestRatio_%"(maxProcessUnderestimateRatio.ratio2pc);
     }
 }
