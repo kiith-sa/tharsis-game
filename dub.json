@@ -8,15 +8,15 @@
     "homepage": "https://github.com/kiith-sa/tharsis-game",
     "dependencies": 
     {
-        "tharsis-prof":  "~>0.5.0",
+        "tharsis-prof":  ">=0.5.3",
         "derelict-gl3":  ">=1.0.4",
         "derelict-sdl2": ">=1.2.5",
         "dgamevfs":      ">=0.2.0",
         "dyaml":         ">=0.5.0",
         "gl3n":          "~master",
-        "gfm:math":      "==1.1.8",
-        "logger":        "==0.2.9",
-        "tharsis-full": { "version" : "~>0.1.0", "path" : "../tharsis-full" },
+        "gfm:math":      "~>2.0",
+        "logger":        ">=0.3.0",
+        "tharsis-full": { "path" : "../tharsis-full" },
     },
     "buildTypes":
     {
