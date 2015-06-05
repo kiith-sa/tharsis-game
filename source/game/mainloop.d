@@ -112,6 +112,8 @@ bool mainLoop(ref EntitySystem entitySystem,
                 if(input.keyboard.pressed(Key.E)) { setSchedulingAlgorithm(RBt400r3);  }
                 if(input.keyboard.pressed(Key.R)) { setSchedulingAlgorithm(RBt800r6);  }
                 if(input.keyboard.pressed(Key.T)) { setSchedulingAlgorithm(RBt1600r9); }
+                if(input.keyboard.pressed(Key.Y)) { setSchedulingAlgorithm(COMBINE);   }
+                if(input.keyboard.pressed(Key.U)) { setSchedulingAlgorithm(DJMS);      }
             }
 
 

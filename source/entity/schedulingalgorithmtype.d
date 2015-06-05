@@ -20,5 +20,9 @@ enum SchedulingAlgorithmType
     /// Randomized backtracking: timelimit = 800, attempts=6
     RBt800r6,
     /// Randomized backtracking: timelimit = 1600, attempts=9
-    RBt1600r9
+    RBt1600r9,
+    /// The COMBINE algorithm combining LPT and MULTIFIT. Almost as fast as LPT, better results.
+    COMBINE,
+    /// Different Job and Machine Sets. Better but slower than LPT, should be fast enough. Buggy.
+    DJMS
 }

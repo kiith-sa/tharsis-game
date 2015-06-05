@@ -79,6 +79,7 @@ void help()
         "  --sched-algo               Scheduling algorithm to use. Possible values:",
         "                             Dumb      Equal number of Processes per thread",
         "                             LPT       Longest Processing Time (fast, decent)",
+        "                             COMBINE   COMBINE (slightly slower, better)",
         "                             BRUTE     Bruteforce backtracking (extremely slow)",
         "                             RBt400r3  Random backtrack, time=400, attempts=3",
         "                             RBt800r6  Random backtrack, time=800, attempts=6",

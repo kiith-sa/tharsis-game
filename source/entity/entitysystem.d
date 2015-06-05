@@ -279,6 +279,8 @@ public:
             case RBt400r3:  setSched(new RandomBacktrackScheduling(t, 400, 3));  break;
             case RBt800r6:  setSched(new RandomBacktrackScheduling(t, 800, 6));  break;
             case RBt1600r9: setSched(new RandomBacktrackScheduling(t, 1600, 9)); break;
+            case COMBINE:   setSched(new COMBINEScheduling(t));                  break;
+            case DJMS:      setSched(new DJMSScheduling(t));                     break;
         }
     }
 
