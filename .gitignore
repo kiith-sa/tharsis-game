@@ -15,3 +15,5 @@ cachegrind.out.*
 callgrind.out.*
 .dub
 dub.selections.json
+process_benchmarks
+/libtharsis-game.a
