@@ -229,12 +229,12 @@ int execute(string[] cliArgs)
 {
     auto cfgData = ConfigData(cliArgs);
     const cfg = GeneralConfig(cfgData);
+    // For now. Should log to an in-memory buffer later.
+    auto log = stdlog;
+
     switch(cfg.command)
     {
         case "game":
-            // For now. Should log to an in-memory buffer later.
-            auto log = stdlog;
-
             if(!loadDerelict(log))          { return 1; }
             scope(exit)                     { unloadDerelict(); }
             if(!initSDL(log, cfg.headless)) { return 1; }
@@ -256,9 +256,6 @@ int execute(string[] cliArgs)
             {
                 return 1;
             }
-
-            // For now. Should log to an in-memory buffer later.
-            auto log = stdlog;
 
             if(!loadDerelict(log))          { return 1; }
             scope(exit)                     { unloadDerelict(); }
@@ -290,7 +287,7 @@ int execute(string[] cliArgs)
             help();
             return 0;
         default:
-            writeln("ERROR: unknown command '", cfg.command, "'");
+            log.error("unknown command '", cfg.command, "'");
             return 1;
     }
 }
@@ -435,8 +432,8 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     {
         if(profiler.outOfSpace)
         {
-            log.infof("WARNING: profiler for thread %s ran out of memory while "
-                      "profiling; profiling data is incomplete", p);
+            log.warningf("Profiler for thread %s ran out of memory while "
+                         "profiling; profiling data is incomplete", p);
         }
 
         final switch(dumpFormat)
