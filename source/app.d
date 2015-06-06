@@ -34,7 +34,7 @@ import time.gametime;
  */
 // Kernel distorts results too much at 60FPS, go with 50 for now.
 // enum fixedFPS = 60.0f;
-enum fixedFPS = 50.0f;
+// enum fixedFPS = 50.0f;
 // Good for printf debugging:
 // enum fixedFPS = 3.0f;
 
@@ -72,7 +72,10 @@ void help()
         "                             Default: 1024",
         "  --height=<pixels>          Window height.",
         "                             Default: 768",
-        "",
+        "  --target-fps=<fps>         FPS the game should run at.",
+        "                             FPS is fixed to this value and, if the actual FPS",
+        "                             gets any lower, the game will slow down.",
+        "                             Default: 50",
         "",
         "Commands:",
         "  demo                       Play a pre-recorded demo, executing tharsis-game",
@@ -131,6 +134,12 @@ struct GeneralConfig
     // Window/camera height to start with (affects even headless runs).
     uint height = 768;
 
+    /** FPS the game should run at.
+     *
+     * FPS will be at most this value and if it dips below it, the game will slow down.
+     */
+    uint targetFPS = 50;
+
     // "game", "demo" or "help"
     string command = "game";
 
@@ -154,7 +163,8 @@ struct GeneralConfig
                    std.getopt.config.passThrough,
                    std.getopt.config.bundling,
                    "help", &help, "headless", &headless, "sched-algo", &schedAlgo,
-                   "width", &width, "height", &height, "threadCount", &threadCount);
+                   "width", &width, "height", &height, "threadCount", &threadCount,
+                   "target-fps", &targetFPS);
             data.cliArgs = cliArgs;
 
             if(help) { command = "help"; }
@@ -225,17 +235,17 @@ int execute(string[] cliArgs)
             // For now. Should log to an in-memory buffer later.
             auto log = stdlog;
 
-            if(!loadDerelict(log)) { return 1; }
-            scope(exit)            { unloadDerelict(); }
+            if(!loadDerelict(log))          { return 1; }
+            scope(exit)                     { unloadDerelict(); }
             if(!initSDL(log, cfg.headless)) { return 1; }
-            scope(exit)            { SDL_Quit(); }
+            scope(exit)                     { SDL_Quit(); }
 
             auto video = cfg.headless ? null : new VideoDevice(log);
             scope(exit) if(!cfg.headless) { video.destroy(); }
             if(!cfg.headless && !initVideo(cfg, video, log)) { return 1; }
 
             auto input = scoped!InputDevice(() => cfg.headless ? cfg.height : video.height, log);
-            auto gameTime = scoped!GameTime(1 / fixedFPS);
+            auto gameTime = scoped!GameTime(1.0 / cfg.targetFPS);
 
             runGame(video, input, gameTime, cfg, log);
             return 0;
@@ -260,7 +270,7 @@ int execute(string[] cliArgs)
             if(!cfg.headless && !initVideo(cfg, video, log)) { return 1; }
 
             auto input = scoped!InputDevice(() => cfg.headless ? cfg.height : video.height, log);
-            auto gameTime = scoped!GameTime(1 / fixedFPS);
+            auto gameTime = scoped!GameTime(1.0 / cfg.targetFPS);
 
             // Load recorded input.
             import io.yaml;
