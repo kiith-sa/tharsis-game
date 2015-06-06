@@ -109,7 +109,34 @@ struct ConfigData
      * Note: GeneralConfig constructor removes 'general config' arguments from here.
      */
     string[] cliArgs;
-    // TODO: YAMLNode yaml
+
+    import io.yaml;
+
+    /// YAML data loaded from config.yaml.
+    YAMLNode yaml;
+    
+    /// File name to load ConfigData.yaml from.
+    string yamlFileName = "config.yaml";
+
+    /** Construct ConfigData from specified CLI arguments (and by loading config.yaml)
+     *
+     * Params:
+     *
+     * cliArgs = Command-line arguments passed to the program.
+     * log     = The game log.
+     */
+    this(string[] cliArgs, Logger log) @safe
+    {
+        this.cliArgs = cliArgs;
+        try
+        {
+            yaml = Loader(yamlFileName).load();
+        }
+        catch(YAMLException e)
+        {
+            log.warningf("Failed to load '%s'.", yamlFileName);
+        }
+    }
 }
 
 
@@ -147,8 +174,32 @@ struct GeneralConfig
      *
      * Note: removes 'general config' arguments from ConfigData.cliArgs.
      */
-    this(ref ConfigData data)
+    this(ref ConfigData data, Logger log)
     {
+        import io.yaml;
+        try foreach(string key, YAMLNode node; data.yaml)
+        {
+            try switch(key)
+            {
+                case "threadCount": threadCount = node.as!uint; break;
+                case "headless":    headless    = node.as!bool; break;
+                case "schedAlgo":   schedAlgo   = node.as!string.to!SchedulingAlgorithmType; break;
+                case "width":       width       = node.as!uint; break;
+                case "height":      height      = node.as!uint; break;
+                case "targetFPS":   targetFPS   = node.as!uint; break;
+                case "command":     command     = node.as!string; break;
+                default: break;
+            }
+            catch(Exception e)
+            {
+                log.warningf("Error reading '%s' from %s: %s", key, data.yamlFileName, e.msg);
+            }
+        }
+        catch(YAMLException e)
+        {
+            log.warningf("Error reading data from %s: %s", data.yamlFileName, e.msg);
+        }
+
         try
         {
             auto cliArgs = data.cliArgs[];
@@ -159,9 +210,7 @@ struct GeneralConfig
             }
 
             bool help;
-            getopt(cliArgs,
-                   std.getopt.config.passThrough,
-                   std.getopt.config.bundling,
+            getopt(cliArgs, std.getopt.config.passThrough, std.getopt.config.bundling,
                    "help", &help, "headless", &headless, "sched-algo", &schedAlgo,
                    "width", &width, "height", &height, "threadCount", &threadCount,
                    "target-fps", &targetFPS);
@@ -171,7 +220,7 @@ struct GeneralConfig
         }
         catch(Exception e)
         {
-            writeln("Warning: Failed to parse CLI args in GeneralConfig constructor");
+            log.warning("Failed to parse CLI args in GeneralConfig constructor: ", e.msg);
         }
     }
 }
@@ -188,8 +237,28 @@ struct DemoConfig
     // Should the game quit when the the replay is finished?
     Flag!"quitWhenDone" quitWhenDone_ = No.quitWhenDone;
 
-    this(ref ConfigData data)
+    this(ref ConfigData data, Logger log)
     {
+        import io.yaml;
+        try foreach(string key, YAMLNode node; data.yaml["demo"])
+        {
+            try switch(key)
+            {
+                case "inputName":    inputName_    = node.as!string; break;
+                case "blockInput":   blockInput_   = node.as!bool.to!(Flag!"block"); break;
+                case "quitWhenDone": quitWhenDone_ = node.as!bool.to!(Flag!"quitWhenDone"); break;
+                default: break;
+            }
+            catch(Exception e)
+            {
+                log.warningf("Error reading '%s' from %s: %s", key, data.yamlFileName, e.msg);
+            }
+        }
+        catch(YAMLException e)
+        {
+            log.warningf("Error reading data from %s: %s", data.yamlFileName, e.msg);
+        }
+
         bool directInput;
         string[] cliArgs = data.cliArgs;
         try
@@ -201,7 +270,7 @@ struct DemoConfig
         }
         catch(Exception e)
         {
-            writeln("Warning: Failed to parse CLI args in DemoConfig constructor");
+            log.warning("Failed to parse CLI args in DemoConfig constructor");
         }
 
         blockInput_ = directInput ? No.block : Yes.block;
@@ -212,14 +281,14 @@ struct DemoConfig
             if(inputName_ !is null)
             {
                 inputName_ = null;
-                writeln("ERROR: `demo` can have only one argument: input file name");
+                log.error("ERROR: `demo` can have only one argument: input file name");
                 return;
             }
             inputName_ = arg;
         }
         if(inputName_ is null)
         {
-            writeln("ERROR: Demo file name not specified");
+            log.error("ERROR: Demo file name not specified");
         }
     }
 }
@@ -227,10 +296,11 @@ struct DemoConfig
 /// Execute the game. This is the 'real main()'.
 int execute(string[] cliArgs)
 {
-    auto cfgData = ConfigData(cliArgs);
-    const cfg = GeneralConfig(cfgData);
     // For now. Should log to an in-memory buffer later.
     auto log = stdlog;
+
+    auto cfgData = ConfigData(cliArgs, log);
+    const cfg = GeneralConfig(cfgData, log);
 
     switch(cfg.command)
     {
@@ -251,7 +321,7 @@ int execute(string[] cliArgs)
             return 0;
 
         case "demo":
-            const democfg = DemoConfig(cfgData);
+            const democfg = DemoConfig(cfgData, log);
             if(democfg.inputName_ is null)
             {
                 return 1;
