@@ -5,7 +5,7 @@ dynamic:
 visual:
     color: [255, 0, 0, 255]
 engine:
-    acceleration: 90.0
+    acceleration: 450.0
     maxSpeed:     450.0
 weaponMulti:
   - secsTillBurst: 0.3

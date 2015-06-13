@@ -6,9 +6,9 @@ spawnerMulti:
           coords: [100, 100, 0]
         dynamic:
           velocity: [200, 200, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 2
       override:
@@ -16,9 +16,9 @@ spawnerMulti:
             coords: [100, -100, 0]
         dynamic:
             velocity: [200, -200, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 3
       override:
@@ -26,9 +26,9 @@ spawnerMulti:
           coords: [-100, -100, 0]
         dynamic:
           velocity: [-200, -200, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 4
       override:
@@ -36,9 +36,9 @@ spawnerMulti:
           coords: [-100, 100, 0]
         dynamic:
           velocity: [-200, 200, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 5
       override:
@@ -46,9 +46,9 @@ spawnerMulti:
           coords: [100, 0, 0]
         dynamic:
           velocity: [300, 0, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 6
       override:
@@ -56,9 +56,9 @@ spawnerMulti:
           coords: [-100, 0, 0]
         dynamic:
           velocity: [-300, 0, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 7
       override:
@@ -66,9 +66,9 @@ spawnerMulti:
           coords: [0, -100, 0]
         dynamic:
           velocity: [0, -300, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
     - spawn:     game_data/entity1.yaml
       triggerID: 8
       override:
@@ -76,14 +76,15 @@ spawnerMulti:
           coords: [0, 100, 0]
         dynamic:
           velocity: [0, 300, 0]
-        engine:
-            acceleration: 11
-            maxSpeed:     450.0
+        # engine:
+        #     # acceleration: 11
+        #     maxSpeed:     450.0
 visual:
     color: [255, 255, 0, 255]
 engine:
-    acceleration: 45.0
+    acceleration: 150.0
     maxSpeed:     900.0
+    rotSpeed:     180.0
 dynamic:
     velocity: [0, 0, 0]
 timedTriggerMulti:
