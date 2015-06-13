@@ -11,12 +11,14 @@ import tharsis.entity;
 import gl3n_extra.linalg;
 
 
-
-/// Component storing the position (and only the position) of an entity.
+/// Component storing the position of an entity.
 struct PositionComponent
 {
     /// X/Y/Z coordinates of the entity.
     @("relative") vec3 coords = vec3(0, 0, 0);
+
+    /// Facing of the entity (its 'forward' vector).
+    vec3 facing = vec3(1, 0, 0);
 
     alias coords this;
 
@@ -142,6 +144,8 @@ struct EngineComponent
     float acceleration = 0.0f;
     /// Max speed the entity can be accelerated to by this engine (in any direction).
     float maxSpeed = 0.0f;
+    /// Rotation speed of the entity (rotation doesn't accelerate/decelerate).
+    float rotSpeed = 360.0f;
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
@@ -159,6 +163,14 @@ struct DynamicComponent
     /// Velocity of the entity.
     @("relative") vec3 velocity = vec3(0, 0, 0);
 
+    /// Current rotation speed.
+    float rotSpeed = 360.0f;
+
+    /** Target facing we're rotating into.
+     *
+     * Must be either a unit vector or a zero vector. If zero, we're not rotating.
+     */
+    vec3 rotTarget = vec3(0, 0, 0);
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
