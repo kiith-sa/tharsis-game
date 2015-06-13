@@ -70,3 +70,53 @@ Vector!(T, 2) matMulTo2D(T)(auto ref const Matrix!(T, 4, 4) m, const Vector!(T, 
     }
     return ret;
 }
+
+/** Get the angle (radians) between two points on a unit sphere (unit vectors).
+ */
+T angleBetweenPointsOnSphere(T)(const Vector!(T, 3) a, const Vector!(T, 3) b)
+    @safe pure nothrow @nogc 
+out(result)
+{
+    assert(!result.isNaN, 
+            "angleBetweenPointsOnSphere result is NaN: probably >1 or <-1 passed to acos");
+}
+body
+{
+    import std.math: acos, abs;
+    assert(abs(a.magnitude_squared - 1.0) < 0.001, 
+            "(a) points on sphere must be unit vectors");
+    assert(abs(b.magnitude_squared - 1.0) < 0.001, 
+            "(b) points on sphere must be unit vectors");
+    //TODO: check if there are any edge cases where acos would return nan
+    //here (is the dot product ever >1 or <-1?)
+    return acos(a.dot(b));
+}
+
+/// Convert an angle in radians to degrees.
+F radToDeg(F)(F a) @safe pure nothrow @nogc 
+{
+    import std.math: PI;
+    return (a / PI) * 180.0;
+}
+
+/** Linear interpolation between facings (unit direction vectors).
+ *
+ * Params:
+ *
+ * from  = Unit vector we're interpolating from.
+ * to    = Unit vector we're interpolating to.
+ * ratio = Interpolation ratio; 0 means the result is `from`, 1 is `to`,
+ *         0.5 is the direction halfway between `from` and `to`.
+ */
+Vector!(T, dim) slerp(T, int dim)(const Vector!(T, dim) from, 
+                                  const Vector!(T, dim) to, const T ratio) 
+    @safe pure nothrow @nogc 
+{
+    import std.math: abs;
+    assert(abs(from.magnitude_squared - 1.0) < 0.001, 
+            "(from) directions must be unit vectors");
+    assert(abs(to.magnitude_squared - 1.0) < 0.001, 
+            "(to) directions must be unit vectors");
+    assert(ratio >= 0.0 && ratio <= 1.0, "slerp ratio out of range");
+    return (from * ratio + to * (1.0 - ratio)).normalized;
+}
