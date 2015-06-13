@@ -223,6 +223,9 @@ public:
         with(CommandComponent.Type) final switch(command.type)
         {
             case MoveTo:
+                /* Old code for 'no rotation locomotor' where engine can be applied to
+                 * any direction, so rotation is not necessary for movement (but add
+                 * rotation so the object faces the target at least)
                 const vec3 target = command.moveTo;
                 // Vector from current position to target.
                 const vec3 toTarget = target - pos;
@@ -242,7 +245,41 @@ public:
                 }
 
                 dynamicFuture = DynamicComponent(futureVelocity);
-                return;
+                */
+
+
+                const vec3 target = command.moveTo;
+                // Vector from current position to target.
+                const vec3 toTarget = target - pos;
+                const vec3 pastVelocity = dynamicPast.velocity;
+                // Direction we want to go in.
+                const vec3 wantedDir = toTarget.normalized;
+
+
+                enum speedEpsilon = 5.0;
+                const speed = pastVelocity.length;
+                // Determines whether we're accelerating or decelerating
+                // const int accelDir = 1;
+                const int accelDir = 
+                    // if we're so close that the distance taken while decelerating is 
+                    // more than distance to target, decelerate
+                    (speed / engine.acceleration) * 
+                    (speed / 2) >= toTarget.length ? -1 : 
+                    // otherwise, accelerate (we will still clamp velocity to maxSpeed)
+                    1;
+
+                const vec3 accel = 
+                    engine.acceleration * (accelDir * pos.facing) * timeStep;
+                vec3 velocity = dynamicPast.velocity + accel;
+                if(velocity.length >= engine.maxSpeed)
+                {
+                    velocity.setLength(engine.maxSpeed);
+                }
+
+                dynamicFuture = 
+                    DynamicComponent(velocity, engine.rotSpeed, wantedDir);
+
+                break;
             case StaticFireAt:
                 break;
         }
@@ -262,6 +299,7 @@ public:
         if(velocity.length == 0.0f)
         {
             dynamicFuture = dynamicPast;
+            dynamicFuture.rotTarget = vec3(0, 0, 0);
             return;
         }
 
@@ -269,6 +307,7 @@ public:
         const timeStep = time_.timeStep;
         velocity.setLength(max(0.0f, velocity.length - engine.acceleration * timeStep));
         dynamicFuture = DynamicComponent(velocity);
+        dynamicFuture.rotTarget = vec3(0, 0, 0);
     }
 }
 
@@ -305,8 +344,37 @@ public:
                  ref const DynamicComponent dynamic,
                  out PositionComponent posFuture) nothrow
     {
+        import std.math: abs;
+        assert(abs(posPast.facing.magnitude_squared - 1.0) < 0.001, 
+               "(past) PositionComponent.facing must be a unit vector");
+        scope(exit)
+        {
+            assert(abs(posFuture.facing.magnitude_squared - 1.0) < 0.001, 
+                   "(future) PositionComponent.facing must be a unit vector");
+        }
+
         const timeStep = gameTime_.timeStep;
-        posFuture = posPast + timeStep * dynamic.velocity;
+        vec3 newFacing = posPast.facing;
+        // a zero rotTarget gvector means we're not rotating
+        if(dynamic.rotTarget.magnitude_squared >= 0.00001)
+        {
+            assert(abs(dynamic.rotTarget.magnitude_squared - 1.0) < 0.001 ,
+                   "rotTarget must be a unit vector");
+
+            const rotDistanceDeg = radToDeg(angleBetweenPointsOnSphere(posPast.facing, dynamic.rotTarget));
+            // How much of the rot distance can we move in the second.
+            // e.g. if speed is 45degpersec and distance is 90 deg, we'll be able to cover 
+            // 0.5 of the distance in a second.
+            const rotRatioInSecond = dynamic.rotSpeed / rotDistanceDeg;
+            // The actual rot ratio for this frame - and we don't want to move more than
+            // the entire distance so we clamp to 1.0
+            const rotRatio = min(1.0, rotRatioInSecond * timeStep);
+
+            newFacing = slerp(posPast.facing, dynamic.rotTarget, rotRatio);
+        }
+        const newPos = posPast + timeStep * dynamic.velocity;
+
+        posFuture = PositionComponent(newPos, newFacing);
     }
 
     /// Keep position of an entity that has no DynamicComponent.
