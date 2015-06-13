@@ -112,3 +112,4 @@ timedTriggerMulti:
     - time:      0.7
       triggerID: 8
       periodic: true
+selectable:

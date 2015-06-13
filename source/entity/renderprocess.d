@@ -384,9 +384,12 @@ public:
     /// Draw a selected entity.
     void process(ref const PositionComponent pos,
                  ref const VisualComponent vis,
-                 ref const SelectionComponent select) @safe nothrow
+                 ref const SelectableComponent select) @safe nothrow
     {
         if(renderMode_ == RenderMode.None) { return; }
+        process(pos, vis);
+
+        if(!select.isSelected) { return; }
 
         const pointsOnly = renderMode_ == RenderMode.Points;
 
@@ -403,8 +406,6 @@ public:
         // Z is really far in front so it's in front of all depth-buffered draws.
         selectionBatch_.put(Vertex(coords.x - 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
         selectionBatch_.put(Vertex(coords.x + 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
-
-        process(pos, vis);
     }
 
     /// Draw all batched entities that have not yet been drawn.

@@ -129,11 +129,11 @@ public:
      * We only give movement commands to entities that have engines.
      */
     void process(ref const PositionComponent pos,
-                 ref const SelectionComponent select,
+                 ref const SelectableComponent select,
                  ref const EngineComponent engine,
                  ref CommandComponent* command) nothrow
     {
-        if(noCommandForSelected_)
+        if(noCommandForSelected_ || !select.isSelected)
         {
             command = null;
             return;
@@ -164,12 +164,13 @@ public:
 
     /// Handle an entity that is both selected and has a command already.
     void process(ref const PositionComponent pos,
-                 ref const SelectionComponent select,
+                 ref const SelectableComponent select,
                  ref const EngineComponent engine,
                  ref const CommandComponent commandPast,
                  ref CommandComponent* commandFuture) nothrow
     {
-        noCommandForSelected_ ? process(pos, commandPast, commandFuture)
-                              : process(pos, select, engine, commandFuture);
+        (noCommandForSelected_ || !select.isSelected)
+            ? process(pos, commandPast, commandFuture)
+            : process(pos, select, engine, commandFuture);
     }
 }

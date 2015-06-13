@@ -19,3 +19,4 @@ weaponMulti:
                     coords: [0.5, 0, 0.2]
                 dynamic:
                     velocity: [1200, 0, 600]
+selectable:

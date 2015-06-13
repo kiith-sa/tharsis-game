@@ -78,11 +78,11 @@ struct PickingComponent
     }
 }
 
-
 /// Added to entities that are selected.
-struct SelectionComponent
+struct SelectableComponent
 {
-    // Empty for now.
+    /// Is this component selected right now?
+    bool isSelected = false;
 
     /// Small for testing. Will increase.
     enum minPrealloc = 64;

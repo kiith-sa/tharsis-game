@@ -118,7 +118,7 @@ private:
     bool deselect_;
 
 public:
-    alias FutureComponent = SelectionComponent;
+    alias FutureComponent = SelectableComponent;
     /** Construct a SelectionProcess.
      *
      * Params:
@@ -142,40 +142,34 @@ public:
     // TODO In future, SelectionProcess will use other mechanisms besides picking
     // (e.g. keyboard shortcuts like T in RA2 and maybe pentadactyl-style keyboard
     // selection) 2014-08-19
-    /// Select a picked entity (if really picked, not just hovered).
-    void process(ref const PickingComponent pick, ref SelectionComponent* select)
-        nothrow
-    {
-        if(pick.state == PickingComponent.State.Picked)
-        {
-            *select = SelectionComponent();
-            return;
-        }
-        select = null;
-    }
+
 
     /// Keep an entity selected or deselect it depending on mouse input this frame.
-    void process(ref const SelectionComponent past, ref SelectionComponent* future)
+    void process(ref const SelectableComponent past, out SelectableComponent future)
         nothrow
     {
+        future = past;
         if(deselect_)
         {
-            future = null;
-            return;
+            future.isSelected = false;
         }
-        *future = past;
     }
 
     /// Handle an entity that is both picked/hovered and selected.
     void process(ref const PickingComponent pick,
-                 ref const SelectionComponent selectPast,
-                 ref SelectionComponent* selectFuture)
+                 ref const SelectableComponent selectPast,
+                 out SelectableComponent selectFuture)
         nothrow
     {
-        // If a selected entity is picked again, just 're-select' it.
-        // If it's not picked, check if we need to deselect it.
-        (pick.state == PickingComponent.State.Picked) ? process(pick, selectFuture)
-                                                      : process(selectPast, selectFuture);
+        if(pick.state == PickingComponent.State.Picked)
+        {
+            selectFuture = selectPast;
+            selectFuture.isSelected = true;
+        }
+        else
+        {
+            process(selectPast, selectFuture);
+        }
     }
 }
 
