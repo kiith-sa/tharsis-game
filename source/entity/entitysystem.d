@@ -98,7 +98,7 @@ public:
         componentTypeMgr_.registerComponentTypes!(PositionComponent,
                                                   VisualComponent,
                                                   PickingComponent,
-                                                  SelectionComponent,
+                                                  SelectableComponent,
                                                   CommandComponent,
                                                   EngineComponent,
                                                   DynamicComponent,
