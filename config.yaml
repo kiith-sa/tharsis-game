@@ -1,0 +1,7 @@
+width: 1024
+height: 768
+targetFPS: 50
+threadCount: 3
+headless: false
+schedAlgo: LPT
+command: game
