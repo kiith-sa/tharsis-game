@@ -9,6 +9,7 @@ module entity.processes;
 
 import std.exception;
 import std.experimental.logger;
+import std.stdio;
 
 import gl3n_extra.linalg;
 
