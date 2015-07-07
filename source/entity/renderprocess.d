@@ -157,6 +157,9 @@ private:
     // Bars over selected entities are accumulated here and then drawn together.
     VertexArray!Vertex selectionBatch_;
 
+    // Lines showing entity facings are accumulated here and then drawn together.
+    VertexArray!Vertex facingBatch_;
+
     // Batch used to draw UI elements that are drawn as triangles and redrawn every frame.
     VertexArray!Vertex uiBatch_;
 
@@ -276,6 +279,7 @@ public:
 
         entitiesBatch_  = new VertexArray!Vertex(gl_, new Vertex[32768]);
         selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        facingBatch_    = new VertexArray!Vertex(gl_, new Vertex[32768]);
         uiBatch_        = new VertexArray!Vertex(gl_, new Vertex[8192]);
     }
 
@@ -285,6 +289,7 @@ public:
         if(program_ !is null) { program_.__dtor(); }
         uiBatch_.__dtor();
         selectionBatch_.__dtor();
+        facingBatch_.__dtor();
         entitiesBatch_.__dtor();
         axisThingy_.__dtor();
         grid_.__dtor();
@@ -380,11 +385,19 @@ public:
             uniforms_.modelView  = camera_.view;
             drawBatch(entitiesBatch_, PrimitiveType.Triangles);
         }
+        if(facingBatch_.capacity - facingBatch_.length < 2)
+        {
+            uniforms_.projection = camera_.projection;
+            uniforms_.modelView  = camera_.view;
+            drawBatch(entitiesBatch_, PrimitiveType.Triangles);
+        }
 
         foreach(i, v; positions)
         {
             entitiesBatch_.put(Vertex(v + pos, vis.color));
         }
+        facingBatch_.put(Vertex(pos, rgb!"F0F080"));
+        facingBatch_.put(Vertex(pos + pos.facing * 50.0, rgb!"F0F080"));
     }
 
     /// Draw a selected entity.
@@ -431,6 +444,7 @@ public:
         uniforms_.projection = camera_.projection;
         uniforms_.modelView  = camera_.view;
         if(!entitiesBatch_.empty) { drawBatch(entitiesBatch_, PrimitiveType.Triangles); }
+        if(!facingBatch_.empty)   { drawBatch(facingBatch_, PrimitiveType.Lines); }
         uniforms_.modelView  = mat4.identity;
         if(!selectionBatch_.empty) { drawBatch(selectionBatch_, PrimitiveType.Lines); }
         uniforms_.projection = camera_.ortho;
