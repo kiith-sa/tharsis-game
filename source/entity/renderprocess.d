@@ -294,31 +294,18 @@ public:
 
         static allPositions =
         [
-            /*
-            vec3( 20, -20, -20),
-            vec3(-20,  20, -20),
-            vec3(-20, -20,  20),
-
             // TODO: For now we just draw a triangle. Will draw something
             //       more complex later. 2014-08-27
-            vec3( 20,  20,  20),
-            vec3(-20,  20, -20),
-            vec3(-20, -20,  20),
-
-            vec3( 20,  20,  20),
-            vec3( 20, -20, -20),
-            vec3(-20,  20, -20),
-            */
-
-            vec3( 20,  20,  20),
-            vec3( 20, -20, -20),
-            vec3(-20, -20,  20)
+            // vec3( 20, -20, -20), vec3(-20,  20, -20), vec3(-20, -20,  20),
+            // vec3( 20,  20,  20), vec3(-20,  20, -20), vec3(-20, -20,  20),
+            // vec3( 20,  20,  20), vec3( 20, -20, -20), vec3(-20,  20, -20),
+            vec3( 20,  20,  20), vec3( 20, -20, -20), vec3(-20, -20,  20)
         ];
 
         const pointsOnly = renderMode_ == RenderMode.Points;
         auto positions = pointsOnly ? allPositions[0 .. 1] : allPositions[];
 
-        // Draw and empty the batch if we've run out of space.
+        // Draw and empty any batch if it runs out of space
         if(entitiesBatch_.capacity - entitiesBatch_.length < positions.length)
         {
             uniforms_.projection = camera_.projection;
