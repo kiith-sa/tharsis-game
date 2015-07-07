@@ -218,6 +218,7 @@ public:
     {
         // By default, don't change the component.
         dynamicFuture = dynamicPast;
+        dynamicFuture.rotTarget = vec3(0, 0, 0);
 
         const timeStep = time_.timeStep;
 
