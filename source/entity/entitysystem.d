@@ -69,6 +69,7 @@ private:
 
     import game.camera;
     import time.gametime;
+    import game.map;
 
 public:
     /** Construct an EntitySystem, initializing Tharsis.
@@ -78,15 +79,22 @@ public:
      * video           = VideoDevice for any processes that need to draw.
      * input           = User input device.
      * time            = Keeps track of game time.
-     * camera          = Isometric amera.
+     * camera          = Isometric camera.
+     * map             = Game map.
      * threadCount     = Number of threads for Tharsis to use. 0 is autodetect.
      * threadProfilers = Profilers profiling both the game and Tharsis execution in the
      *                   main thread as well as any extra threads used by Tharsis. One
      *                   profiler per thread.
      * log             = Game log.
      */
-    this(VideoDevice video, InputDevice input, GameTime time, Camera camera,
-         uint threadCount, Profiler[] threadProfilers, Logger log)
+    this(VideoDevice video,
+         InputDevice input,
+         GameTime time,
+         Camera camera,
+         Map map,
+         uint threadCount,
+         Profiler[] threadProfilers,
+         Logger log)
         @safe nothrow //!@nogc
     {
         auto zone = Zone(threadProfilers[0], "EntitySystem.this");
@@ -150,7 +158,7 @@ public:
 
         if(video !is null)
         {
-            renderer_ = new RenderProcess(video, input.keyboard, input.mouse, camera, log);
+            renderer_ = new RenderProcess(video, input.keyboard, input.mouse, camera, map, log);
             entityMgr_.registerProcess(renderer_);
         }
 

@@ -106,6 +106,10 @@ private:
     // 2D isometric camera used for projection and view matrices.
     const Camera camera_;
 
+    import game.map;
+    // Game map.
+    const Map map_;
+
     // OpenGL wrapper.
     OpenGL gl_;
 
@@ -180,10 +184,11 @@ public:
      * keyboard = Access to keyboard input.
      * mouse    = Access to mouse input.
      * camera   = Isometric camera.
+     * map      = Game map.
      * log      = Game log.
      */
     this(VideoDevice video, const Keyboard keyboard, const Mouse mouse, 
-         const Camera camera, Logger log)
+         const Camera camera, const Map map, Logger log)
         @trusted nothrow
     {
         log_      = log;
@@ -195,6 +200,7 @@ public:
 
         gridW_ = 64;
         gridH_ = 64;
+        map_      = map;
 
         try
         {

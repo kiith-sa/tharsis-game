@@ -470,8 +470,19 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     {
         AlignedMallocator.it.deallocate(buffer);
     }
-    auto entitySystem = EntitySystem(video, input, gameTime, camera, cfg.threadCount,
-                                     profilers, log);
+
+    import game.map;
+    auto map = scoped!Map(64, 64, 32);
+    map.generatePlainMap();
+    
+    auto entitySystem = EntitySystem(video, 
+                                     input,
+                                     gameTime,
+                                     camera,
+                                     map,
+                                     cfg.threadCount,
+                                     profilers, 
+                                     log);
     entitySystem.schedulingAlgorithm = cfg.schedAlgo;
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
