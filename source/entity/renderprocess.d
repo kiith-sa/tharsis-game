@@ -153,6 +153,12 @@ private:
     // Lines showing entity facings are accumulated here and then drawn together.
     VertexArray!Vertex facingBatch_;
 
+    // Lines on cell borders are accumulated here.
+    VertexArray!Vertex cellLineBatch_;
+
+    // Cells themselves (triangle pairs) are accumulated here.
+    VertexArray!Vertex cellFillBatch_;
+
     // Batch used to draw UI elements that are drawn as triangles and redrawn every frame.
     VertexArray!Vertex uiBatch_;
 
@@ -227,12 +233,16 @@ public:
         selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[32768]);
         facingBatch_    = new VertexArray!Vertex(gl_, new Vertex[32768]);
         uiBatch_        = new VertexArray!Vertex(gl_, new Vertex[8192]);
+        cellLineBatch_   = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        cellFillBatch_   = new VertexArray!Vertex(gl_, new Vertex[32768]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
     ~this()
     {
         if(program_ !is null) { program_.__dtor(); }
+        cellFillBatch_.__dtor();
+        cellLineBatch_.__dtor();
         uiBatch_.__dtor();
         selectionBatch_.__dtor();
         facingBatch_.__dtor();
@@ -261,23 +271,69 @@ public:
 
         uniforms_.projection = camera_.projection;
         uniforms_.modelView  = camera_.view;
-        program_.use();
-
-        scope(exit) { program_.unuse(); }
-
-        const pointsOnly = renderMode_ == RenderMode.Points;
-        const lines      = pointsOnly ? PrimitiveType.Points : PrimitiveType.Lines;
-        const triangles  = pointsOnly ? PrimitiveType.Points : PrimitiveType.Triangles;
-
         {
+            program_.use();
+
+            scope(exit) { program_.unuse(); }
+
+            const pointsOnly = renderMode_ == RenderMode.Points;
+            const lines      = pointsOnly ? PrimitiveType.Points : PrimitiveType.Lines;
+            const triangles  = pointsOnly ? PrimitiveType.Points : PrimitiveType.Triangles;
+
+            if(axisThingy_.bind(program_))
+            {
+                axisThingy_.draw(lines, 0, axisThingy_.length);
+                axisThingy_.release();
+            }
+            else { logVArrayBindError("axisThingy_"); }
         }
 
-        if(axisThingy_.bind(program_))
+        foreach(cell; map_.allCells)
         {
-            axisThingy_.draw(lines, 0, axisThingy_.length);
-            axisThingy_.release();
+            size_t fillVerticesToAdd = 6;
+            size_t lineVerticesToAdd = 8;
+
+            if(cellFillBatch_.capacity - cellFillBatch_.length < fillVerticesToAdd)
+            {
+                drawBatch(cellFillBatch_, PrimitiveType.Triangles); 
+            }
+            if(cellLineBatch_.capacity - cellLineBatch_.length < lineVerticesToAdd)
+            {
+                drawBatch(cellLineBatch_, PrimitiveType.Lines); 
+            }
+
+            const float rowXOffset = - (cast(long)cell.row / 2) * cellSizeWorld_.x;
+            const float rowYOffset = ((cell.row + 1) / 2) * cellSizeWorld_.y;
+            const cellX = rowXOffset + cell.column * cellSizeWorld_.x;
+            const cellY = rowYOffset + cell.column * cellSizeWorld_.y;
+            const cellZ = cell.layer * cellSizeWorld_.z;
+
+            cellLineBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
+            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
+
+            cellFillBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.cellColor));
+            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.cellColor)); 
+            cellFillBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
+            cellFillBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
+            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.cellColor));
+            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
         }
-        else { logVArrayBindError("axisThingy_"); }
+
+        if(!cellFillBatch_.empty) 
+        {
+            drawBatch(cellFillBatch_, PrimitiveType.Triangles); 
+        }
+        if(!cellLineBatch_.empty) 
+        {
+            drawBatch(cellLineBatch_, PrimitiveType.Lines); 
+        }
+
 
         const mouse = camera_.screenToOrtho(vec2(mouse_.x, mouse_.y));
         // const mouse = vec2(mouse_.x, mouse_.y) - camera_.size * 0.5;
