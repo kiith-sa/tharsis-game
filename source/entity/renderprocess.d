@@ -141,13 +141,6 @@ private:
     // Provides access to uniform variables in program_.
     GLUniforms!UniformsSpec uniforms_;
 
-    // VertexArray storing the map grid.
-    VertexArray!Vertex grid_;
-
-    // Number of vertices in grid_ to draw the bottom level of the map with (for
-    // visual reference)
-    size_t bottomLevelVertices_ = 6;
-
     // VertexArray of the axis thingy (showing axes in different colors).
     VertexArray!Vertex axisThingy_;
 
@@ -167,9 +160,6 @@ private:
     enum cellSizeScreen_ = vec3u(96, 48, 24);
     // Size of a map cell in world space.
     enum cellSizeWorld_  = vec3d(67.882251, 67.882251, 33.9411255);
-
-    // Map grid width and height in cells.
-    size_t gridW_, gridH_;
 
     import tharsis.prof;
     // Profiler for the thread the RenderProcess runs in. Passed on every preProcess() and 
@@ -200,9 +190,6 @@ public:
         mouse_    = mouse;
         camera_   = camera;
         gl_       = video_.gl;
-
-        gridW_ = 64;
-        gridH_ = 64;
         map_      = map;
 
         try
@@ -223,47 +210,6 @@ public:
             log_.error(e).assumeWontThrow;
             assert(false, "Unexpected exception in RenderProcess.this()");
         }
-
-        auto vaoSpace = new Vertex[2 * gridW_ * (gridH_ + 1) +
-                                   2 * gridH_ * (gridW_ + 1) +
-                                   bottomLevelVertices_];
-        grid_ = new VertexArray!Vertex(gl_, vaoSpace);
-
-        double x = 0.0;
-        double y = 0.0;
-        const white = rgb!"FFFFFF";
-        foreach(xCell; 0 .. gridW_ + 1)
-        {
-            y = 0.0;
-            foreach(yCell; 0 .. gridH_)
-            {
-                grid_.put(Vertex(x, y, 0, white));
-                grid_.put(Vertex(x, y + cellSizeWorld_.y, 0, white));
-                y += cellSizeWorld_.y;
-            }
-            x += cellSizeWorld_.x;
-        }
-        x = y = 0.0;
-        foreach(yCell; 0 .. gridH_ + 1)
-        {
-            x = 0.0;
-            foreach(xCell; 0 .. gridW_)
-            {
-                grid_.put(Vertex(x, y, 0, white));
-                grid_.put(Vertex(x + cellSizeWorld_.x, y, 0, white));
-                x += cellSizeWorld_.x;
-            }
-            y += cellSizeWorld_.y;
-        }
-        const bottomColor = rgb!"101008";
-        grid_.put(Vertex(0, 0, -10, bottomColor));
-        grid_.put(Vertex(cellSizeWorld_.x * gridW_, 0, -10, bottomColor));
-        grid_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        grid_.put(Vertex(cellSizeWorld_.x * gridW_, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        grid_.put(Vertex(0, cellSizeWorld_.y * gridH_, -10, bottomColor));
-        grid_.put(Vertex(0, 0, -10, bottomColor));
-        grid_.lock();
-
 
         axisThingy_ = new VertexArray!Vertex(gl_, new Vertex[6]);
         // X (red)
@@ -292,7 +238,6 @@ public:
         facingBatch_.__dtor();
         entitiesBatch_.__dtor();
         axisThingy_.__dtor();
-        grid_.__dtor();
     }
 
     /// Draw anything that should be drawn before any entities.
@@ -324,13 +269,8 @@ public:
         const lines      = pointsOnly ? PrimitiveType.Points : PrimitiveType.Lines;
         const triangles  = pointsOnly ? PrimitiveType.Points : PrimitiveType.Triangles;
 
-        if(grid_.bind(program_))
         {
-            grid_.draw(lines, 0, grid_.length - bottomLevelVertices_);
-            grid_.draw(triangles, grid_.length - bottomLevelVertices_, bottomLevelVertices_);
-            grid_.release();
         }
-        else { logVArrayBindError("grid_"); }
 
         if(axisThingy_.bind(program_))
         {
