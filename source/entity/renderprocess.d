@@ -334,9 +334,7 @@ public:
             drawBatch(cellLineBatch_, PrimitiveType.Lines); 
         }
 
-
         const mouse = camera_.screenToOrtho(vec2(mouse_.x, mouse_.y));
-        // const mouse = vec2(mouse_.x, mouse_.y) - camera_.size * 0.5;
         uiBatch_.put(Vertex(mouse.x,      mouse.y - 20, 1000.0f, rgb!"FFFFEE"));
         uiBatch_.put(Vertex(mouse.x + 14, mouse.y - 13, 1000.0f, rgb!"FFFFEE"));
         uiBatch_.put(Vertex(mouse.x,      mouse.y,      1000.0f, rgb!"FFFFFF"));
