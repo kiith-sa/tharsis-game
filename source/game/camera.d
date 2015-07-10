@@ -145,6 +145,17 @@ private:
     // Camera width and height (2D extents of the camera). Signed to avoid issues with
     // negative values.
     long width_, height_;
+    // Camera depth.
+    //
+    // Huge so we don't need to move our (ortho) camera closer/further.
+    // Shouldn't be a problem with 24-bit depth, if it is, try to increase even 
+    // further, and if that fails, move the camera.
+    long depth_ = 65536;
+    // Part of depth that is "in front" of the point we're looking at.
+    // Allows viewing e.g. hills closer than the ground at 0,0
+    //
+    // Must be less than depth.
+    long depthInFront_ = 8192;
     // Center of the camera (the point the camera is looking at in 2D space).
     vec2 center_;
     // Zoom of the camera (higher is closer).
@@ -256,11 +267,12 @@ private:
     /// Update the orthographic projection matrix.
     void updateProjection()
     {
-        const hWidth  = max(width_  * 0.5f, 1.0f);
-        const hHeight = max(height_ * 0.5f, 1.0f);
+        const halfWidth  = max(width_  * 0.5f, 1.0f);
+        const halfHeight = max(height_ * 0.5f, 1.0f);
         orthoStack_.loadIdentity();
-        orthoStack_.ortho(center_.x - hWidth, center_.x + hWidth,
-                          center_.y - hHeight, center_.y + hHeight, -8000, 8000);
+        orthoStack_.ortho(center_.x - halfWidth, center_.x + halfWidth,
+                          center_.y - halfHeight, center_.y + halfHeight, 
+                          -depthInFront_, depth_ - depthInFront_);
         const invZoom = 1.0 / zoom_;
         projectionStack_.loadIdentity();
         projectionStack_.setTop(orthoStack_.top);
