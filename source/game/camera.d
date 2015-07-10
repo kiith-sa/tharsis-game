@@ -263,6 +263,16 @@ public:
         return (screen - halfSize) + center_;
     }
 
+    import gl3n.aabb;
+    /// Get the camera bounding box/volume in projection (ortho + zoom) space.
+    AABB projectionVolume() const 
+    {
+        const halfSize = (1.0 / zoom_) * vec2(width_ * 0.5f, height_ * 0.5f);
+        return AABB(vec3(center_ - halfSize, -depthInFront_),
+                    vec3(center_ + halfSize, depth_ - depthInFront_));
+    }
+
+
 private:
     /// Update the orthographic projection matrix.
     void updateProjection()
