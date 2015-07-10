@@ -473,6 +473,12 @@ private:
     /// All cell layers of the map.
     CellLayer[] layers_;
 
+    /// Width of the map in columns.
+    const size_t width_;
+
+    /// Height of the map in rows.
+    const size_t height_;
+
 public:
     /** Construct CellState for map with specified size.
      *
@@ -487,6 +493,8 @@ public:
     {
         // TODO std.allocator 2015-07-06
         layers_ = new CellLayer[layers];
+        width_ = width;
+        height_ = height;
         foreach(ref layer; layers_)
         {
             layer = new CellLayer(width, height);
