@@ -14,6 +14,8 @@ import std.container.array;
 import std.exception: assumeWontThrow;
 
 import gl3n_extra.color;
+import gl3n_extra.linalg;
+
 
 
 /*
@@ -139,7 +141,7 @@ public:
      * size_t column // index of the column the cell is in in the row
      * ```
      */
-    auto allCells() @safe pure nothrow @nogc const
+    auto allCells() @safe pure nothrow const //@nogc
     {
         return cells_.allCells;
     }
@@ -508,138 +510,13 @@ public:
         GC.free(layers_.ptr);
     }
 
-    /// Get a range of all cells in the map.
-    auto allCells() @safe pure nothrow @nogc const
+
+    /** Get a range of all cells in the map.
+     *
+     * See_Also: `Map.allCells`
+     */
+    auto allCells() @safe pure nothrow const // @nogc
     {
-        /** An `InputRange` over all cells in the map.
-         *
-         * The cells are in the following order (but note that layers/rows/columns that
-         * contain no cells are ignored; only cells are iterated):
-         *
-         * ```
-         * layer 0:
-         *     row 0:
-         *         column 0
-         *         ...
-         *         column max
-         *     row 1: ...
-         *     ...
-         *     row max 
-         * layer 1: ...
-         * ...
-         * layer max
-         * ```
-         */
-        struct CellRange
-        {
-        private:
-            /// Current cell layer.
-            size_t layer_ = 0;
-            /// Current cell row.
-            size_t row_ = 0;
-            /** Index of the current cell in current row.
-             *
-             * `size_t.max` at the beginning, incremented in each `nextCell` call, which
-             * changes it to 0 in constructor.
-             */
-            size_t rowIdx_ = size_t.max;
-            /// Reference to cell state (containing all layers).
-            const(CellState) map_;
-
-            /// Is the range empty (no more cells)?
-            bool empty_;
-
-        public:
-            /// Element of the range. `Cell` extended by coordinate data.
-            struct CellWithCoords
-            {
-                /// Column the cell is on.
-                size_t column;
-                /// Row containing the cell.
-                size_t row;
-                /// Layer containing the cell.
-                size_t layer;
-
-                /// Cell itself.
-                Cell cell;
-                alias cell this;
-            }
-
-            /// Construct a `CellRange` referencing specified `CellState`.
-            this(const(CellState) map) @trusted pure nothrow @nogc
-            {
-                map_ = map;
-                nextCell();
-            }
-
-            /// Get the current element (cell).
-            CellWithCoords front() @safe pure nothrow const 
-                //TODO @nogc when std.container.array.Array is @nogc or replaced. 2015-06-21
-            {
-                assert(!empty, "Can't get front of an empty range");
-                const cell = map_.layers_[layer_].rows_[row_].cells[rowIdx_];
-                return CellWithCoords(cell.column, row_, layer_, cell.cell);
-            }
-
-            /// Move to the next cell.
-            void popFront() @trusted pure nothrow @nogc
-            {
-                assert(!empty, "Can't pop front of an empty range");
-                nextCell();
-            }
-
-            /// Is the range empty (no more cells)?
-            bool empty() @safe pure nothrow const @nogc { return empty_; }
-
-        private:
-            /** Move to the next cell.
-             *
-             * Called both by `this` (to initialize the first cell or find out if the
-             * range is empty) and `popFront` (to move to the next cell).
-             *
-             * Sets `empty_` if there are no more cells.
-             */
-            void nextCell() @system pure nothrow @nogc
-            {
-                const(CellLayer)* layerPtr = &(map_.layers_[layer_]);
-                const(CellRow)*   rowPtr   = &(layerPtr.rows_[row_]);
-
-                static assert(size_t.max + 1 == 0, "Unexpected size_t overflow");
-                ++rowIdx_;
-                if(rowIdx_ < rowPtr.cells.length) { return; }
-
-                assert(rowIdx_ <= rowPtr.cells.length, "Cell index in row out of range");
-                // if row done
-                // Multiple rows may be empty so using while
-                while(rowIdx_ == rowPtr.cells.length)
-                {
-                    ++row_;
-                    rowIdx_ = 0;
-                    ++rowPtr;
-
-                    assert(row_ <= layerPtr.height_, "Row index out of range");
-                    // if layer done
-                    // No layer is empty; the next layer will have some rows
-                    if(row_ == layerPtr.height_)
-                    {
-                        ++layer_;
-                        row_ = 0;
-                        ++layerPtr;
-                        assert(layer_ <= map_.layers_.length, "Layer index out of range");
-                        // if map done
-                        if(layer_ == map_.layers_.length)
-                        {
-                            empty_ = true;
-                            return;
-                        }
-                        // Must be done after the if() above so we can't point to a 
-                        // row on a nonexistent layer (when done with the last layer).
-                        rowPtr = layerPtr.rows_.ptr;
-                    }
-                }
-            }
-        }
-
         return CellRange(this);
     }
     /// Test for basic CellRange functionality.
@@ -692,6 +569,222 @@ public:
         {
             case CellType.Empty: layer.deleteCell(cmd.column, cmd.row); break;
             case CellType.Cell:  layer.setCell(cmd.column, cmd.row, cmd.cell); break;
+        }
+    }
+}
+
+/** An `InputRange` over all cells in the map.
+ *
+ * The cells are in the following order (but note that layers/rows/columns that
+ * contain no cells are ignored; only cells are iterated):
+ *
+ * ```
+ * layer 0:
+ *     row 0:
+ *         column 0
+ *         ...
+ *         column max
+ *     row 1: ...
+ *     ...
+ *     row max
+ * layer 1: ...
+ * ...
+ * layer max
+ * ```
+ */
+struct CellRange
+{
+private:
+    /// Minimum column (inclusive) of cells in the range.
+    uint minColumn_ = 0;
+    /// Maximum column (exclusive) of cells in the range.
+    uint maxColumn_ = uint.max;
+    /// Minimum row (inclusive) of cells in the range.
+    uint minRow_ = 0;
+    /// Maximum row (exclusive) of cells in the range.
+    uint maxRow_ = uint.max;
+    /// Minimum layer (inclusive) of cells in the range.
+    uint minLayer_ = 0;
+    /// Maximum layer (exclusive) of cells in the range.
+    uint maxLayer_ = uint.max;
+
+    /// Current cell layer.
+    size_t layer_ = 0;
+    /// Current cell row.
+    size_t row_ = 0;
+    /** Index of the current cell in current row.
+    *
+    * `size_t.max` at the beginning, incremented in each `nextCell` call, which
+    * changes it to 0 in constructor.
+    */
+    size_t rowIdx_ = size_t.max;
+    /// Reference to cell state (containing all layers).
+    const(CellState) map_;
+
+    /// Is the range empty (no more cells)?
+    bool empty_;
+
+public:
+    /// Element of the range. `Cell` extended by coordinate data.
+    struct CellWithCoords
+    {
+        /// Column the cell is on.
+        size_t column;
+        /// Row containing the cell.
+        size_t row;
+        /// Layer containing the cell.
+        size_t layer;
+
+        /// Cell itself.
+        Cell cell;
+        alias cell this;
+    }
+
+    /** Construct a `CellRange` referencing specified `CellState`.
+     *
+     * Params:
+     *
+     * map = Cell state of the map this range will iterate over cells of.
+     * min = Minimum column, row and layer (inclusive) of cells to iterate.
+     * max = Maximum column, row and layer (exclusive) of cells to iterate.
+     */
+    this(const(CellState) map, vec3u min = vec3u(0, 0, 0),
+                               vec3u max = vec3u(uint.max, uint.max, uint.max))
+        @trusted pure nothrow //@nogc
+    {
+        map_ = map;
+
+        assert(min.x < max.x, "minimum column must be less than maximum column");
+        assert(min.y < max.y, "minimum row must be less than maximum row");
+        assert(min.z < max.z, "minimum layer must be less than maximum layer");
+
+        minColumn_ = min.x;
+        minRow_    = min.y;
+        minLayer_  = min.z;
+        maxColumn_ = max.x;
+        maxRow_    = max.y;
+        maxLayer_  = max.z;
+
+        skipLayers();
+        skipRows();
+        skipCells();
+        getToCell();
+    }
+
+
+    /// Get the current element (cell).
+    CellWithCoords front() @safe pure nothrow const
+        //TODO @nogc when std.container.array.Array is @nogc or replaced. 2015-06-21
+    {
+        assert(!empty, "Can't get front of an empty range");
+        const cell = map_.layers_[layer_].rows_[row_].cells[rowIdx_];
+        return CellWithCoords(cell.column, row_, layer_, cell.cell);
+    }
+
+    /// Move to the next cell.
+    void popFront() @trusted pure nothrow //@nogc
+    {
+        assert(!empty, "Can't pop front of an empty range");
+        // Move to the next cell, and check if it's in the interval and if it 
+        // exists at all. If not, skip any cells/rows/layers to get to the next
+        // cell in the interval.
+        ++rowIdx_;
+        getToCell();
+    }
+
+    /// Is the range empty (no more cells)?
+    bool empty() @safe pure nothrow const @nogc { return empty_; }
+
+private:
+    /** Are we currently on an existing cell in the interval?
+     * If not, there are no more cells in the range in this row.
+     *
+     * Any cells before the interval must be skipped before calling this.
+     */
+    bool haveCell() @safe pure nothrow //@nogc
+    {
+        const(CellRow)* rowPtr = &map_.layers_[layer_].rows_[row_];
+        assert(rowIdx_ <= rowPtr.cells.length, "unexpected rowIdx_ value");
+        if(rowIdx_ == rowPtr.cells.length)
+        {
+            // finished the row
+            return false;
+        }
+        const column = rowPtr.cells[rowIdx_].column;
+        assert(column >= minColumn_,
+               "must skip all cells with column < minColumn before haveCell call");
+        // if column < maxColumn_, we have a cell we can read.
+        // Otherwise we've exhausted useful cells in the row.
+        return column < maxColumn_;
+    }
+
+    /** Are we currently on a row in the interval? If not, need to move to the next layer.
+     *
+     * Any rows before the interval must be skipped before calling this.
+     */
+    bool haveRow() @safe pure nothrow @nogc
+    {
+        assert(row_ <= map_.height_, "row_ out of range");
+        return row_ < map_.height_ && row_ < maxRow_;
+    }
+
+    /** Are we currently on a layer in the interval? If not, there are no more layers.
+     *
+     * Any layers before the interval must be skipped before calling this.
+     */
+    bool haveLayer() @safe pure nothrow @nogc
+    {
+        assert(layer_ <= map_.layers_.length, "layer_ out of range");
+        return layer_ < map_.layers_.length && layer_ < maxLayer_;
+    }
+
+    /** Check if we're at a valid cell and if not, move to the first layer/row with
+     * a valid cell or declare the range empty.
+     *
+     * Before calling `getToCell()`, any cells before the interval must be skipped.
+     */
+    void getToCell() @safe pure nothrow
+    {
+        // If we don't have a cell in the interval after skipping cells before the 
+        // interval (and possibly processing some cells in the interval), there are
+        // no more cells in the interval so we need to move to the next row.
+        while(!haveCell())
+        {
+            ++row_;
+            while(!haveRow())
+            {
+                ++layer_;
+                if(!haveLayer())
+                {
+                    empty_ = true;
+                    return;
+                }
+                skipRows();
+            }
+            skipCells();
+        }
+    }
+
+    /// Move to the first layer in the interval.
+    void skipLayers() @safe pure nothrow @nogc { layer_ = minLayer_; }
+
+    /// Move to the first row in the interval - in current layer.
+    void skipRows() @safe pure nothrow @nogc   { row_ = minRow_; }
+
+    /** Skip all cells before the interval - in current row.
+     *
+     * Note that this does not mean that the cell skipped to is in the interval;
+     * it might be behind it. `haveCell` handles that.
+     */
+    void skipCells() @safe pure nothrow //@nogc
+    {
+        const(CellRow)* rowPtr = &map_.layers_[layer_].rows_[row_];
+        for(rowIdx_ = 0; rowIdx_ < rowPtr.cells.length; ++rowIdx_)
+        {
+            if(rowPtr.cells[rowIdx_].column >= minColumn_)
+            {
+                break;
+            }
         }
     }
 }
