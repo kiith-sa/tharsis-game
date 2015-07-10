@@ -437,6 +437,12 @@ public:
         final switch(cellTypes_[x][y])
         {
             case CellType.Empty:
+                // Fast path when appending a cell (during map creation)
+                if(!row.cells.empty && row.cells.back.column < x)
+                {
+                    row.cells.insert(CellRow.IndexedCell(cast(ushort)x, cell));
+                    break;
+                }
                 // Inserting a new cell into the cell row.
                 row.cells.insertBefore(row.cells[].find!(c => c.column > x),
                                        CellRow.IndexedCell(cast(ushort)x, cell));
