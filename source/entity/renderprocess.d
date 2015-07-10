@@ -233,8 +233,8 @@ public:
         selectionBatch_ = new VertexArray!Vertex(gl_, new Vertex[32768]);
         facingBatch_    = new VertexArray!Vertex(gl_, new Vertex[32768]);
         uiBatch_        = new VertexArray!Vertex(gl_, new Vertex[8192]);
-        cellLineBatch_   = new VertexArray!Vertex(gl_, new Vertex[32768]);
-        cellFillBatch_   = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        cellLineBatch_  = new VertexArray!Vertex(gl_, new Vertex[32768]);
+        cellFillBatch_  = new VertexArray!Vertex(gl_, new Vertex[32768]);
     }
 
     /// Destroy the RenderProcess along with any rendering data.
