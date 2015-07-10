@@ -216,7 +216,7 @@ public:
 
         // make sure commands_ doesn't waste too much memory if there was a lot of
         // commands last frame.
-        enum maxReservedCommands = 1024;
+        enum maxReservedCommands = 4096;
         commands_.clear();
         if(commands_.capacity > maxReservedCommands)
         {
