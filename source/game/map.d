@@ -255,9 +255,9 @@ void generatePlainMap(Map map)
                 map.cellCommandSet(x, y, 1, Cell(0, 0, 0, 0, rgb!"FF0000", Color(red, green, blue, alpha)));
             }
         }
+        map.applyCellCommands();
     }
 
-    map.applyCellCommands();
 }
 unittest
 {
