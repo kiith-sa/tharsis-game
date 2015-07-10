@@ -288,7 +288,25 @@ public:
             else { logVArrayBindError("axisThingy_"); }
         }
 
-        foreach(cell; map_.allCells)
+        // Determine which part of the map is seen by the camera.
+        const cameraVolume = camera_.projectionVolume;
+
+        // Need uint 'index' bounds for min/max columns/rows/layers.
+        uint index(float f) nothrow { return cast(uint)max(0, f); }
+
+        const minColumn = index(cameraVolume.min.x / cellSizeScreen_.x - 1);
+        const maxColumn = index(cameraVolume.max.x / cellSizeScreen_.x + 1);
+        // How many rows below the screen we need to draw to ensure all cells
+        // even on the highest layer are visible.
+        const layerSpace = map_.layers * (cast(float)cellSizeScreen_.z / cellSizeScreen_.y);
+        const halfY = cellSizeScreen_.y / 2;
+        // Cells in rows below the screen on high layers might be visible on screen.
+        const minRow = index(cameraVolume.min.y / halfY - layerSpace - 1);
+        const maxRow = index(cameraVolume.max.y / halfY + 2);
+
+        // Draw map cells.
+        foreach(cell; map_.cellRange(vec3u(minColumn, minRow, 0), 
+                                     vec3u(maxColumn, maxRow, uint.max)))
         {
             size_t fillVerticesToAdd = 6;
             size_t lineVerticesToAdd = 8;
