@@ -146,6 +146,35 @@ public:
         return cells_.allCells;
     }
 
+    /** Get a range (`InputRange`) of cells in an interval of rows/layers/columns.
+     *
+     * See_Also: `allCells`
+     *
+     * Params:
+     *
+     * min = Minimum row (x), column (y) and layer (z), inclusive.
+     * max = Maximum row (x), column (y) and layer (z), exclusive.
+     *       Can be greater than map bounds (uint.max will always iterate
+     *       to the last row/column/layer).
+     *
+     * Example:
+     * --------------------
+     * // Map map;
+     *
+     * // This will iterate over any cells in columns
+     * // 1,2,3 and 4 that are in row 2 and in layers 0 and 1.
+     * foreach(cell; Map.cellRange(vec3(1, 2, 0), vec3(5, 3, 2)))
+     * {
+     *     // do something
+     * }
+     * --------------------
+     *
+     */
+    auto cellRange(vec3u min, vec3u max) @safe pure nothrow const //@nogc
+    {
+        return cells_.cellRange(min, max);
+    }
+
     /** Add a cell command to set cell at specified coordinates.
      *
      * `applyCellCommands` must be called to apply this command.
@@ -510,6 +539,14 @@ public:
         GC.free(layers_.ptr);
     }
 
+    /** Get a range of cells in the map in specified column/row/layer interval.
+     *
+     * See_Also: `Map.cellRange`
+     */
+    auto cellRange(vec3u min, vec3u max) @safe pure nothrow const // @nogc
+    {
+        return CellRange(this, min, max);
+    }
 
     /** Get a range of all cells in the map.
      *
