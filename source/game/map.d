@@ -30,7 +30,7 @@ import gl3n_extra.color;
  *
  * A cell represents a 'filled' volume; its base is a diamond-shaped at the bottom
  * of the layer the cell is in, while its ceiling (surface that can be walked on)
- * can have varying heights at each corner of the diamond, allowing to represent 
+ * can have varying heights at each corner of the diamond, allowing to represent
  * slopes.
  */
 struct Cell
@@ -67,12 +67,12 @@ struct Cell
  * Map layout
  * ----------
  *
- * Cell layout is *staggered* like in C&C TS/RA2. This means diamond cells form 
+ * Cell layout is *staggered* like in C&C TS/RA2. This means diamond cells form
  * a rectangular (not diamond) map. Each cell row is horizontal (east-ward) in screen
- * space (with x-y direction of (1,1), that is, the consecutive cells are placed by 
+ * space (with x-y direction of (1,1), that is, the consecutive cells are placed by
  * equally increasing both the X and Y coordinates).
  * The rows are staggered and spaced vertically by *half* of cell size. This means
- * that  e.g. a 64x64 map is actually a rectangle with width 2x its height (and 
+ * that  e.g. a 64x64 map is actually a rectangle with width 2x its height (and
  * visually it's even more more elongated due to the isometric camera). A
  * 64x128 map would be square in the game world.
  *
@@ -130,7 +130,7 @@ public:
 
     /** Get a range (`InputRange`) of all cells (in all rows/columns/layers) in the map.
      *
-     * Range elements are `Cell` struct with the following additional members 
+     * Range elements are `Cell` struct with the following additional members
      * (added through `alias this`):
      *
      * ```
@@ -169,7 +169,7 @@ public:
         commands_.insert(CellCommand(column, row, layer, CellType.Cell, cell)).assumeWontThrow;
     }
 
-    /** Add a cell command to delete cell at specified coordinates. Will do nothing if 
+    /** Add a cell command to delete cell at specified coordinates. Will do nothing if
      * ther is no cell.
      *
      * `applyCellCommands` must be called to apply this command.
@@ -230,14 +230,14 @@ public:
 
 /** Generate a plain map for testing.
  *
- * Takes a Map and generates cells in it. Best used with an empty, newly constructed 
+ * Takes a Map and generates cells in it. Best used with an empty, newly constructed
  * map.
  *
  *
  * The generated cells will fill one layer, with colors changing based on rows/columns,
  * and also add a few cells on a higher layer (1 cell for every 4 rows and 4 columns).
  */
-void generatePlainMap(Map map) 
+void generatePlainMap(Map map)
     @safe nothrow
 {
     foreach(x; 0 .. map.width_)
@@ -271,18 +271,18 @@ unittest
 
 private:
 
-/** A cell command. These are added by `cellCommandXXX` methods of `Map`, and then 
+/** A cell command. These are added by `cellCommandXXX` methods of `Map`, and then
  * executed together by `Map.applyCellCommands.`
  */
 struct CellCommand
 {
     /// Column of the affected cell.
-    size_t column; 
+    size_t column;
     /// Row of the affected cell.
-    size_t row; 
+    size_t row;
     /// Layer of the affected cell.
     size_t layer;
-    /// Cell type the cell should be after applying the command 
+    /// Cell type the cell should be after applying the command
     /// (`CellType.Empty to delete the cell`)
     CellType type;
     /// Cell data if `type == CellType.Cell`.
@@ -301,7 +301,7 @@ enum CellType: ubyte
     Cell
 }
 
-// TODO use std.allocator everywhere below this point 
+// TODO use std.allocator everywhere below this point
 // (except allocating CellLayer instances) and make most of this code @nogc.
 // 2015-07-06
 
@@ -475,7 +475,7 @@ public:
      * width  = Width of the map in columns.
      * height = Height of the map in rows.
      * layers = Depth of the map in layers.
-     * 
+     *
      */
     this(size_t width, size_t height, size_t layers) @safe pure nothrow
     {
