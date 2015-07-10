@@ -556,7 +556,9 @@ public:
     {
         return CellRange(this);
     }
-    /// Test for basic CellRange functionality.
+
+    import std.string: format;
+    /// Tests for basic CellRange functionality.
     unittest
     {
         import std.stdio;
@@ -596,6 +598,41 @@ public:
         assert(array[cellIdx].row == 0, "Unexpected last cell row in Map.allCells");
         assert(array[cellIdx].column == 0, "Unexpected last cell column in Map.allCells");
         assert(array[cellIdx].layer == 1, "Unexpected last cell layer in Map.allCells");
+    }
+    unittest
+    {
+        import std.stdio;
+        writeln("Map.cellRange() unittest");
+        scope(success) { writeln("Map.cellRange() unittest SUCCESS"); }
+        scope(failure) { writeln("Map.cellRange() unittest FAILURE"); }
+        auto map = new Map(4, 4, 4);
+        map.generatePlainMap();
+        auto rng = map.allCells;
+        while(!rng.empty)
+        {
+            rng.popFront();
+        }
+
+        import std.array;
+        auto array = map.cellRange(vec3u(1, 1, 0), vec3u(3, 3, 1)).array;
+
+        size_t cellIdx = 0;
+        assert(array.length == 4,
+               "Unexpected cell count in Map.cellRange: %s".format(array.length));
+
+        foreach(row; 1 .. 3)
+        {
+            foreach(col; 1 .. 3)
+            {
+                assert(array[cellIdx].row == row,
+                       "Unexpected cell order in Map.cellRange");
+                assert(array[cellIdx].column == col,
+                       "Unexpected cell order in Map.cellRange");
+                assert(array[cellIdx].layer == 0,
+                       "Unexpected cell layer order in Map.cellRange");
+                ++cellIdx;
+            }
+        }
     }
 
     /// Apply specified CellCommand.
