@@ -164,8 +164,6 @@ private:
 
     // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
     enum cellSizeScreen_ = vec3u(96, 48, 24);
-    // Size of a map cell in world space.
-    enum cellSizeWorld_  = vec3d(67.882251, 67.882251, 33.9411255);
 
     import tharsis.prof;
     // Profiler for the thread the RenderProcess runs in. Passed on every preProcess() and 
@@ -320,27 +318,24 @@ public:
                 drawBatch(cellLineBatch_, PrimitiveType.Lines); 
             }
 
-            const float rowXOffset = - (cast(long)cell.row / 2) * cellSizeWorld_.x;
-            const float rowYOffset = ((cell.row + 1) / 2) * cellSizeWorld_.y;
-            const cellX = rowXOffset + cell.column * cellSizeWorld_.x;
-            const cellY = rowYOffset + cell.column * cellSizeWorld_.y;
-            const cellZ = cell.layer * cellSizeWorld_.z;
+            const float rowXOffset = - (cast(long)cell.row / 2) * cellSizeWorld.x;
+            const float rowYOffset = ((cell.row + 1) / 2) * cellSizeWorld.y;
+            const cellPos = vec3(rowXOffset + cell.column * cellSizeWorld.x,
+                                 rowYOffset + cell.column * cellSizeWorld.y,
+                                 cell.layer * cellSizeWorld.z);
 
-            cellLineBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
-            cellLineBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.borderColor));
-
-            cellFillBatch_.put(Vertex(cellX,                    cellY, cellZ, cell.cellColor));
-            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.cellColor)); 
-            cellFillBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
-            cellFillBatch_.put(Vertex(cellX,                    cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
-            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY, cellZ, cell.cellColor));
-            cellFillBatch_.put(Vertex(cellX + cellSizeWorld_.x, cellY + cellSizeWorld_.y, cellZ, cell.cellColor));
+            auto positionMapVertex(ref const(MapVertex) v) nothrow
+            {
+                return Vertex(v.position + cellPos, v.color);
+            }
+            foreach(ref const(MapVertex) v; map_.tile(cell.tileIndex).lineVertices)
+            {
+                cellLineBatch_.put(positionMapVertex(v));
+            }
+            foreach(ref const(MapVertex) v; map_.tile(cell.tileIndex).triangleVertices)
+            {
+                cellFillBatch_.put(positionMapVertex(v));
+            }
         }
 
         if(!cellFillBatch_.empty) 

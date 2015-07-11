@@ -41,13 +41,40 @@ struct MapVertex
  *
  * A cell represents a 'filled' volume; its base is a diamond-shaped at the bottom
  * of the layer the cell is in, while its ceiling (surface that can be walked on)
- * can have varying heights at each corner of the diamond, allowing to represent
- * slopes.
+ * can have varying heights (defined by Tile) at each corner of the diamond,
+ * allowing to represent slopes.
+ *
+ * All data members shared by cells, *which may not change without changing the tile*,
+ * should be in `struct Tile`. Data that may change over the cell's lifetime 
+ * without changing the tile (e.g. values that change gradually over time - 
+ * where we can't have a separate tile for every possible value), should be
+ * in `Cell`.
  */
 struct Cell
 {
-    // TODO in future most of this data will be in CellType (or something),
-    //      which will be indexed by Cell
+    /// Index of the tile used by this cell.
+    uint tileIndex;
+}
+
+/** Tile type enum.
+ *
+ * Separating tiles into types will be useful for map editing and terrain 
+ * deformation, to allow us to select the type of tile to use.
+ */
+enum TileType: ushort
+{
+    Flat,
+}
+
+/** A tile.
+ *
+ * Tiles are referred to cells; a tile specifies the shape and graphics of
+ * all cells referring to the tile.
+ */
+struct Tile 
+{
+    /// Type of this tile (e.g. flat, north-west slope, etc).
+    TileType type;
     /// Height of the cell surface at its northern corner.
     ubyte heightN = 0;
     /// Height of the cell surface at its eastern corner.
@@ -57,16 +84,18 @@ struct Cell
     /// Height of the cell surface at its western corner.
     ubyte heightW = 0;
 
-    // TODO replace with an index to an external struct with 2 arrays of Vertices
-    //      for RenderProcess to copy (lines and triangles) 2015-07-05
-    /// Cell border color
-    Color borderColor = rgb!"FFFFFF";
-    /// Color of the cell surface
-    Color cellColor   = rgb!"8080FF";
-
-//  obsolete once cell graphics are represented by arrays of vertices
-//     bool cliffSW = false;
-//     bool cliffSE = false;
+    // TODO: std.allocator 2015-07-11
+    /** Vertices of the tile's graphics representation that will be drawn as lines.
+     *
+     * Vertices 0 and 1 will form the first line, vertices 2 and 3 the second line, etc.
+     */
+    MapVertex[] lineVertices;
+    /** Vertices of the tile's graphics representation that will be drawn as triangles.
+     *
+     * Vertices 0, 1 and 2 will form the first triangle, vertices 3, 4 and 5 the second
+     * triangle, etc.
+     */
+    MapVertex[] triangleVertices;
 }
 
 /** Game map.
@@ -106,6 +135,11 @@ private:
     /// Cell commands to be executed on the next call to `applyCellCommands()`.
     Array!CellCommand commands_;
 
+    /** The set (or array, rather) of all tiles.
+     *
+     * Cells refer to tiles in this array by indices.
+     */
+    Array!Tile tileSet_;
 
 public:
     /** Create a map with specified size
@@ -130,6 +164,30 @@ public:
     ~this()
     {
         destroy(cells_);
+    }
+
+    /** Get a non-const reference to the tile array - to e.g. add new tiles.
+     *
+     * Note: 
+     *
+     * *removing* any tiles is **unsafe** once any cells exist; if tiles
+     * are moved to different indices the cells will refer to different tiles;
+     * or even outside of the array.
+     */
+    ref Array!Tile editTileSet() @safe pure nothrow
+    {
+        return tileSet_;
+    }
+
+    /// Get tile at specified index.
+    const(Tile) tile(uint idx) @trusted pure nothrow const @nogc 
+    {
+        static const(Tile) impl(const(Map) self, uint idx) @safe pure nothrow
+        {
+            return self.tileSet_[idx];
+        }
+        return (cast(const(Tile) function(const(Map), uint)
+                    @safe pure nothrow @nogc)&impl)(this, idx);
     }
 
     /// Width (number of columns) of the map.
@@ -268,6 +326,9 @@ public:
     }
 }
 
+/// Size of a map cell in world space.
+enum cellSizeWorld  = vec3d(67.882251, 67.882251, 33.9411255);
+
 /** Generate a plain map for testing.
  *
  * Takes a Map and generates cells in it. Best used with an empty, newly constructed
@@ -278,8 +339,31 @@ public:
  * and also add a few cells on a higher layer (1 cell for every 4 rows and 4 columns).
  */
 void generatePlainMap(Map map)
-    @safe nothrow
+    @trusted nothrow
 {
+    const white  = rgb!"FFFFFF";
+    const bluish = rgb!"B0B0F0";
+    const xMax = cellSizeWorld.x;
+    const yMax = cellSizeWorld.y;
+    // TODO: These arrays will be allocated with Map's own Allocator instance
+    // 2015-07-11
+    auto flat = Tile(TileType.Flat, 0, 0, 0, 0,
+                     [MapVertex(vec3(0,    0,    0), white),
+                      MapVertex(vec3(0,    yMax, 0), white),
+                      MapVertex(vec3(xMax, 0,    0), white),
+                      MapVertex(vec3(xMax, yMax, 0), white),
+                      MapVertex(vec3(0,    0,    0), white),
+                      MapVertex(vec3(xMax, 0,    0), white),
+                      MapVertex(vec3(0,    yMax, 0), white),
+                      MapVertex(vec3(xMax, yMax, 0), white)],
+                     [MapVertex(vec3(0,    0,    0), bluish),
+                      MapVertex(vec3(xMax, 0,    0), bluish),
+                      MapVertex(vec3(0,    yMax, 0), bluish),
+                      MapVertex(vec3(0,    yMax, 0), bluish),
+                      MapVertex(vec3(xMax, 0,    0), bluish),
+                      MapVertex(vec3(xMax, yMax, 0), bluish)]);
+    const flatTileIdx = 0;
+    map.editTileSet.insert(flat).assumeWontThrow;
     foreach(x; 0 .. map.width_)
     {
         foreach(y; 0 .. map.height_)
@@ -288,11 +372,11 @@ void generatePlainMap(Map map)
             const ubyte green = cast(ubyte)((cast(float)y / map.height_) * 255.0);
             const ubyte blue = 255;
             const ubyte alpha = 255;
-            map.cellCommandSet(x, y, 0, Cell(0, 0, 0, 0, rgb!"FF0000", Color(red, green, blue, alpha)));
+            map.cellCommandSet(x, y, 0, Cell(flatTileIdx));
             // Just to have some layering
             if((x % 4 == 0) && (y % 4 == 0))
             {
-                map.cellCommandSet(x, y, 1, Cell(0, 0, 0, 0, rgb!"FF0000", Color(red, green, blue, alpha)));
+                map.cellCommandSet(x, y, 1, Cell(flatTileIdx));
             }
         }
         map.applyCellCommands();
