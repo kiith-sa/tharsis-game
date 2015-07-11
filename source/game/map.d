@@ -28,6 +28,15 @@ import gl3n_extra.linalg;
  * So TODO cliff cell graphics!
  */
 
+/// Vertex type used in map (tile) drawing.
+struct MapVertex 
+{
+    /// 3D vertex position.
+    vec3 position;
+    /// RGBA vertex color.
+    Color color;
+}
+
 /** One cell (3D 'cube') of the map.
  *
  * A cell represents a 'filled' volume; its base is a diamond-shaped at the bottom
