@@ -298,6 +298,7 @@ int execute(string[] cliArgs)
 {
     // For now. Should log to an in-memory buffer later.
     auto log = stdlog;
+    scope(exit) { log.info("execute() exit"); }
 
     auto cfgData = ConfigData(cliArgs, log);
     const cfg = GeneralConfig(cfgData, log);
@@ -438,6 +439,7 @@ void deinitSDL()
 int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
             ref const GeneralConfig cfg, Logger log)
 {
+    scope(exit) { log.info("runGame() exit"); }
     // TODO: We should use D:GameVFS to access files, with a custom YAML source reading
     //       files through D:GameVFS. 2014-08-27
     auto camera        = new Camera(cast(size_t)cfg.width, cast(size_t)cfg.height);
@@ -550,6 +552,7 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
  */
 int main(string[] args)
 {
+    scope(exit) { writeln("main() exit"); }
     try
     {
         return execute(args);
