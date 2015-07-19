@@ -766,21 +766,32 @@ private:
     /// Height of the map in rows.
     const size_t height_;
 
+    /// Read-only access to tiles.
+    const(TileStorage) tileStorage_;
+
+    /// Game log.
+    Logger log_;
+
 public:
     /** Construct CellState for map with specified size.
      *
      * Params:
      *
-     * width  = Width of the map in columns.
-     * height = Height of the map in rows.
-     * layers = Depth of the map in layers.
-     *
+     * width       = Width of the map in columns.
+     * height      = Height of the map in rows.
+     * layers      = Depth of the map in layers.
+     * tileStorage = Read-only access to tiles.
+     * log         = Game log.
      */
-    this(size_t width, size_t height, size_t layers) @safe pure nothrow
+    this(size_t width, size_t height, size_t layers, const(TileStorage) tileStorage,
+         Logger log)
+        @safe pure nothrow
     {
-        // TODO std.allocator 2015-07-06
+        tileStorage_ = tileStorage;
+        log_         = log;
+        // // TODO std.allocator 2015-07-06
         layers_ = new CellLayer[layers];
-        width_ = width;
+        width_  = width;
         height_ = height;
         foreach(ref layer; layers_)
         {
