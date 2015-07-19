@@ -11,6 +11,7 @@ module game.map;
 
 import core.memory;
 import std.algorithm;
+import std.experimental.logger;
 import std.container.array;
 import std.exception: assumeWontThrow;
 
@@ -141,21 +142,25 @@ private:
      * Cells refer to tiles in this array by indices.
      */
     Array!Tile tileSet_;
+    /// The game log.
+    Logger log_;
 
 public:
     /** Create a map with specified size
      *
      * Params:
      *
+     * log    = Game log.
      * width  = Number of cells in each row of the map.
      * height = Number of rows in each layer of the map.
      * layers = Number of layers in the map.
      */
-    this(size_t width, size_t height, size_t layers) @safe pure nothrow
+    this(Logger log, size_t width, size_t height, size_t layers) @safe pure nothrow
     {
         cells_  = new CellState(width, height, layers);
         assert(width < ushort.max, "Map width can't be >65535 cells");
         assert(height < ushort.max, "Map height can't be >65535 cells");
+        log_    = log;
         width_  = width;
         height_ = height;
         layers_ = layers;

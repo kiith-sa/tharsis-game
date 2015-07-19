@@ -473,7 +473,8 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
 
     import game.map;
     // auto map = scoped!Map(64, 64, 32);
-    auto map = scoped!Map(256, 256, 32);
+    auto map = scoped!Map(log, 256, 256, 32);
+
     map.generatePlainMap();
     
     auto entitySystem = EntitySystem(video, 
