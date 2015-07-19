@@ -865,6 +865,55 @@ public:
         return cell(outCell, coords.x, coords.y, coords.z);
     }
 
+    /// Get coords of the **north-eastern** neighbor to specified coordinates.
+    vec3u NE(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column + row % 2, row + 1, layer);
+    }
+
+    /// Get coords of the **south-eastern** neighbor to specified coordinates.
+    vec3u SE(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column + row % 2, row - 1, layer);
+    }
+
+    /// Get coords of the **south-western** neighbor to specified coordinates.
+    vec3u SW(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column + row % 2 - 1, row - 1, layer);
+    }
+
+    /// Get coords of the **north-western** neighbor to specified coordinates.
+    vec3u NW(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column + row % 2 - 1, row + 1, layer);
+    }
+
+    /// Get coords of the **northern** neighbor to specified coordinates.
+    vec3u N(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column, row + 2, layer);
+    }
+
+    /// Get coords of the **eastern** neighbor to specified coordinates.
+    vec3u E(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column + 1, row, layer);
+    }
+
+    /// Get coords of the **southern** neighbor to specified coordinates.
+    vec3u S(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column, row - 2, layer);
+    }
+
+    /// Get coords of the **western** neighbor to specified coordinates.
+    vec3u W(uint column, uint row, uint layer) @safe nothrow const @nogc
+    {
+        return vec3u(column - 1, row, layer);
+    }
+
+
     import std.string: format;
     /// Tests for basic CellRange functionality.
     unittest
