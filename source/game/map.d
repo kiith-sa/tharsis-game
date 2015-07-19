@@ -820,9 +820,9 @@ public:
     {
         map_ = map;
 
-        assert(min.x < max.x, "minimum column must be less than maximum column");
-        assert(min.y < max.y, "minimum row must be less than maximum row");
-        assert(min.z < max.z, "minimum layer must be less than maximum layer");
+        assert(min.x <= max.x, "minimum column must be <= maximum column");
+        assert(min.y <= max.y, "minimum row must be <= maximum row");
+        assert(min.z <= max.z, "minimum layer must be <= maximum layer");
 
         minColumn_ = min.x;
         minRow_    = min.y;
@@ -830,6 +830,15 @@ public:
         maxColumn_ = max.x;
         maxRow_    = max.y;
         maxLayer_  = max.z;
+
+        if(min.x == max.x || min.y == max.y || min.z == max.z ||
+           minColumn_ > map_.width_ ||
+           minRow_ >= map_.height_ ||
+           minLayer_ >= map_.layers_.length)
+        {
+            empty_ = true;
+            return;
+        }
 
         skipLayers();
         skipRows();
