@@ -558,6 +558,11 @@ public:
         final switch(cellTypes_[x][y])
         {
             case CellType.Empty:
+                scope(exit)
+                {
+                    assert(row.invariant_(), "Cell row invalid after inserting a cell");
+                    cellTypes_[x][y] = CellType.Cell;
+                }
                 // Fast path when appending a cell (during map creation)
                 if(!row.cells.empty && row.cells.back.column < x)
                 {
@@ -567,8 +572,6 @@ public:
                 // Inserting a new cell into the cell row.
                 row.cells.insertBefore(row.cells[].find!(c => c.column > x),
                                        CellRow.IndexedCell(cast(ushort)x, cell));
-                assert(row.invariant_(), "Cell row invalid after inserting a cell");
-                cellTypes_[x][y] = CellType.Cell;
                 break;
             case CellType.Cell:
                 // If there is already a cell at these coordinates, rewrite
