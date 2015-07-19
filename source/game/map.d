@@ -1,4 +1,5 @@
-//          Copyright Ferdinand Majerech 2015.
+//      Copyright Ferdinand Majerech 2015.
+
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -29,7 +30,7 @@ import gl3n_extra.linalg;
  */
 
 /// Vertex type used in map (tile) drawing.
-struct MapVertex 
+struct MapVertex
 {
     /// 3D vertex position.
     vec3 position;
@@ -45,15 +46,15 @@ struct MapVertex
  * allowing to represent slopes.
  *
  * All data members shared by cells, *which may not change without changing the tile*,
- * should be in `struct Tile`. Data that may change over the cell's lifetime 
- * without changing the tile (e.g. values that change gradually over time - 
+ * should be in `struct Tile`. Data that may change over the cell's lifetime
+ * without changing the tile (e.g. values that change gradually over time -
  * where we can't have a separate tile for every possible value), should be
  * in `Cell`.
  */
 struct Cell
 {
     /// Index of the tile used by this cell.
-    uint tileIndex;
+    uint tileIndex = uint.max;
 }
 
 /** Tile type enum.
