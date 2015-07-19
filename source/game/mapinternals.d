@@ -499,7 +499,7 @@ public:
         //////////////////////////////
         /// Nested functions first ///
         //////////////////////////////
-        enum layerZ = cellSizeDiscrete.z;
+        enum layerZ = cellSizeWorld.z;
         /* Create a cell with specified heights at specified coordinates.
          * Replaces any previously existing cell at specified coords.
          *

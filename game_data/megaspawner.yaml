@@ -5,7 +5,7 @@ spawnerMulti:
         position:
           coords: [100, 100, 0]
         dynamic:
-          velocity: [200, 200, 0]
+          velocity: [600, 600, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -15,7 +15,7 @@ spawnerMulti:
         position:
             coords: [100, -100, 0]
         dynamic:
-            velocity: [200, -200, 0]
+            velocity: [600, -600, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -25,7 +25,7 @@ spawnerMulti:
         position:
           coords: [-100, -100, 0]
         dynamic:
-          velocity: [-200, -200, 0]
+          velocity: [-600, -600, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -35,7 +35,7 @@ spawnerMulti:
         position:
           coords: [-100, 100, 0]
         dynamic:
-          velocity: [-200, 200, 0]
+          velocity: [-600, 600, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -45,7 +45,7 @@ spawnerMulti:
         position:
           coords: [100, 0, 0]
         dynamic:
-          velocity: [300, 0, 0]
+          velocity: [900, 0, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -55,7 +55,7 @@ spawnerMulti:
         position:
           coords: [-100, 0, 0]
         dynamic:
-          velocity: [-300, 0, 0]
+          velocity: [-900, 0, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -65,7 +65,7 @@ spawnerMulti:
         position:
           coords: [0, -100, 0]
         dynamic:
-          velocity: [0, -300, 0]
+          velocity: [0, -900, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0
@@ -75,7 +75,7 @@ spawnerMulti:
         position:
           coords: [0, 100, 0]
         dynamic:
-          velocity: [0, 300, 0]
+          velocity: [0, 900, 0]
         # engine:
         #     # acceleration: 11
         #     maxSpeed:     450.0

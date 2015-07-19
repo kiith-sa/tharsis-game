@@ -163,8 +163,16 @@ private:
     // Batch used to draw UI elements that are drawn as triangles and redrawn every frame.
     VertexArray!Vertex uiBatch_;
 
-    // Size of a map cell on the screen (the 3rd coord maps world Z to screen Y).
-    enum cellSizeScreen_ = vec3u(96, 48, 24);
+    /* Size of a map cell on the screen at zoom 1.0 (the 3rd coord maps world Z to screen Y).
+     *
+     * By default, zoom is divided by scaleCorrection so the actual cell size
+     * is the vec3d value without the `* scaleCorrection` multiplication,
+     * or, vec3d(96, 48, 24).
+     */
+    enum cellSizeScreen_ = vec3d(cellSizeWorld.x / 8 * 3.0,
+                                 cellSizeWorld.y / 16 * 3.0,
+                                 cellSizeWorld.z / 16 * 3.0)
+                           * scaleCorrection;
 
     import tharsis.prof;
     // Profiler for the thread the RenderProcess runs in. Passed on every preProcess() and 
@@ -367,7 +375,7 @@ public:
             // vec3( 20, -20, -20), vec3(-20,  20, -20), vec3(-20, -20,  20),
             // vec3( 20,  20,  20), vec3(-20,  20, -20), vec3(-20, -20,  20),
             // vec3( 20,  20,  20), vec3( 20, -20, -20), vec3(-20,  20, -20),
-            vec3( 20,  20,  20), vec3( 20, -20, -20), vec3(-20, -20,  20)
+            vec3( 64,  64,  64), vec3( 64, -64, -64), vec3(-64, -64,  64)
         ];
 
         const pointsOnly = renderMode_ == RenderMode.Points;
@@ -392,7 +400,7 @@ public:
             entitiesBatch_.put(Vertex(v + pos, vis.color));
         }
         facingBatch_.put(Vertex(pos, rgb!"F0F080"));
-        facingBatch_.put(Vertex(pos + pos.facing * 50.0, rgb!"F0F080"));
+        facingBatch_.put(Vertex(pos + pos.facing * 192.0, rgb!"F0F080"));
     }
 
     /// Draw a selected entity.
@@ -418,8 +426,8 @@ public:
         // Transform to 2D space, but not screen space.
         vec2 coords = vec2(camera_.view * vec4(pos, 0));
         // Z is really far in front so it's in front of all depth-buffered draws.
-        selectionBatch_.put(Vertex(coords.x - 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
-        selectionBatch_.put(Vertex(coords.x + 32.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
+        selectionBatch_.put(Vertex(coords.x - 96.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
+        selectionBatch_.put(Vertex(coords.x + 96.0f, coords.y + 24.0f, 1000.0f, rgb!"00FF00"));
     }
 
     /// Draw all batched entities that have not yet been drawn.

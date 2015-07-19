@@ -13,6 +13,13 @@ import gfmod.opengl.matrixstack;
 import platform.inputdevice;
 
 
+/** Size of a cell in world space is 256*256*128 units.
+ *
+ * We need to zoom out by this value by default to ensure cell size 
+ * *on screen* is 96x48x24 pixels.
+ */
+enum scaleCorrection = 3.7834981;
+
 /** Controls the camera according to user input.
  *
  * Note that the camera should only be changed between frames, when Tharsis processes
@@ -159,7 +166,7 @@ private:
     // Center of the camera (the point the camera is looking at in 2D space).
     vec2 center_;
     // Zoom of the camera (higher is closer).
-    double zoom_ = 1.0f;
+    double zoom_ = 1.0f / scaleCorrection;
 
 public:
 @safe pure nothrow:
@@ -268,6 +275,7 @@ public:
     AABB projectionVolume() const 
     {
         const halfSize = (1.0 / zoom_) * vec2(width_ * 0.5f, height_ * 0.5f);
+
         return AABB(vec3(center_ - halfSize, -depthInFront_),
                     vec3(center_ + halfSize, depth_ - depthInFront_));
     }
