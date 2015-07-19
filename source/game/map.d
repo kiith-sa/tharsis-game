@@ -177,6 +177,50 @@ struct Tile
         this.triangleVertices = triangleVertices;
     }
 }
+
+/** Stores all tiles.
+ *
+ * Part of `Map` API through `alias this`.
+ */
+class TileStorage
+{
+private:
+    /** The set (or array, rather) of all tiles.
+     *
+     * Cells refer to tiles in this array by indices.
+     */
+    Array!Tile allTiles_;
+
+public:
+    /** Get a non-const reference to the tile array - to e.g. add new tiles.
+     *
+     * Note:
+     *
+     * *removing* any tiles is **unsafe** once any cells exist; if tiles
+     * are moved to different indices the cells will refer to different tiles;
+     * or even outside of the array.
+     */
+    ref Array!Tile editTileSet() @safe pure nothrow
+    {
+        return allTiles_;
+    }
+
+    /// Get a read-only range of all tiles.
+    auto allTiles() @trusted nothrow const
+    {
+        return allTiles_[].assumeWontThrow;
+    }
+
+    /// Get tile at specified index.
+    const(Tile) tile(uint idx) @trusted pure nothrow const @nogc
+    {
+        static const(Tile) impl(const(TileStorage) self, uint idx) @safe pure nothrow
+        {
+            return self.allTiles_[idx];
+        }
+        return (cast(const(Tile) function(const(TileStorage), uint)
+                    @safe pure nothrow @nogc)&impl)(this, idx);
+    }
 }
 
 /** Game map.
@@ -216,15 +260,16 @@ private:
     /// Cell commands to be executed on the next call to `applyCellCommands()`.
     Array!CellCommand commands_;
 
-    /** The set (or array, rather) of all tiles.
-     *
-     * Cells refer to tiles in this array by indices.
-     */
-    Array!Tile tileSet_;
     /// The game log.
     Logger log_;
 
 public:
+    // TODO: private once the alias this vs private issue is fixed 2015-07-15
+    // Tile storage and management.
+    TileStorage tileStorage_;
+
+    alias tileStorage_ this;
+
     /** Create a map with specified size
      *
      * Params:
@@ -239,6 +284,7 @@ public:
         cells_  = new CellState(width, height, layers);
         assert(width < ushort.max, "Map width can't be >65535 cells");
         assert(height < ushort.max, "Map height can't be >65535 cells");
+        tileStorage_ = new TileStorage();
         log_    = log;
         width_  = width;
         height_ = height;
@@ -249,30 +295,7 @@ public:
     ~this()
     {
         destroy(cells_);
-    }
-
-    /** Get a non-const reference to the tile array - to e.g. add new tiles.
-     *
-     * Note: 
-     *
-     * *removing* any tiles is **unsafe** once any cells exist; if tiles
-     * are moved to different indices the cells will refer to different tiles;
-     * or even outside of the array.
-     */
-    ref Array!Tile editTileSet() @safe pure nothrow
-    {
-        return tileSet_;
-    }
-
-    /// Get tile at specified index.
-    const(Tile) tile(uint idx) @trusted pure nothrow const @nogc 
-    {
-        static const(Tile) impl(const(Map) self, uint idx) @safe pure nothrow
-        {
-            return self.tileSet_[idx];
-        }
-        return (cast(const(Tile) function(const(Map), uint)
-                    @safe pure nothrow @nogc)&impl)(this, idx);
+        destroy(tileStorage_);
     }
 
     /// Width (number of columns) of the map.
@@ -320,7 +343,6 @@ public:
      *     // do something
      * }
      * --------------------
-     *
      */
     auto cellRange(vec3u min, vec3u max) @safe pure nothrow const //@nogc
     {
