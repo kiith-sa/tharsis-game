@@ -257,8 +257,8 @@ private:
 
     //TODO std.allocator 2015-07-06
     import std.container.array;
-    /// Cell commands to be executed on the next call to `applyCellCommands()`.
-    Array!CellCommand commands_;
+    /// Cell commands to be executed on the next call to `applyCommands()`.
+    Array!MapCommand commands_;
 
     /// The game log.
     Logger log_;
@@ -281,10 +281,10 @@ public:
      */
     this(Logger log, size_t width, size_t height, size_t layers) @safe pure nothrow
     {
-        cells_  = new CellState(width, height, layers);
         assert(width < ushort.max, "Map width can't be >65535 cells");
         assert(height < ushort.max, "Map height can't be >65535 cells");
         tileStorage_ = new TileStorage();
+        cells_       = new CellState(width, height, layers, tileStorage_, log);
         log_    = log;
         width_  = width;
         height_ = height;
@@ -351,7 +351,7 @@ public:
 
     /** Add a cell command to set cell at specified coordinates.
      *
-     * `applyCellCommands` must be called to apply this command.
+     * `applyCommands` must be called to apply this command.
      *
      * Note:
      *
@@ -365,19 +365,25 @@ public:
      * layer  = Layer of the cell to set.
      * cell   = Cell data to set.
      */
-    void cellCommandSet(size_t column, size_t row, size_t layer, Cell cell)
+    void commandSet(uint column, uint row, uint layer, Cell cell)
         @trusted nothrow
     {
         assert(column < width_, "cell column out of range");
         assert(row < height_, "cell row out of range");
         assert(layer < layers_, "cell layer out of range");
-        commands_.insert(CellCommand(column, row, layer, CellType.Cell, cell)).assumeWontThrow;
+        commands_.insert(MapCommand(MapCommand.Type.SetCell, column, row, layer, cell))
+                 .assumeWontThrow;
+    }
+
+    void commandSet(vec3u coords, Cell cell) @safe nothrow
+    {
+        commandSet(coords.x, coords.y, coords.z, cell);
     }
 
     /** Add a cell command to delete cell at specified coordinates. Will do nothing if
      * ther is no cell.
      *
-     * `applyCellCommands` must be called to apply this command.
+     * `applyCommands` must be called to apply this command.
      *
      * Note:
      *
@@ -390,13 +396,19 @@ public:
      * row    = Row of the cell to set.
      * layer  = Layer of the cell to set.
      */
-    void cellCommandClear(size_t column, size_t row, size_t layer)
+    void commandClear(uint column, uint row, uint layer)
         @trusted nothrow
     {
         assert(column < width_, "cell column out of range");
         assert(row < height_, "cell row out of range");
         assert(layer < layers_, "cell layer out of range");
-        commands_.insert(CellCommand(column, row, layer, CellType.Empty)).assumeWontThrow;
+        commands_.insert(MapCommand(MapCommand.Type.ClearCell, column, row, layer))
+                 .assumeWontThrow;
+    }
+
+    void commandClear(vec3u coords) @safe nothrow
+    {
+        commandClear(coords.x, coords.y, coords.z);
     }
 
     /** Apply (and delete) all queued cell commands.
@@ -408,7 +420,7 @@ public:
      * This code is not synchronized; make sure no cell commands are being called from
      * another thread.
      */
-    void applyCellCommands()
+    void applyCommands()
         @trusted nothrow
     {
         ()
@@ -512,14 +524,14 @@ void generatePlainMap(Map map)
             const ubyte green = cast(ubyte)((cast(float)y / map.height_) * 255.0);
             const ubyte blue = 255;
             const ubyte alpha = 255;
-            map.cellCommandSet(x, y, 0, Cell(flatTileIdx));
+            map.commandSet(x, y, 0, Cell(flatTileIdx));
             // Just to have some layering
             if((x % 16 == 0) && (y % 16 == 0))
             {
-                map.cellCommandSet(x, y, 1, Cell(flatTileIdx));
+                map.commandSet(x, y, 1, Cell(flatTileIdx));
             }
         }
-        map.applyCellCommands();
+        map.applyCommands();
     }
 }
 unittest
@@ -534,22 +546,35 @@ unittest
 
 private:
 
-/** A cell command. These are added by `cellCommandXXX` methods of `Map`, and then
- * executed together by `Map.applyCellCommands.`
+/** A cell command. These are added by `commandXXX` methods of `Map`, and then
+ * executed together by `Map.applyCommands.`
  */
-struct CellCommand
+struct MapCommand
 {
+    /// Command types.
+    enum Type: ubyte
+    {
+        /// Set a cell at specified coordinates.
+        SetCell,
+        /// Delete cell at specified coordinates.
+        ClearCell,
+        /// Raise terrain at specified coordinates.
+        RaiseTerrain
+    }
+    /// Type of the command.
+    Type type;
     /// Column of the affected cell.
-    size_t column;
+    uint column;
     /// Row of the affected cell.
-    size_t row;
+    uint row;
     /// Layer of the affected cell.
-    size_t layer;
-    /// Cell type the cell should be after applying the command
-    /// (`CellType.Empty to delete the cell`)
-    CellType type;
-    /// Cell data if `type == CellType.Cell`.
-    Cell cell;
+    uint layer;
+
+    union
+    {
+        /// Cell data if `type == CellType.Cell`.
+        Cell cell;
+    }
 }
 
 
@@ -868,14 +893,17 @@ public:
         }
     }
 
-    /// Apply specified CellCommand.
-    void command(ref const CellCommand cmd) @trusted nothrow
+    /// Apply specified MapCommand.
+    void command(ref const MapCommand cmd) @trusted nothrow
     {
         auto layer = layers_[cmd.layer];
-        final switch(cmd.type)
+        final switch(cmd.type) with(MapCommand.Type)
         {
-            case CellType.Empty: layer.deleteCell(cmd.column, cmd.row); break;
-            case CellType.Cell:  layer.setCell(cmd.column, cmd.row, cmd.cell); break;
+            case ClearCell:    layer.deleteCell(cmd.column, cmd.row);        break;
+            case SetCell:      layer.setCell(cmd.column, cmd.row, cmd.cell); break;
+            case RaiseTerrain: raiseTerrain(cmd.column, cmd.row, cmd.layer); break;
+        }
+    }
         }
     }
 }

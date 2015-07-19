@@ -478,6 +478,7 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     auto map = scoped!Map(log, 256, 256, 32);
 
     map.generatePlainMap();
+    map.applyCommands();
     
     auto entitySystem = EntitySystem(video, 
                                      input,
