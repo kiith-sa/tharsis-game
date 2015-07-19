@@ -178,7 +178,6 @@ private:
     // Profiler for the thread the RenderProcess runs in. Passed on every preProcess() and 
     // must not be use outside process(), preProcess() and postProcess().
     Profiler threadProfiler_;
-
 public:
     /** Construct a RenderProcess.
      *
@@ -315,14 +314,14 @@ public:
         foreach(cell; map_.cellRange(vec3u(minColumn, minRow, 0), 
                                      vec3u(maxColumn, maxRow, uint.max)))
         {
-            size_t fillVerticesToAdd = 6;
-            size_t lineVerticesToAdd = 8;
+            const lineVerts = map_.tile(cell.tileIndex).lineVertices;
+            const triVerts  = map_.tile(cell.tileIndex).triangleVertices;
 
-            if(cellFillBatch_.capacity - cellFillBatch_.length < fillVerticesToAdd)
+            if(cellFillBatch_.capacity - cellFillBatch_.length < lineVerts.length)
             {
                 drawBatch(cellFillBatch_, PrimitiveType.Triangles); 
             }
-            if(cellLineBatch_.capacity - cellLineBatch_.length < lineVerticesToAdd)
+            if(cellLineBatch_.capacity - cellLineBatch_.length < triVerts.length)
             {
                 drawBatch(cellLineBatch_, PrimitiveType.Lines); 
             }
@@ -337,11 +336,11 @@ public:
             {
                 return Vertex(v.position + cellPos, v.color);
             }
-            foreach(ref const(MapVertex) v; map_.tile(cell.tileIndex).lineVertices)
+            foreach(ref const(MapVertex) v; lineVerts)
             {
                 cellLineBatch_.put(positionMapVertex(v));
             }
-            foreach(ref const(MapVertex) v; map_.tile(cell.tileIndex).triangleVertices)
+            foreach(ref const(MapVertex) v; triVerts)
             {
                 cellFillBatch_.put(positionMapVertex(v));
             }
