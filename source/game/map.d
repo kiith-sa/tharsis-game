@@ -682,7 +682,7 @@ public:
      *
      * Does nothing if there is no cell at given coordinates.
      */
-    void deleteCell(size_t x, size_t y) @system nothrow //pure @nogc
+    void deleteCell(uint x, uint y) @system nothrow //pure @nogc
     {
         (){
         if(cellTypes_[x][y] != CellType.Empty)
@@ -714,7 +714,7 @@ public:
      * y    = Row of the cell.
      * cell = Cell data to set.
      */
-    void setCell(size_t x, size_t y, ref const Cell cell) @system nothrow //pure @nogc
+    void setCell(uint x, uint y, Cell cell) @system nothrow //pure @nogc
     {
         (){
         CellRow* row = &(rows_[y]);
@@ -944,15 +944,15 @@ private:
     uint maxLayer_ = uint.max;
 
     /// Current cell layer.
-    size_t layer_ = 0;
+    uint layer_ = 0;
     /// Current cell row.
-    size_t row_ = 0;
+    uint row_ = 0;
     /** Index of the current cell in current row.
     *
-    * `size_t.max` at the beginning, incremented in each `nextCell` call, which
+    * `uint.max` at the beginning, incremented in each `nextCell` call, which
     * changes it to 0 in constructor.
     */
-    size_t rowIdx_ = size_t.max;
+    uint rowIdx_ = uint.max;
     /// Reference to cell state (containing all layers).
     const(CellState) map_;
 
@@ -964,11 +964,11 @@ public:
     struct CellWithCoords
     {
         /// Column the cell is on.
-        size_t column;
+        uint column;
         /// Row containing the cell.
-        size_t row;
+        uint row;
         /// Layer containing the cell.
-        size_t layer;
+        uint layer;
 
         /// Cell itself.
         Cell cell;
