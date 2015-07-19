@@ -478,6 +478,33 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     auto map = scoped!Map(log, 256, 256, 32);
 
     map.generatePlainMap();
+
+    map.commandRaiseTerrain(7, 25, 0);
+    map.commandRaiseTerrain(7, 23, 0);
+
+
+    map.commandRaiseTerrain(7, 14, 0);
+    // map.commandRaiseTerrain(9, 14, 0);
+
+    // map.commandRaiseTerrain(7, 15, 0);
+    // map.commandRaiseTerrain(7, 13, 0);
+    // map.commandRaiseTerrain(6, 13, 0);
+    // map.commandRaiseTerrain(6, 15, 0);
+    // map.commandRaiseTerrain(8, 15, 0);
+    // map.commandRaiseTerrain(7, 12, 0);
+    // map.commandRaiseTerrain(6, 14, 0);
+    // map.commandRaiseTerrain(7, 16, 0);
+    // map.commandRaiseTerrain(8, 14, 0);
+
+    map.commandRaiseTerrain(7, 14, 1);
+    map.commandRaiseTerrain(7, 14, 2);
+    map.commandRaiseTerrain(7, 14, 3);
+
+    map.commandRaiseTerrain(12, 14, 0);
+    map.commandRaiseTerrain(12, 14, 1);
+    map.commandRaiseTerrain(12, 14, 2);
+    map.commandRaiseTerrain(12, 14, 3);
+    map.commandRaiseTerrain(12, 14, 4);
     map.applyCommands();
     
     auto entitySystem = EntitySystem(video, 
