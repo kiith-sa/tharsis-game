@@ -12,6 +12,7 @@ import std.experimental.logger;
 import tharsis.prof;
 
 import game.camera;
+import game.map;
 import entity.entitysystem;
 import entity.schedulingalgorithmtype;
 import platform.inputdevice;
@@ -20,13 +21,15 @@ import time.gametime;
 
 // TODO: Refactor into a 'Game' class with all parameters as data members. Game subsystems
 //       will be constructed before Game and passed as ctor params (maybe a 'Subsystems'
-//       struct? instead of being constructed in the Game ctor. 2014-08-21
+//       struct? instead of being constructed in the Game ctor. 
+//       2014-08-21
 
 /** Main event loop of the game.
  *
  * Params:
  *
  * entitySystem    = EntitySystem holding all the Processes in the game.
+ * map             = Map used for the game.
  * videoDevice     = The video device used for graphics and windowing operations.
  *                   May be null if we're running headless.
  * inputDevice     = Device used for user input.
@@ -36,6 +39,7 @@ import time.gametime;
  * log             = Log to write... log messages to.
  */
 bool mainLoop(ref EntitySystem entitySystem,
+              Map map,
               VideoDevice video,
               InputDevice input,
               GameTime time,
@@ -71,6 +75,7 @@ bool mainLoop(ref EntitySystem entitySystem,
             }
 
             entitySystem.frame();
+            map.applyCommands();
         }
 
         time.finishedUpdate();

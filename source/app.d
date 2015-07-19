@@ -488,7 +488,7 @@ int runGame(VideoDevice video, InputDevice input, GameTime gameTime,
     scope(failure) { log.critical("Unexpected failure in the main loop"); }
 
     // Run the game itself.
-    try if(!mainLoop(entitySystem, video, input, gameTime, cameraControl, profilers, log))
+    try if(!mainLoop(entitySystem, map, video, input, gameTime, cameraControl, profilers, log))
     {
         log.critical("Main loop exited with error");
         return 1;
