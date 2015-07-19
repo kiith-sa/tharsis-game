@@ -124,29 +124,59 @@ Tuple!(Direction, Direction) partDirs(Direction dir) @safe pure nothrow @nogc
  * Tiles are referred to cells; a tile specifies the shape and graphics of
  * all cells referring to the tile.
  */
-struct Tile 
+struct Tile
 {
-    /// Height of the cell surface at its northern corner.
-    ubyte heightN = 0;
-    /// Height of the cell surface at its eastern corner.
-    ubyte heightE = 0;
-    /// Height of the cell surface at its southern corner.
-    ubyte heightS = 0;
-    /// Height of the cell surface at its western corner.
-    ubyte heightW = 0;
+    union
+    {
+        struct 
+        {
+            /// Height of the cell surface at its northern corner.
+            ushort heightN;
+            /// Height of the cell surface at its eastern corner.
+            ushort heightE;
+            /// Height of the cell surface at its southern corner.
+            ushort heightS;
+            /// Height of the cell surface at its western corner.
+            ushort heightW;
+        }
+        ushort[4] heights;
+    }
 
     // TODO: std.allocator 2015-07-11
     /** Vertices of the tile's graphics representation that will be drawn as lines.
      *
      * Vertices 0 and 1 will form the first line, vertices 2 and 3 the second line, etc.
      */
-    MapVertex[] lineVertices;
+    const(MapVertex)[] lineVertices;
     /** Vertices of the tile's graphics representation that will be drawn as triangles.
      *
      * Vertices 0, 1 and 2 will form the first triangle, vertices 3, 4 and 5 the second
      * triangle, etc.
      */
-    MapVertex[] triangleVertices;
+    const(MapVertex)[] triangleVertices;
+
+    /** Tile constructor.
+     *
+     * Params:
+     *
+     * heightN          = Height of the tile at its northern corner.
+     * heightE          = Height of the tile at its eastern corner.
+     * heightS          = Height of the tile at its southern corner.
+     * heightW          = Height of the tile at its western corner.
+     * lineVertices     = Vertices to draw as lines when drawing the tile.
+     * triangleVertices = Vertices to draw as triangles when drawing the tile.
+     */
+    this(ushort heightN, ushort heightE, ushort heightS, ushort heightW,
+         const(MapVertex)[] lineVertices, const(MapVertex)[] triangleVertices) @safe pure nothrow @nogc
+    {
+        this.heightN = heightN;
+        this.heightE = heightE;
+        this.heightS = heightS;
+        this.heightW = heightW;
+        this.lineVertices     = lineVertices;
+        this.triangleVertices = triangleVertices;
+    }
+}
 }
 
 /** Game map.
