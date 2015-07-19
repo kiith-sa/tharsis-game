@@ -58,14 +58,9 @@ struct Cell
     uint tileIndex = uint.max;
 }
 
-/** Tile type enum.
  *
- * Separating tiles into types will be useful for map editing and terrain 
- * deformation, to allow us to select the type of tile to use.
  */
-enum TileType: ushort
 {
-    Flat,
 }
 
 /** A tile.
@@ -75,8 +70,6 @@ enum TileType: ushort
  */
 struct Tile 
 {
-    /// Type of this tile (e.g. flat, north-west slope, etc).
-    TileType type;
     /// Height of the cell surface at its northern corner.
     ubyte heightN = 0;
     /// Height of the cell surface at its eastern corner.
@@ -351,28 +344,61 @@ void generatePlainMap(Map map)
     const bluish = rgb!"B0B0F0";
     const xMax = cellSizeWorld.x;
     const yMax = cellSizeWorld.y;
-    // TODO: These arrays will be allocated with Map's own Allocator instance
-    // 2015-07-11
-    auto flat = Tile(TileType.Flat, 0, 0, 0, 0,
-                     [MapVertex(vec3(0,    0,    0), white),
-                      MapVertex(vec3(0,    yMax, 0), white),
-                      MapVertex(vec3(xMax, 0,    0), white),
-                      MapVertex(vec3(xMax, yMax, 0), white),
-                      MapVertex(vec3(0,    0,    0), white),
-                      MapVertex(vec3(xMax, 0,    0), white),
-                      MapVertex(vec3(0,    yMax, 0), white),
-                      MapVertex(vec3(xMax, yMax, 0), white)],
-                     [MapVertex(vec3(0,    0,    0), bluish),
-                      MapVertex(vec3(xMax, 0,    0), bluish),
-                      MapVertex(vec3(0,    yMax, 0), bluish),
-                      MapVertex(vec3(0,    yMax, 0), bluish),
-                      MapVertex(vec3(xMax, 0,    0), bluish),
-                      MapVertex(vec3(xMax, yMax, 0), bluish)]);
-    const flatTileIdx = 0;
-    map.editTileSet.insert(flat).assumeWontThrow;
-    foreach(x; 0 .. map.width_)
+
+    Tile generateTile(uint hN, uint hE, uint hS, uint hW)
     {
-        foreach(y; 0 .. map.height_)
+        const white  = rgb!"FFFFFF";
+        const bluish = rgb!"B0B0F0";
+        const xMax = cellSizeWorld.x;
+        const yMax = cellSizeWorld.y;
+        //XXX try to replace cellSizeWorld with cellSizeDiscrete completely
+        const zMult = cellSizeWorld.z / cellSizeDiscrete.z;
+
+        // TODO: These arrays will be allocated with Map's own Allocator instance
+        // 2015-07-11
+        return Tile(cast(ushort)hN, cast(ushort)hE, cast(ushort)hS, cast(ushort)hW,
+                    [MapVertex(vec3(0,    0,    hW * zMult), white),
+                     MapVertex(vec3(0,    yMax, hN * zMult), white),
+                     MapVertex(vec3(xMax, 0,    hS * zMult), white),
+                     MapVertex(vec3(xMax, yMax, hE * zMult), white),
+                     MapVertex(vec3(0,    0,    hW * zMult), white),
+                     MapVertex(vec3(xMax, 0,    hS * zMult), white),
+                     MapVertex(vec3(0,    yMax, hN * zMult), white),
+                     MapVertex(vec3(xMax, yMax, hE * zMult), white)],
+                    [MapVertex(vec3(0,    0,    hW * zMult), bluish),
+                     MapVertex(vec3(xMax, 0,    hS * zMult), bluish),
+                     MapVertex(vec3(0,    yMax, hN * zMult), bluish),
+                     MapVertex(vec3(0,    yMax, hN * zMult), bluish),
+                     MapVertex(vec3(xMax, 0,    hS * zMult), bluish),
+                     MapVertex(vec3(xMax, yMax, hE * zMult), bluish)]);
+    }
+
+
+    // flat
+    map.editTileSet.insert(generateTile(0,   0,   0,   0  )).assumeWontThrow;
+    const flatTileIdx = 0;
+    // NW/NE/SE/SW slopes
+    map.editTileSet.insert(generateTile(0,   127, 127, 0  )).assumeWontThrow;
+    map.editTileSet.insert(generateTile(0,   0,   127, 127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 0,   0,   127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 127,   0,   0)).assumeWontThrow;
+    // N/E/S/W slopes (both the 'top' and 'bottom' versions)
+    map.editTileSet.insert(generateTile(0,   0,   127, 0  )).assumeWontThrow;
+    map.editTileSet.insert(generateTile(0,   127, 127, 127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(0,   0,   0,   127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 0,   127, 127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 0,   0,   0  )).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 127, 0,   127)).assumeWontThrow;
+    map.editTileSet.insert(generateTile(0,   127, 0,   0  )).assumeWontThrow;
+    map.editTileSet.insert(generateTile(127, 127, 127, 0  )).assumeWontThrow;
+    // "Tents" with opposing corners raised
+    map.editTileSet.insert(generateTile(127, 0,   127, 0  )).assumeWontThrow;
+    map.editTileSet.insert(generateTile(0,   127, 0,   127)).assumeWontThrow;
+
+
+    foreach(uint x; 0 .. cast(uint)map.width_)
+    {
+        foreach(uint y; 0 .. cast(uint)map.height_)
         {
             const ubyte red = cast(ubyte)((cast(float)x / map.width_) * 255.0);
             const ubyte green = cast(ubyte)((cast(float)y / map.height_) * 255.0);
@@ -380,14 +406,13 @@ void generatePlainMap(Map map)
             const ubyte alpha = 255;
             map.cellCommandSet(x, y, 0, Cell(flatTileIdx));
             // Just to have some layering
-            if((x % 4 == 0) && (y % 4 == 0))
+            if((x % 16 == 0) && (y % 16 == 0))
             {
                 map.cellCommandSet(x, y, 1, Cell(flatTileIdx));
             }
         }
         map.applyCellCommands();
     }
-
 }
 unittest
 {
