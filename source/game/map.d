@@ -513,10 +513,6 @@ public:
     ~this()
     {
         foreach(ref row; rows_) { destroy(row.cells); }
-        GC.free(rows_.ptr);
-
-        foreach(col; cellTypes_) { GC.free(col.ptr); }
-        GC.free(cellTypes_.ptr);
     }
 
     /** Delete cell at specified coordinates, if any.
@@ -629,8 +625,10 @@ public:
     /// Destroy CellState, deallocating memory.
     ~this()
     {
-        foreach(layer; layers_) { destroy(layer); }
-        GC.free(layers_.ptr);
+        foreach(layer; layers_)
+        {
+            destroy(layer);
+        }
     }
 
     /** Get a range of cells in the map in specified column/row/layer interval.
