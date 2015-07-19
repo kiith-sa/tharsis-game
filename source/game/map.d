@@ -349,6 +349,37 @@ public:
         return cells_.cellRange(min, max);
     }
 
+    /** Raise terrain at specified coordinates.
+     *
+     * Replaces cell at specified coordinates with a cell on a higher layer; then
+     * connects to cells around the new cell and creates a foundation for the
+     * cell (a 'hill') if needed.
+     *
+     * If no cell is found at specified coordinates, or if `layer` is already
+     * the top layer, does nothing.
+     *
+     * Params:
+     *
+     * column = Column of the cell to raise.
+     * row    = Row of the cell to raise.
+     * layer  = Layer of the cell to raise.
+     */
+    void commandRaiseTerrain(uint column, uint row, uint layer)
+        @trusted nothrow
+    {
+        assert(column < width_, "cell column out of range");
+        assert(row    < height_, "cell row out of range");
+        assert(layer  < layers_, "cell layer out of range");
+        // Can't raise terrain that is already at the top layer
+        if(layer >= layers_ - 1)
+        {
+            return;
+        }
+
+        commands_.insert(MapCommand(MapCommand.Type.RaiseTerrain, column, row, layer))
+                 .assumeWontThrow;
+    }
+
     /** Add a cell command to set cell at specified coordinates.
      *
      * `applyCommands` must be called to apply this command.
@@ -447,6 +478,9 @@ public:
 
 /// Size of a map cell in world space.
 enum cellSizeWorld  = vec3d(67.882251, 67.882251, 33.9411255);
+
+/// Size of a map cell in world space.
+enum cellSizeDiscrete  = vec3u(255, 255, 127);
 
 /** Generate a plain map for testing.
  *
@@ -1003,6 +1037,231 @@ public:
             case RaiseTerrain: raiseTerrain(cmd.column, cmd.row, cmd.layer); break;
         }
     }
+
+    /** Implementation of the RaiseTerrain command.
+     *
+     * Replaces cell at specified coordinates with a cell on a higher layer; then
+     * connects to cells around the new cell and creates a foundation for the
+     * cell (a 'hill') if needed.
+     *
+     * If no cell is found at specified coordinates, or if `layer` is already
+     * the top layer, does nothing.
+     *
+     * Params:
+     *
+     * column = Column of the cell to raise.
+     * row    = Row of the cell to raise.
+     * layer  = Layer of the cell to raise.
+     */
+    void raiseTerrain(uint column, uint row, uint layer) @system nothrow
+    {
+        //////////////////////////////
+        /// Nested functions first ///
+        //////////////////////////////
+        enum layerZ = cellSizeDiscrete.z;
+        /* Create a cell with specified heights at specified coordinates.
+         * Replaces any previously existing cell at specified coords.
+         *
+         * Params:
+         *
+         * heightN = Height the cell should have at its northern edge.
+         * heightE = Height the cell should have at its eastern edge.
+         * heightS = Height the cell should have at its southern edge.
+         * heightW = Height the cell should have at its western edge.
+         * coords  = column, row and layer to create the cell at.
+         */
+        void makeCell(uint heightN, uint heightE, uint heightS, uint heightW,
+                      const vec3u coords) nothrow
+        {
+            if(min(heightN, heightE, heightS, heightW) >= layerZ)
+            {
+                layers_[coords.z].deleteCell(coords.x, coords.y);
+                makeCell(heightN - layerZ, heightE - layerZ, heightS - layerZ, heightW - layerZ,
+                        coords + vec3u(0, 0, 1));
+                // Make a connection on above layer, and delete any cells below it.
+                return;
+            }
+
+            // TODO: use matching terrain type instead of just first tile with matching
+            //       heights (the terrain type will also refer to a fallback terrain
+            //       type where we can look for tiles if not found in the terrain type)
+            //       2015-07-13
+
+            // Find a tile with matching heights, and set the cell to that tile.
+            // This 'connects' the raised tile to terrain around it.
+            const tileIdx =
+                tileStorage_.allTiles.countUntil!
+                (t => t.heightN == heightN && t.heightE == heightE && 
+                      t.heightS == heightS && t.heightW == heightW).assumeWontThrow;
+            if(tileIdx < 0)
+            {
+                log_.warningf("Failed to makeCell when raising terrain: "
+                              "found no tile with heights %s %s %s %s",
+                              heightS, heightN, heightE, heightW).assumeWontThrow;
+                return;
+            }
+            layers_[coords.z].setCell(coords.x, coords.y, Cell(cast(uint)tileIdx));
+        }
+
+        // Call raiseTerrain on the cell (if any) below specified coordinates
+        void raiseBelow(vec3u coords) nothrow
+        {
+            raiseTerrain(coords.x, coords.y, coords.z - 1);
+        }
+
+        /* Connect to a neighbor at specified coordinates.
+         *
+         * The neighbor may be on the layer the cell was raised to (top) or the
+         * layer it was raised from (bottom).
+         *
+         * Params:
+         *
+         * direction = Direction of the neighbor from the raised cell.
+         * tile      = Tile on the neighboring cell.
+         * base      = Height of the raised cell (from the point of view of
+         *             the layer specified by `coords.z`)
+         * coords    = column, row and layer of the neigbor.
+         */
+        void connectNeighbor(Direction dir, Tile tile, uint base, vec3u coords) nothrow
+        {
+            const heightN = tile.heightN; const heightE = tile.heightE;
+            const heightS = tile.heightS; const heightW = tile.heightW;
+            final switch(dir) with(Direction)
+            {
+                case N:  makeCell(heightN, heightE, base, heightW, coords); break;
+                case E:  makeCell(heightN, heightE, heightS, base, coords); break;
+                case S:  makeCell(base, heightE, heightS, heightW, coords); break;
+                case W:  makeCell(heightN, base, heightS, heightW, coords); break;
+                case NE: makeCell(heightN, heightE, base, base, coords);    break;
+                case SE: makeCell(base, heightE, heightS, base, coords);    break;
+                case SW: makeCell(base, base, heightS, heightW, coords);    break;
+                case NW: makeCell(heightN, base, base, heightW, coords);    break;
+            }
+        }
+
+        bool tile(out Tile outTile, vec3u coords) @safe nothrow // @nogc
+        {
+            Cell cell;
+            if(this.cell(cell, coords))
+            {
+                outTile = tileStorage_.tile(cell.tileIndex);
+                return true;
+            }
+            return false;
+        }
+
+        //////////////////////////////////
+        /// Actual raiseTerrain() code ///
+        //////////////////////////////////
+
+        log_.infof("raiseTerrain() %s %s %s", column, row, layer).assumeWontThrow;
+        // Handled by Map.commandRaiseTerrain()
+        assert(layer < layers_.length - 1, "Can't raise terrain from the top layer");
+
+        Cell center;
+        // If no cell at specified coords, ignore
+        if(!cell(center, column, row, layer))
+        {
+            return;
+        }
+
+        // TODO: instead of using the first flat tile, we should use a flat tile
+        //       of the same terrain type as the tile on the cell being raised.
+        //       I.e. TODO TerrainType (group of tiles for same type of terrain) first.
+        //       2015-07-13
+        // For now, we just find the first flat tile and use it for the raised terrain.
+        const flatTileIdx =
+            tileStorage_.allTiles.countUntil!
+            (t => t.heightN == 0 && t.heightE == 0 && t.heightS == 0 && t.heightW == 0)
+            .assumeWontThrow;
+        if(flatTileIdx < 0)
+        {
+            log_.warning("Failed to raise terrain: No flat tile loaded.").assumeWontThrow;
+            return;
+        }
+        layers_[layer + 1].setCell(column, row, Cell(cast(uint)flatTileIdx));
+        // Delete the original cell that was raised
+        layers_[layer].deleteCell(column, row);
+
+
+        //T: top, B: bottom
+        bool[8] done;
+        vec3u[8] coordsT;
+        vec3u[8] coordsB;
+        Tile[8] tileT;
+        Tile[8] tileB;
+        bool[8] gotT;
+        bool[8] gotB;
+
+        import std.traits: EnumMembers;
+        foreach(dir; EnumMembers!Direction)
+        {
+            mixin(q{ coordsT[dir] = this.%s(column, row, layer + 1); }.format(dir));
+            mixin(q{ coordsB[dir] = this.%s(column, row, layer); }.format(dir));
+            gotT[dir] = tile(tileT[dir], coordsT[dir]);
+            gotB[dir] = tile(tileB[dir], coordsB[dir]);
+        }
+
+        // First try to connect to cells (e.g. hills) at the level of the raised cell.
+        foreach(dir; EnumMembers!Direction) if(gotT[dir])
+        {
+            connectNeighbor(dir, tileT[dir], 0, coordsT[dir]); 
+            done[dir] = true; 
+        }
+        // The NE/SE/SW/NW directions have special cases where there is no 'top'
+        // cell to connect with, and while there is a bottom cell, there is also
+        // a neighboring top N/E/S/W cell which we need to connect to as well;
+        // so we connect both the bottom e.g. NE cell and the top e.g. N cell.
+        foreach(dir; diagonalDirections) if(!done[dir] && gotB[dir])
+        {
+            enum aDir = dir.partDirs[0];
+            enum bDir = dir.partDirs[1];
+            if(gotT[aDir] && gotT[bDir])
+            {
+                raiseBelow(coordsT[dir]);
+                done[dir] = true;
+            }
+            // connect raised tile with dir and aDir from below
+            else if(gotT[aDir])
+            {
+                makeCell(dir.hasN ? layerZ + tileT[aDir].heights[bDir] : layerZ,
+                         dir.hasE ? tileB[dir].heights[bDir]           : layerZ,
+                         dir.hasS ? layerZ + tileT[aDir].heights[bDir] : layerZ,
+                         dir.hasW ? tileB[dir].heights[bDir]           : layerZ,
+                         coordsT[dir] - vec3u(0, 0, 1));
+                done[dir] = true;
+            }
+            // connect raised tile with dir and bDir from below
+            else if(gotT[bDir])
+            {
+                makeCell(dir.hasN ? tileB[dir].heights[aDir]           : layerZ,
+                         dir.hasE ? layerZ + tileT[bDir].heights[aDir] : layerZ,
+                         dir.hasS ? tileB[dir].heights[aDir]           : layerZ,
+                         dir.hasW ? layerZ + tileT[bDir].heights[aDir] : layerZ,
+                         coordsT[dir] - vec3u(0, 0, 1));
+                done[dir] = true;
+            }
+        }
+
+        // Raise the foundation for our raised cell if there is no foundation
+        if(layer > 0) 
+        {
+            foreach(dir; EnumMembers!Direction) if(!done[dir] && !gotB[dir]) 
+            {
+                raiseBelow(coordsB[dir]);
+                gotB[dir]  = tile(tileB[dir],  coordsB[dir]);
+            }
+        }
+
+        // Try to connect based on cells from the layer the cell was raised *from*
+
+        // Note that if all heights are >= layerZ the connection will be made on
+        // the layer above coordsN with heights subtracted by layerZ; the cell
+        // is on the layer reached by the lowest point of the volume of its tile.
+        foreach(dir; EnumMembers!Direction) if(!done[dir] && gotB[dir])
+        {
+            connectNeighbor(dir, tileB[dir], layerZ, coordsB[dir]);
+            done[dir] = true;
         }
     }
 }
