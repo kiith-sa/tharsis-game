@@ -58,9 +58,65 @@ struct Cell
     uint tileIndex = uint.max;
 }
 
- *
- */
+
+/// Directions on the map, used to identify neighboring cells.
+enum Direction: ubyte
 {
+    N = 0,
+    E = 1,
+    S = 2,
+    W = 3,
+    NE = 4,
+    SE = 5,
+    SW = 6,
+    NW = 7
+}
+import std.typetuple;
+/// Diagonal directions.
+alias diagonalDirections = 
+    TypeTuple!(Direction.NE, Direction.SE, Direction.SW, Direction.NW);
+
+/// Does the given direction have an 'N' part? (N, NE and NW).
+int hasN(Direction dir) @safe pure nothrow @nogc 
+{
+    with(Direction) { return dir == N || dir == NE || dir == NW; }
+}
+
+/// Does the given direction have an 'E' part? (E, NE and SE).
+int hasE(Direction dir) @safe pure nothrow @nogc 
+{
+    with(Direction) { return dir == E || dir == NE || dir == SE; }
+}
+
+/// Does the given direction have an 'S' part? (S, SE and SW).
+int hasS(Direction dir) @safe pure nothrow @nogc 
+{
+    with(Direction) { return dir == S || dir == SE || dir == SW; }
+}
+
+/// Does the given direction have an 'W' part? (W, NW and SW).
+int hasW(Direction dir) @safe pure nothrow @nogc 
+{
+    with(Direction) { return dir == W || dir == NW || dir == SW; }
+}
+
+import std.typecons: Tuple, tuple;
+/** Get the 'partial directions' of a diagonal direction, e.g. N and W for NW.
+ *
+ * Params:
+ *
+ * dir = Direction to get parts of. Must be NE, SE, SW or NW.
+ */
+Tuple!(Direction, Direction) partDirs(Direction dir) @safe pure nothrow @nogc 
+{
+    switch(dir) with(Direction)
+    {
+        case NE: return tuple(N, E);
+        case SE: return tuple(S, E);
+        case SW: return tuple(S, W);
+        case NW: return tuple(N, W);
+        default: assert(false, "Trying to get parts of a non-diagonal direction");
+    }
 }
 
 /** A tile.
