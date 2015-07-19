@@ -9,6 +9,7 @@ module entity.renderprocess;
 import std.exception;
 import std.experimental.logger;
 import std.typecons;
+import std.stdio;
 
 import derelict.opengl3.gl3;
 
@@ -297,10 +298,10 @@ public:
         // How many rows below the screen we need to draw to ensure all cells
         // even on the highest layer are visible.
         const layerSpace = map_.layers * (cast(float)cellSizeScreen_.z / cellSizeScreen_.y);
-        const halfY = cellSizeScreen_.y / 2;
+        const halfY = cellSizeScreen_.y / 2.0;
         // Cells in rows below the screen on high layers might be visible on screen.
-        const minRow = index(cameraVolume.min.y / halfY - layerSpace - 1);
-        const maxRow = index(cameraVolume.max.y / halfY + 2);
+        const minRow = index(cast(int)cameraVolume.min.y / halfY - layerSpace - 1);
+        const maxRow = index(cast(int)cameraVolume.max.y / halfY + 2);
 
         // Draw map cells.
         foreach(cell; map_.cellRange(vec3u(minColumn, minRow, 0), 
