@@ -851,7 +851,7 @@ public:
     void popFront() @trusted pure nothrow //@nogc
     {
         assert(!empty, "Can't pop front of an empty range");
-        // Move to the next cell, and check if it's in the interval and if it 
+        // Move to the next cell, and check if it's in the interval and if it
         // exists at all. If not, skip any cells/rows/layers to get to the next
         // cell in the interval.
         ++rowIdx_;
@@ -911,7 +911,7 @@ private:
      */
     void getToCell() @safe pure nothrow
     {
-        // If we don't have a cell in the interval after skipping cells before the 
+        // If we don't have a cell in the interval after skipping cells before the
         // interval (and possibly processing some cells in the interval), there are
         // no more cells in the interval so we need to move to the next row.
         while(!haveCell())
