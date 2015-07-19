@@ -826,6 +826,45 @@ public:
         return CellRange(this);
     }
 
+
+    /** Write cell at specified coordinates to `outCell`, or return false if no cell
+     * exists at specified coordinates or if the coordinates point outside the map.
+     *
+     * Params:
+     *
+     * outCell = The cell will be written here if it exists.
+     * column  = Column of the cell.
+     * row     = Row of the cell.
+     * layer   = Layer of the cell.
+     *
+     * Returns: true if a cell was found and written to outCell, false if no cell
+     *          exists at specified coordinates and outCell was default-initialized.
+     */
+    bool cell(out Cell outCell, uint column, uint row, uint layer)
+        @trusted nothrow const // @nogc
+    {
+        return () {
+        if(layer >= layers_.length || row >= height_ || column >= width_)
+        {
+            return false;
+        }
+        foreach(cell; layers_[layer].rows_[row].cells[])
+            if(cell.column == column)
+        {
+            outCell = cell.cell;
+            return true;
+        }
+        return false;
+        }().assumeWontThrow;
+    }
+
+    /// Overload of `cell` taking `vec3u` coordinates.
+    bool cell(out Cell outCell, vec3u coords)
+        @safe nothrow const // @nogc
+    {
+        return cell(outCell, coords.x, coords.y, coords.z);
+    }
+
     import std.string: format;
     /// Tests for basic CellRange functionality.
     unittest
