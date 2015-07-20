@@ -38,6 +38,8 @@ import time.gametime;
 // Good for printf debugging:
 // enum fixedFPS = 3.0f;
 
+/// Enable GC profiling.
+extern(C) __gshared string[] rt_options = [ "gcopt=profile:1" ];
 
 
 /// Print help information.
