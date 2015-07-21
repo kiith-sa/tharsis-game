@@ -15,6 +15,7 @@ import gl3n_extra.linalg;
 
 import entity.components;
 import game.camera;
+import game.map;
 
 import entity.entitysystem;
 
@@ -193,11 +194,13 @@ public:
      * Params:
      *
      * time = Game time, for time step.
+     * map  = Game map.
      * log  = The game log.
      */
-    this(const GameTime time, Logger log) @safe pure nothrow @nogc
+    this(const(GameTime) time, const(Map) map, Logger log) @safe pure nothrow @nogc
     {
         time_ = time;
+        map_  = map;
         log_  = log;
     }
 
@@ -324,6 +327,8 @@ private:
     import time.gametime;
     // Game time for access to time step.
     const(GameTime) gameTime_;
+    // Game map.
+    const(Map) map_;
 
 public:
     alias FutureComponent = PositionComponent;
@@ -333,11 +338,13 @@ public:
      * Params:
      *
      * gameTime = Game time for access to time step.
+     * map      = Game map.
      * log      = The game log.
      */
-    this(const(GameTime) gameTime, Logger log) @safe pure nothrow @nogc
+    this(const(GameTime) gameTime, const(Map) map, Logger log) @safe pure nothrow @nogc
     {
         gameTime_ = gameTime;
+        map_      = map;
         log_      = log;
     }
 
