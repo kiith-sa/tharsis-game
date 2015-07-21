@@ -477,6 +477,20 @@ public:
 
 /// Size of a map cell in world space.
 enum cellSizeWorld  = vec3i(256, 256, 128);
+
+
+/// Get (column/row/layer) coordinates of cell containing specified world space coords.
+vec3i worldToCellCoords(vec3 world) @safe pure nothrow @nogc 
+{
+    import std.math: floor;
+    assert(cast(int)floor(-64.0 / 128.0) == -1);
+    return vec3i(cast(int)floor(world.x / cellSizeWorld.x),
+                    cast(int)floor(world.y / cellSizeWorld.y),
+                    cast(int)floor(world.z / cellSizeWorld.z));
+}
+
+
+
 /** Generate a plain map for testing.
  *
  * Takes a Map and generates cells in it. Best used with an empty, newly constructed
