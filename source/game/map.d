@@ -11,6 +11,7 @@ module game.map;
 import std.experimental.logger;
 import std.container.array;
 import std.exception: assumeWontThrow;
+import std.stdio;
 
 import game.mapinternals;
 import gl3n_extra.color;
@@ -581,7 +582,6 @@ unittest
     writeln("Map/generatePlainMap() unittest");
     scope(success) { writeln("Map/generatePlainMap() unittest SUCCESS"); }
     scope(failure) { writeln("Map/generatePlainMap() unittest FAILURE"); }
-    auto map = new Map(256, 256, 32);
+    auto map = new Map(null, 256, 256, 32);
     generatePlainMap(map);
 }
-

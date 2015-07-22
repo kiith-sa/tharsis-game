@@ -397,7 +397,7 @@ public:
         writeln("Map.allCells() unittest");
         scope(success) { writeln("Map.allCells() unittest SUCCESS"); }
         scope(failure) { writeln("Map.allCells() unittest FAILURE"); }
-        auto map = new Map(4, 4, 4);
+        auto map = new Map(null, 4, 4, 4);
         map.generatePlainMap();
         auto rng = map.allCells;
         while(!rng.empty)
@@ -437,7 +437,7 @@ public:
         writeln("Map.cellRange() unittest");
         scope(success) { writeln("Map.cellRange() unittest SUCCESS"); }
         scope(failure) { writeln("Map.cellRange() unittest FAILURE"); }
-        auto map = new Map(4, 4, 4);
+        auto map = new Map(null, 4, 4, 4);
         map.generatePlainMap();
         auto rng = map.allCells;
         while(!rng.empty)
