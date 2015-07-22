@@ -391,7 +391,7 @@ public:
         {
             uniforms_.projection = camera_.projection;
             uniforms_.modelView  = camera_.view;
-            drawBatch(facingBatch_, PrimitiveType.Triangles);
+            drawBatch(facingBatch_, PrimitiveType.Lines);
         }
 
         foreach(i, v; positions)
