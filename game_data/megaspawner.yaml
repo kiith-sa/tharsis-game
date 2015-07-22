@@ -82,8 +82,8 @@ spawnerMulti:
 visual:
     color: [255, 255, 0, 255]
 engine:
-    acceleration: 150.0
-    maxSpeed:     900.0
+    acceleration: 900.0
+    maxSpeed:     450.0
     rotSpeed:     180.0
 dynamic:
     velocity: [0, 0, 0]

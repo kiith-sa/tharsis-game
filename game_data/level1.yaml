@@ -32,7 +32,7 @@ spawnerMulti:
       triggerID: 5
       override:
         position:
-          coords: [2172, 2172, 15]
+          coords: [0, 2172, 15]
 
 timedTriggerMulti:
     - time:      0.5
