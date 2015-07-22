@@ -183,6 +183,9 @@ private:
     // Game time, for time step.
     const GameTime time_;
 
+    // Game map.
+    const(Map) map_;
+
     // Game log.
     Logger log_;
 
