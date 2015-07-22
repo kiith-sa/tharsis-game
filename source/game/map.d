@@ -479,17 +479,50 @@ public:
 /// Size of a map cell in world space.
 enum cellSizeWorld  = vec3i(256, 256, 128);
 
-
 /// Get (column/row/layer) coordinates of cell containing specified world space coords.
 vec3i worldToCellCoords(vec3 world) @safe pure nothrow @nogc 
 {
-    import std.math: floor;
-    assert(cast(int)floor(-64.0 / 128.0) == -1);
-    return vec3i(cast(int)floor(world.x / cellSizeWorld.x),
-                    cast(int)floor(world.y / cellSizeWorld.y),
-                    cast(int)floor(world.z / cellSizeWorld.z));
+    import tharsis.util.math;
+    assert(floor!int(-64.0 / 128.0) == -1);
+
+    // Cell coords as they would be on a 'diamond' (square from isometric view) map
+    // like e.g. Age of Empires.
+    const diamondCoords = 
+        vec3i(floor!int(world.x / cellSizeWorld.x),
+              floor!int(world.y / cellSizeWorld.y),
+              floor!int(world.z / cellSizeWorld.z));
+    // X adds -X rows and X/2 columns
+    // Y adds Y rows and Y/2 columns
+    // Convert diamond coords to our staggered coords.
+    return vec3i((diamondCoords.x + diamondCoords.y) / 2,
+                 diamondCoords.y - diamondCoords.x,
+                 diamondCoords.z);
 }
 
+/// Get world space coordinates of the eastern corner of cell with specified coordinates.
+vec3 cellToWorldCoords(vec3i cell) @safe pure nothrow @nogc 
+{
+    // columns add cols diagonal Y and cols diagonal X
+    // rows add (rows + 1) / 2 diagonal Y and -(rows/2) diagonal X
+    const diamondCoords = vec3(cell.x - cell.y / 2, cell.x + (cell.y + 1) / 2, cell.z);
+    return vec3(diamondCoords.x * cellSizeWorld.x,
+                diamondCoords.y * cellSizeWorld.y,
+                diamondCoords.z * cellSizeWorld.z);
+}
+
+unittest
+{
+    writeln("cellToWorldCoords()/worldToCellCoords() unittest");
+    scope(success) { writeln("cellToWorldCoords()/worldToCellCoords() unittest SUCCESS"); }
+    scope(failure) { writeln("cellToWorldCoords()/worldToCellCoords() unittest FAILURE"); }
+
+    foreach(coords; [vec3i(0, 0, 0), vec3i(9, 0, 0), vec3i(0, 9, 0), vec3i(0, 0, 9),
+                     vec3i(5, 9, 0), vec3i(9, 5, 0), vec3i(21, 34, 43)])
+    {
+        assert(coords.cellToWorldCoords.worldToCellCoords == coords,
+               "cellToWorldCoords() must be an inverse of worldToCellCoords()");
+    }
+}
 
 
 /** Generate a plain map for testing.

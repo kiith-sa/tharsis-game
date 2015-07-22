@@ -326,11 +326,7 @@ public:
                 drawBatch(cellLineBatch_, PrimitiveType.Lines); 
             }
 
-            const float rowXOffset = - (cast(long)cell.row / 2) * cellSizeWorld.x;
-            const float rowYOffset = ((cell.row + 1) / 2) * cellSizeWorld.y;
-            const cellPos = vec3(rowXOffset + cell.column * cellSizeWorld.x,
-                                 rowYOffset + cell.column * cellSizeWorld.y,
-                                 cell.layer * cellSizeWorld.z);
+            const cellPos = cellToWorldCoords(vec3i(cell.column, cell.row, cell.layer));
 
             auto positionMapVertex(ref const(MapVertex) v) nothrow
             {
