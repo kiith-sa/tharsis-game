@@ -369,6 +369,35 @@ public:
         return cells_.allCells;
     }
 
+    /** Write cell at specified coordinates to `outCell`, or return false if no cell
+     * exists at specified coordinates or if the coordinates point outside the map.
+     *
+     * Params:
+     *
+     * outCell = The cell will be written here if it exists.
+     * column  = Column of the cell.
+     * row     = Row of the cell.
+     * layer   = Layer of the cell.
+     *
+     * Returns: true if a cell was found and written to outCell, false if no cell
+     *          exists at specified coordinates and outCell was default-initialized.
+     */
+    bool cell(out Cell outCell, int column, int row, int layer)
+        @trusted nothrow const // @nogc
+    {
+        if(column < 0 || row < 0 || layer < 0)
+        {
+            return false;
+        }
+        return cells_.cell(outCell, cast(uint)column, cast(uint)row, cast(uint)layer);
+    }
+
+    /// A `cell` overload taking column,row and layer together as a `vec3i`.
+    bool cell(out Cell outCell, vec3i coords) @safe nothrow const //@nogc
+    {
+        return cell(outCell, coords.x, coords.y, coords.z);
+    }
+
     /** Get a range (`InputRange`) of cells in an interval of rows/layers/columns.
      *
      * See_Also: `allCells`
