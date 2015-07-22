@@ -398,6 +398,54 @@ public:
         return cell(outCell, coords.x, coords.y, coords.z);
     }
 
+    /** Find if specified coords are under the surface of a cell (either on the
+     * same layer as the coords, or one layer above) and return the same coords
+     * with Z coordinate moved to the top of the surface.
+     *
+     * Used to keep entities on top of the map, instead of falling through it.
+     */
+    vec3 bumpToSurface(vec3 coords) @safe nothrow const //@nogc
+    {
+        import std.range: only;
+        const thisCellCoords = coords.worldToCellCoords;
+        foreach(cellCoords; only(thisCellCoords + vec3i(0, 0, 1), thisCellCoords))
+        {
+            Cell cell;
+            if(!this.cell(cell, cellCoords)) { continue; }
+
+            const tile = allTiles_[cell.tileIndex];
+            const S = tile.heightS;
+            const W = tile.heightW;
+            const N = tile.heightN;
+            const E = tile.heightE;
+            const cellWorldCoords = cellCoords.cellToWorldCoords;
+            const coordsInCell = coords - cellWorldCoords;
+            // If the tile is flat and below our coords, we can quickly return without
+            // bumping anything up.
+            if(max(N, E, S, W) < coordsInCell.z)
+            {
+                return coords;
+            }
+
+            // P is the linear interpolation of A and B in u: P = A + (B-A)·u
+            // Q is the linear interpolation of D and C in u: Q = D + (C-D)·u
+            // X is the linear interpolation of P and Q in v: X = P + (Q-P)·v
+            // A: S
+            // V: W
+            // C: N
+            // D: E
+            // Linear interpolation of height between cell's corners
+            const uv = vec2(coordsInCell.x / cellSizeWorld.x,
+                            coordsInCell.y / cellSizeWorld.y);
+            const P = W + (S - W) * uv.x;
+            const Q = N + (E - N) * uv.x;
+            const surfaceHeight = P + (Q - P) * uv.y;
+            return vec3(coords.xy, max(coords.z, cellWorldCoords.z + surfaceHeight));
+        }
+        return coords;
+    }
+
+
     /** Get a range (`InputRange`) of cells in an interval of rows/layers/columns.
      *
      * See_Also: `allCells`
