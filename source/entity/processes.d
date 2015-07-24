@@ -387,6 +387,13 @@ public:
         auto newPos = posPast + timeStep * dynamic.velocity;
 
         newPos = map_.bumpToSurface(newPos);
+        Cell cell = void;
+        if(map_.cell(cell, newPos.worldToCellCoords))
+        {
+            // Align rotation to cell surface.
+            const normal = map_.tile(cell.tileIndex).normal;
+            newFacing = newFacing.decompose(normal).component.normalized;
+        }
 
         posFuture = PositionComponent(newPos, newFacing);
     }
