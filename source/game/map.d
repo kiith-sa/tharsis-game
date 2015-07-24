@@ -199,6 +199,15 @@ struct Tile
         ushort[4] heights;
     }
 
+    /** Normal of the tile used to align entity rotation to the tile.
+     *
+     * Note:
+     *
+     * Some tiles are concave; in those cases this is the average
+     * of normals of the West-South-East and West-East-North triangles.
+     */
+    vec3 normal;
+
     // TODO: std.allocator 2015-07-11
     /** Vertices of the tile's graphics representation that will be drawn as lines.
      *
@@ -232,6 +241,23 @@ struct Tile
         this.heightW = heightW;
         this.lineVertices     = lineVertices;
         this.triangleVertices = triangleVertices;
+
+        // Get normals of WSE and WEN triangles and average them.
+        // For non-concave tiles these are identical, for concave we get the
+        // average as a compromise.
+        const normalWSE = triangleNormal(vec3(0f, 0f, heightW),
+                                         vec3(cellSizeWorld.x, 0f, heightS),
+                                         vec3(vec2(cellSizeWorld.xy), heightE));
+        const normalWEN = triangleNormal(vec3(0f, 0f, heightW),
+                                         vec3(vec2(cellSizeWorld.xy), heightE),
+                                         vec3(0f, cellSizeWorld.y, heightN));
+        normal = (normalWSE + normalWEN).normalized;
+        // Assert that the normal has correct direction, at least for flat tiles.
+        debug if(heightN == heightE && heightN == heightS && heightN == heightW)
+        {
+            assert((normal - vec3(0f, 0f, 1f)).length_squared < 0.0001 , 
+                   "Normal of a flat tile must be the unit up vector");
+        }
     }
 }
 

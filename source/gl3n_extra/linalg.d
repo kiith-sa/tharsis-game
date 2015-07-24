@@ -71,6 +71,16 @@ Vector!(T, 2) matMulTo2D(T)(auto ref const Matrix!(T, 4, 4) m, const Vector!(T, 
     return ret;
 }
 
+
+/// Get the normal of a triangle defined by specified 3 vertices.
+Vector!(T, 3) triangleNormal(T)
+    (Vector!(T, 3) a, Vector!(T, 3) b, Vector!(T, 3) c) 
+    @safe pure nothrow @nogc 
+{
+    // The cross product of two sides of the triangle
+    return cross(b - a, c - a);
+}
+
 /** Get the angle (radians) between two points on a unit sphere (unit vectors).
  */
 T angleBetweenPointsOnSphere(T)(const Vector!(T, 3) a, const Vector!(T, 3) b)
