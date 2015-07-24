@@ -384,7 +384,9 @@ public:
 
             newFacing = slerp(posPast.facing, dynamic.rotTarget, rotRatio);
         }
-        const newPos = posPast + timeStep * dynamic.velocity;
+        auto newPos = posPast + timeStep * dynamic.velocity;
+
+        newPos = map_.bumpToSurface(newPos);
 
         posFuture = PositionComponent(newPos, newFacing);
     }
