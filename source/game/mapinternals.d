@@ -12,6 +12,7 @@ import std.algorithm;
 import std.experimental.logger;
 import std.container.array;
 import std.exception: assumeWontThrow;
+import std.stdio;
 
 import game.map;
 import gl3n_extra.linalg;
@@ -105,14 +106,10 @@ class CellLayer
 {
 private:
     // TODO: std.allocator 2015-07-15
-    /** A 2D array (width_ * height_) specifying the type of cell in each row/column in
-     * the layer.
-     *
-     * If `cellTypes_[x][y] == CellType.Cell`, `rows_[x]` will contain a cell
-     * on column `y`.  If `cellTypes_[x][y] == CellType.Empty`, `rows_[x]` will
-     * contain no such cell.
+    /** A 2D array (`width_ * height_`) specifying the index of each cell in its
+     * cell row's `cells` array, or `ushort.max` if there is no cell.
      */
-    CellType[][] cellTypes_;
+    ushort[][] cellIndices_;
 
     /// Cell rows on the layer. The length of this array is `height_`.
     CellRow[] rows_;
@@ -125,10 +122,10 @@ private:
     /// Invariant to ensure the layer is valid.
     invariant
     {
-        assert(cellTypes_.length == width_,
-               "CellLayer.cellTypes_ size changed over its lifetime");
-        assert(cellTypes_[0].length == height_,
-               "CellLayer.cellTypes_ size changed over its lifetime");
+        assert(cellIndices_.length == width_,
+               "CellLayer.cellIndices_ size changed over its lifetime");
+        assert(cellIndices_[0].length == height_,
+               "CellLayer.cellIndices_ size changed over its lifetime");
         assert(rows_.length == height_,
                "CellLayer.rows_ size changed over its lifetime");
     }
@@ -138,12 +135,13 @@ public:
     this(size_t width, size_t height) @safe pure nothrow // @nogc (TODO std.allocator)
     {
         rows_ = new CellRow[height];
-        cellTypes_ = new CellType[][width];
+        cellIndices_ = new ushort[][width];
         width_ = width;
         height_ = height;
-        foreach(ref col; cellTypes_)
+        foreach(ref col; cellIndices_)
         {
-            col = new CellType[height];
+            col = new ushort[height];
+            col[] = ushort.max;
         }
     }
 
@@ -159,24 +157,26 @@ public:
      */
     void deleteCell(uint x, uint y) @system nothrow //pure @nogc
     {
-        (){
-        if(cellTypes_[x][y] != CellType.Empty)
-        {
-            CellRow* row = &(rows_[y]);
-            // Removing an item from a sorted array (row)
-            // This shouldn't be slow as one row should never have
-            // too many cells (<256 most of the time, <4096 covers even insane cases)
+        if(cellIndices_[x][y] == ushort.max) { return; }
+        CellRow* row = &(rows_[y]);
+        // Removing an item from a sorted array (row)
+        // This shouldn't be slow as one row should never have
+        // too many cells (<256 most of the time, <4096 covers even insane cases)
 
-            // Find the cell
-            const deletePos = row.cells[].countUntil!(c => c.column == x);
-            assert(deletePos != -1,
-                   "cell x not found in row y even though cellTypes_[x][y] is not Empty");
-            // Move all cells after deleted cell back
-            moveAll(row.cells[deletePos + 1 .. $],
-                    row.cells[deletePos .. $ - 1]);
-            // Shorten the array
-            row.cells.removeBack(1);
-            cellTypes_[x][y] = CellType.Empty;
+        // Find the cell
+        const deletePos = cellIndices_[x][y];
+        assert(deletePos != -1,
+               "cell x not found in row y even though cellIndices_[x][y] is not ushort.max");
+        (){
+        // Move all cells after deleted cell back
+        moveAll(row.cells[deletePos + 1 .. $], row.cells[deletePos .. $ - 1]);
+        // Shorten the array
+        row.cells.removeBack(1);
+        cellIndices_[x][y] = ushort.max;
+        import std.range: enumerate;
+        foreach(idx, cell; row.cells[deletePos .. $].enumerate!ushort(deletePos))
+        {
+            cellIndices_[cell.column][y] = idx;
         }
         }().assumeWontThrow();
     }
@@ -193,32 +193,37 @@ public:
     {
         (){
         CellRow* row = &(rows_[y]);
-        final switch(cellTypes_[x][y])
+        if(cellIndices_[x][y] != ushort.max)
         {
-            case CellType.Empty:
-                scope(exit)
-                {
-                    assert(row.invariant_(), "Cell row invalid after inserting a cell");
-                    cellTypes_[x][y] = CellType.Cell;
-                }
-                // Fast path when appending a cell (during map creation)
-                if(!row.cells.empty && row.cells.back.column < x)
-                {
-                    row.cells.insert(CellRow.IndexedCell(cast(ushort)x, cell));
-                    break;
-                }
-                // Inserting a new cell into the cell row.
-                row.cells.insertBefore(row.cells[].find!(c => c.column > x),
-                                       CellRow.IndexedCell(cast(ushort)x, cell));
-                break;
-            case CellType.Cell:
-                // If there is already a cell at these coordinates, rewrite
-                // cell data in the row.
-                foreach(ref indexedCell; row.cells) if(indexedCell.column == x)
-                {
-                    indexedCell.cell = cell;
-                }
-                break;
+            // If there is already a cell at these coordinates, rewrite
+            // cell data in the row.
+            foreach(ref indexedCell; row.cells) if(indexedCell.column == x)
+            {
+                // No need to update cellIndices_; they already point to this cell.
+                indexedCell.cell = cell;
+            }
+            return;
+        }
+        scope(exit)
+        {
+            assert(row.invariant_(), "Cell row invalid after inserting a cell");
+        }
+        // Fast path when appending a cell (during map creation)
+        if(!row.cells.empty && row.cells.back.column < x)
+        {
+            cellIndices_[x][y] = cast(ushort)row.cells.length;
+            row.cells.insert(CellRow.IndexedCell(cast(ushort)x, cell));
+            return;
+        }
+        auto tail = row.cells[].find!(c => c.column > x);
+        const insertPos = cast(ushort)(row.cells.length - tail.length);
+        // cellIndices_[x][y] = insertPos;
+        // Inserting a new cell into the cell row.
+        import std.range: enumerate;
+        row.cells.insertBefore(tail, CellRow.IndexedCell(cast(ushort)x, cell));
+        foreach(idx, c; row.cells[insertPos .. $].enumerate!ushort(insertPos))
+        {
+            cellIndices_[c.column][y] = idx;
         }
         }().assumeWontThrow;
     }
@@ -318,19 +323,19 @@ public:
     bool cell(out Cell outCell, uint column, uint row, uint layer)
         @trusted nothrow const // @nogc
     {
-        return () {
         if(layer >= layers_.length || row >= height_ || column >= width_)
         {
             return false;
         }
-        foreach(cell; layers_[layer].rows_[row].cells[])
-            if(cell.column == column)
+
+        const layerRef = layers_[layer];
+        const cellIndex = layerRef.cellIndices_[column][row];
+        if(cellIndex == ushort.max)
         {
-            outCell = cell.cell;
-            return true;
+            return false;
         }
-        return false;
-        }().assumeWontThrow;
+        outCell = layerRef.rows_[row].cells[cellIndex].cell;
+        return true;
     }
 
     /// Overload of `cell` taking `vec3u` coordinates.
