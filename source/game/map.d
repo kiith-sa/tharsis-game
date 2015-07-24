@@ -31,26 +31,35 @@ import gl3n_extra.linalg;
 
 
 /// Size of a map cell in world space.
-enum cellSizeWorld  = vec3i(256, 256, 128);
+enum cellSizeWorld = vec3i(256, 256, 128);
+/// Bit shift needed to divide by cellSizeWorld.x. Used for optimization.
+enum cellSizeWorldShiftX = 8;
+/// Bit shift needed to divide by cellSizeWorld.y. Used for optimization.
+enum cellSizeWorldShiftY = 8;
+/// Bit shift needed to divide by cellSizeWorld.z. Used for optimization.
+enum cellSizeWorldShiftZ = 7;
 
 /// Get (column/row/layer) coordinates of cell containing specified world space coords.
 vec3i worldToCellCoords(vec3 world) @safe pure nothrow @nogc 
 {
     import tharsis.util.math;
-    assert(floor!int(-64.0 / 128.0) == -1);
-
     // Cell coords as they would be on a 'diamond' (square from isometric view) map
     // like e.g. Age of Empires.
-    const diamondCoords = 
-        vec3i(floor!int(world.x / cellSizeWorld.x),
-              floor!int(world.y / cellSizeWorld.y),
-              floor!int(world.z / cellSizeWorld.z));
+    const diamondX = floor!int(world.x) >> cellSizeWorldShiftX;
+    const diamondY = floor!int(world.y) >> cellSizeWorldShiftY;
+    const diamondZ = floor!int(world.z) >> cellSizeWorldShiftZ;
     // X adds -X rows and X/2 columns
     // Y adds Y rows and Y/2 columns
     // Convert diamond coords to our staggered coords.
-    return vec3i((diamondCoords.x + diamondCoords.y) / 2,
-                 diamondCoords.y - diamondCoords.x,
-                 diamondCoords.z);
+    return vec3i((diamondX + diamondY) >> 1, diamondY - diamondX, diamondZ);
+
+    // const diamondCoords = 
+    //     vec3i(floor!int(world.x / cellSizeWorld.x),
+    //           floor!int(world.y / cellSizeWorld.y),
+    //           floor!int(world.z / cellSizeWorld.z));
+    // return vec3i((diamondCoords.x + diamondCoords.y) / 2,
+    //              diamondCoords.y - diamondCoords.x,
+    //              diamondCoords.z);
 }
 
 /// Get world space coordinates of the eastern corner of cell with specified coordinates.
@@ -410,7 +419,7 @@ public:
         const thisCellCoords = coords.worldToCellCoords;
         foreach(cellCoords; only(thisCellCoords + vec3i(0, 0, 1), thisCellCoords))
         {
-            Cell cell;
+            Cell cell = void;
             if(!this.cell(cell, cellCoords)) { continue; }
 
             const tile = allTiles_[cell.tileIndex];

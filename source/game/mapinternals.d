@@ -582,7 +582,7 @@ public:
 
         bool tile(out Tile outTile, vec3u coords) @safe nothrow // @nogc
         {
-            Cell cell;
+            Cell cell = void;
             if(this.cell(cell, coords))
             {
                 outTile = tileStorage_.tile(cell.tileIndex);
@@ -599,7 +599,7 @@ public:
         // Handled by Map.commandRaiseTerrain()
         assert(layer < layers_.length - 1, "Can't raise terrain from the top layer");
 
-        Cell center;
+        Cell center = void;
         // If no cell at specified coords, ignore
         if(!cell(center, column, row, layer))
         {
