@@ -364,8 +364,8 @@ public:
      */
     this(Logger log, size_t width, size_t height, size_t layers) @safe pure nothrow
     {
-        assert(width < ushort.max, "Map width can't be >65535 cells");
-        assert(height < ushort.max, "Map height can't be >65535 cells");
+        assert(width < ushort.max, "Map width can't be >=65535 cells");
+        assert(height < ushort.max, "Map height can't be >=65535 cells");
         tileStorage_ = new TileStorage();
         cells_       = new CellState(width, height, layers, tileStorage_, log);
         log_    = log;
