@@ -71,6 +71,31 @@ Vector!(T, 2) matMulTo2D(T)(auto ref const Matrix!(T, 4, 4) m, const Vector!(T, 
     return ret;
 }
 
+import std.typecons;
+/** Decompose a vector along to the length along given normal and the perpendicular part.
+ *
+ * Params:
+ *
+ * decomposee = The vector to decompose.
+ * normal     = Normal to decompose around. Must be a unit vector.
+ * 
+ *
+ * Returns: 
+ *
+ * * `length`: Length of the part of the decomposed vector along `normal`.
+ * * `component`: Part of the decomposed vector perpendicular to `normal`.
+ * 
+ */
+Tuple!(T, "length", Vector!(T, 3), "component") decompose(T)(const Vector!(T, 3) decomposee, const Vector!(T, 3) normal)
+    @safe pure nothrow @nogc 
+{
+    import std.math: abs;
+    assert(abs(normal.length_squared - 1) < 0.0001,
+           "normal passed to decompose() must be a unit vector");
+    const length = dot(decomposee, normal);
+    const perpendicular = decomposee - length * normal;
+    return Tuple!(T, "length", Vector!(T, 3), "component")(length, perpendicular);
+}
 
 /// Get the normal of a triangle defined by specified 3 vertices.
 Vector!(T, 3) triangleNormal(T)
