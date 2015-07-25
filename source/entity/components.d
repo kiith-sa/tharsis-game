@@ -136,6 +136,24 @@ struct CommandComponent
     enum ushort ComponentTypeID = userComponentTypeID!5;
 }
 
+/** Movement types an entity can have.
+ *
+ * Different movement logic applies to entities with different movement types.
+ */
+enum MovementType : ubyte
+{
+    /// Acceleration is applied to the velocity vector of the entity.
+    Flying,
+    /** Acceleration is applied to the speed scalar of the entity;
+     * velocity is a product of speed and facing of the entity.
+     */
+    Vehicle,
+    // TODO: implement logic for MovementType.Infantry 2015-07-25
+    /// Same as vehicle, but can rotate instantly when not moving (NOT IMPLEMENTED)
+    Infantry
+    // TODO Hover (airships, etc) and other movement types 2015-07-25
+}
+
 
 /// Accelerates and decelerates entities.
 struct EngineComponent
