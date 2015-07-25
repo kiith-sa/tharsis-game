@@ -7,6 +7,8 @@ visual:
 engine:
     acceleration: 450.0
     maxSpeed:     450.0
+    rotSpeed:     120
+    movementType: Vehicle
 weaponMulti:
   - secsTillBurst: 0.3
     weapon:

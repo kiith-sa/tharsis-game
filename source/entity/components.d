@@ -165,6 +165,9 @@ struct EngineComponent
     /// Rotation speed of the entity (rotation doesn't accelerate/decelerate).
     float rotSpeed = 360.0f;
 
+    /// Movement type of the entity.
+    MovementType movementType = MovementType.Flying;
+
     /// Small for testing. Will increase.
     enum minPrealloc = 64;
 
