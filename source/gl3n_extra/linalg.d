@@ -124,7 +124,17 @@ body
             "(b) points on sphere must be unit vectors");
     //TODO: check if there are any edge cases where acos would return nan
     //here (is the dot product ever >1 or <-1?)
-    return acos(a.dot(b));
+    const dotProduct = a.dot(b);
+    if(dotProduct > 1.0)
+    {
+        return 0;
+    }
+    else if(dotProduct < -1.0)
+    {
+        import std.math: PI;
+        return -PI;
+    }
+    return acos(dotProduct);
 }
 
 /// Convert an angle in radians to degrees.
