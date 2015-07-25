@@ -37,10 +37,11 @@ private:
     // Command we're about to give to selected entities.
     CommandComponent commandForSelected_;
 
+    import game.map: cellSizeWorld;
     // TODO: closeEnough should be in YAML for CommandProcess 2014-08-20
     // If an entity with a MoveTo command is at least this close to its target, there's
     // no need to continue moving.
-    enum closeEnough = 67.0f;
+    enum closeEnough = cellSizeWorld.x;
 
 public:
     alias FutureComponent = CommandComponent;
