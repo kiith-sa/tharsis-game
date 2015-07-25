@@ -262,10 +262,9 @@ public:
                 const vec3 pastVelocity = dynamicPast.velocity;
                 // Direction we want to go in.
                 const vec3 wantedDir = toTarget.normalized;
-
-
-                enum speedEpsilon = 5.0;
                 const speed = pastVelocity.length;
+                vec3 velocity;
+
                 // Determines whether we're accelerating or decelerating
                 // const int accelDir = 1;
                 const int accelDir = 
@@ -276,17 +275,23 @@ public:
                     // otherwise, accelerate (we will still clamp velocity to maxSpeed)
                     1;
 
-                const vec3 accel = 
-                    engine.acceleration * (accelDir * pos.facing) * timeStep;
-                vec3 velocity = dynamicPast.velocity + accel;
+                final switch(engine.movementType)
+                {
+                    case MovementType.Flying:
+                        const vec3 accel = 
+                            engine.acceleration * (accelDir * pos.facing) * timeStep;
+                        velocity = dynamicPast.velocity + accel;
+                        break;
+                    case MovementType.Infantry:
+                    case MovementType.Vehicle:
+                        break;
+                }
+
                 if(velocity.length >= engine.maxSpeed)
                 {
                     velocity.setLength(engine.maxSpeed);
                 }
-
-                dynamicFuture = 
-                    DynamicComponent(velocity, engine.rotSpeed, wantedDir);
-
+                dynamicFuture = DynamicComponent(velocity, engine.rotSpeed, wantedDir);
                 break;
             case StaticFireAt:
                 break;
