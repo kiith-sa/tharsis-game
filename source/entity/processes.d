@@ -378,7 +378,9 @@ public:
             assert(abs(dynamic.rotTarget.magnitude_squared - 1.0) < 0.001 ,
                    "rotTarget must be a unit vector");
 
-            const rotDistanceDeg = radToDeg(angleBetweenPointsOnSphere(posPast.facing, dynamic.rotTarget));
+            const rotDistanceDeg = 
+                angleBetweenPointsOnSphere(posPast.facing, dynamic.rotTarget)
+                .radToDeg;
             // How much of the rot distance can we move in the second.
             // e.g. if speed is 45degpersec and distance is 90 deg, we'll be able to cover 
             // 0.5 of the distance in a second.
@@ -387,7 +389,7 @@ public:
             // the entire distance so we clamp to 1.0
             const rotRatio = min(1.0, rotRatioInSecond * timeStep);
 
-            newFacing = slerp(posPast.facing, dynamic.rotTarget, rotRatio);
+            newFacing = slerp(posPast.facing, dynamic.rotTarget, 1.0 - rotRatio);
         }
         auto newPos = posPast + timeStep * dynamic.velocity;
 
