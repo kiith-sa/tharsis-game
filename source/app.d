@@ -183,13 +183,13 @@ struct GeneralConfig
         {
             try switch(key)
             {
-                case "threadCount": threadCount = node.as!uint; break;
-                case "headless":    headless    = node.as!bool; break;
-                case "schedAlgo":   schedAlgo   = node.as!string.to!SchedulingAlgorithmType; break;
-                case "width":       width       = node.as!uint; break;
-                case "height":      height      = node.as!uint; break;
-                case "targetFPS":   targetFPS   = node.as!uint; break;
-                case "command":     command     = node.as!string; break;
+                case "threads":   threadCount = node.as!uint; break;
+                case "headless":  headless    = node.as!bool; break;
+                case "schedAlgo": schedAlgo   = node.as!string.to!SchedulingAlgorithmType; break;
+                case "width":     width       = node.as!uint; break;
+                case "height":    height      = node.as!uint; break;
+                case "targetFPS": targetFPS   = node.as!uint; break;
+                case "command":   command     = node.as!string; break;
                 default: break;
             }
             catch(Exception e)
@@ -214,7 +214,7 @@ struct GeneralConfig
             bool help;
             getopt(cliArgs, std.getopt.config.passThrough, std.getopt.config.bundling,
                    "help", &help, "headless", &headless, "sched-algo", &schedAlgo,
-                   "width", &width, "height", &height, "threadCount", &threadCount,
+                   "width", &width, "height", &height, "threads", &threadCount,
                    "target-fps", &targetFPS);
             data.cliArgs = cliArgs;
 
